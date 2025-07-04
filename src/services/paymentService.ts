@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { STRIPE_PLANS } from '../lib/stripe';
+import { PaymentDebugger } from '../utils/paymentDebugger';
 
 export interface PaymentIntent {
   clientSecret: string;
@@ -32,11 +33,21 @@ export class PaymentService {
     plan: string,
     email: string
   ): Promise<{ success: boolean; data?: PaymentIntent; error?: string }> {
+    PaymentDebugger.log('Creating Payment Intent', { userId, plan, email });
+    
     try {
       const planConfig = STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS];
       if (!planConfig) {
-        return { success: false, error: 'Invalid plan selected' };
+        const error = 'Invalid plan selected';
+        PaymentDebugger.log('Payment Intent Creation Failed', { error, plan }, 'error');
+        return { success: false, error };
       }
+
+      PaymentDebugger.log('Plan Configuration Found', { 
+        plan, 
+        amount: planConfig.amount, 
+        priceId: planConfig.priceId 
+      });
 
       // Call Supabase Edge Function to create payment intent
       const { data, error } = await supabase.functions.invoke('create-payment-intent', {
@@ -53,13 +64,25 @@ export class PaymentService {
       });
 
       if (error) {
-        console.error('Payment intent creation failed:', error);
+        PaymentDebugger.log('Supabase Function Error', { 
+          error: error.message, 
+          details: error 
+        }, 'error');
         return { success: false, error: error.message };
       }
 
+      PaymentDebugger.log('Payment Intent Created Successfully', { 
+        clientSecretLength: data.clientSecret?.length,
+        amount: data.amount,
+        currency: data.currency
+      });
+
       return { success: true, data };
     } catch (error) {
-      console.error('Payment service error:', error);
+      PaymentDebugger.log('Payment Service Error', { 
+        error: error.message, 
+        stack: error.stack 
+      }, 'error');
       return { success: false, error: 'Failed to create payment intent' };
     }
   }
@@ -71,10 +94,14 @@ export class PaymentService {
     email: string,
     paymentMethodId: string
   ): Promise<{ success: boolean; data?: Subscription; error?: string }> {
+    PaymentDebugger.log('Creating Subscription', { userId, plan, email, paymentMethodId });
+    
     try {
       const planConfig = STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS];
       if (!planConfig) {
-        return { success: false, error: 'Invalid plan selected' };
+        const error = 'Invalid plan selected';
+        PaymentDebugger.log('Subscription Creation Failed', { error, plan }, 'error');
+        return { success: false, error };
       }
 
       // Call Supabase Edge Function to create subscription
@@ -89,13 +116,24 @@ export class PaymentService {
       });
 
       if (error) {
-        console.error('Subscription creation failed:', error);
+        PaymentDebugger.log('Subscription Creation Error', { 
+          error: error.message, 
+          details: error 
+        }, 'error');
         return { success: false, error: error.message };
       }
 
+      PaymentDebugger.log('Subscription Created Successfully', { 
+        subscriptionId: data.subscription.id,
+        status: data.subscription.status
+      });
+
       return { success: true, data };
     } catch (error) {
-      console.error('Subscription service error:', error);
+      PaymentDebugger.log('Subscription Service Error', { 
+        error: error.message, 
+        stack: error.stack 
+      }, 'error');
       return { success: false, error: 'Failed to create subscription' };
     }
   }
@@ -104,19 +142,31 @@ export class PaymentService {
   static async getCustomerSubscriptions(
     userId: string
   ): Promise<{ success: boolean; data?: Subscription[]; error?: string }> {
+    PaymentDebugger.log('Fetching Customer Subscriptions', { userId });
+    
     try {
       const { data, error } = await supabase.functions.invoke('get-subscriptions', {
         body: { userId }
       });
 
       if (error) {
-        console.error('Failed to get subscriptions:', error);
+        PaymentDebugger.log('Failed to Get Subscriptions', { 
+          error: error.message, 
+          details: error 
+        }, 'error');
         return { success: false, error: error.message };
       }
 
+      PaymentDebugger.log('Subscriptions Retrieved', { 
+        count: data.subscriptions?.length || 0 
+      });
+
       return { success: true, data: data.subscriptions || [] };
     } catch (error) {
-      console.error('Subscription fetch error:', error);
+      PaymentDebugger.log('Subscription Fetch Error', { 
+        error: error.message, 
+        stack: error.stack 
+      }, 'error');
       return { success: false, error: 'Failed to fetch subscriptions' };
     }
   }
@@ -125,19 +175,28 @@ export class PaymentService {
   static async cancelSubscription(
     subscriptionId: string
   ): Promise<{ success: boolean; error?: string }> {
+    PaymentDebugger.log('Cancelling Subscription', { subscriptionId });
+    
     try {
       const { error } = await supabase.functions.invoke('cancel-subscription', {
         body: { subscriptionId }
       });
 
       if (error) {
-        console.error('Subscription cancellation failed:', error);
+        PaymentDebugger.log('Subscription Cancellation Failed', { 
+          error: error.message, 
+          subscriptionId 
+        }, 'error');
         return { success: false, error: error.message };
       }
 
+      PaymentDebugger.log('Subscription Cancelled Successfully', { subscriptionId });
       return { success: true };
     } catch (error) {
-      console.error('Subscription cancellation error:', error);
+      PaymentDebugger.log('Subscription Cancellation Error', { 
+        error: error.message, 
+        stack: error.stack 
+      }, 'error');
       return { success: false, error: 'Failed to cancel subscription' };
     }
   }
@@ -147,19 +206,28 @@ export class PaymentService {
     subscriptionId: string,
     paymentMethodId: string
   ): Promise<{ success: boolean; error?: string }> {
+    PaymentDebugger.log('Updating Payment Method', { subscriptionId, paymentMethodId });
+    
     try {
       const { error } = await supabase.functions.invoke('update-payment-method', {
         body: { subscriptionId, paymentMethodId }
       });
 
       if (error) {
-        console.error('Payment method update failed:', error);
+        PaymentDebugger.log('Payment Method Update Failed', { 
+          error: error.message, 
+          subscriptionId 
+        }, 'error');
         return { success: false, error: error.message };
       }
 
+      PaymentDebugger.log('Payment Method Updated Successfully', { subscriptionId });
       return { success: true };
     } catch (error) {
-      console.error('Payment method update error:', error);
+      PaymentDebugger.log('Payment Method Update Error', { 
+        error: error.message, 
+        stack: error.stack 
+      }, 'error');
       return { success: false, error: 'Failed to update payment method' };
     }
   }
@@ -170,6 +238,8 @@ export class PaymentService {
     plan: string,
     paymentIntentId: string
   ): Promise<{ success: boolean; error?: string }> {
+    PaymentDebugger.log('Handling Payment Success', { userId, plan, paymentIntentId });
+    
     try {
       // Update user subscription in database
       const { error } = await supabase
@@ -182,7 +252,11 @@ export class PaymentService {
         .eq('id', userId);
 
       if (error) {
-        console.error('Failed to update user subscription:', error);
+        PaymentDebugger.log('Failed to Update User Subscription', { 
+          error: error.message, 
+          userId, 
+          plan 
+        }, 'error');
         return { success: false, error: 'Failed to update subscription' };
       }
 
@@ -196,9 +270,13 @@ export class PaymentService {
         status: 'succeeded'
       });
 
+      PaymentDebugger.log('Payment Success Handled', { userId, plan, paymentIntentId });
       return { success: true };
     } catch (error) {
-      console.error('Payment success handling error:', error);
+      PaymentDebugger.log('Payment Success Handling Error', { 
+        error: error.message, 
+        stack: error.stack 
+      }, 'error');
       return { success: false, error: 'Failed to process payment success' };
     }
   }

@@ -6,6 +6,7 @@ import {
 } from '@stripe/react-stripe-js';
 import { Shield, Lock, CreditCard, CheckCircle } from 'lucide-react';
 import { formatAmount, STRIPE_PLANS } from '../../lib/stripe';
+import { PaymentDebugger } from '../../utils/paymentDebugger';
 
 interface CheckoutFormProps {
   plan: string;
@@ -24,8 +25,10 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    PaymentDebugger.log('Checkout Form Submitted', { plan, planPrice });
 
     if (!stripe || !elements) {
+      PaymentDebugger.log('Stripe Not Ready', { stripe: !!stripe, elements: !!elements }, 'error');
       return;
     }
 
@@ -33,13 +36,17 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
     setError('');
 
     try {
+      PaymentDebugger.log('Submitting Payment Elements');
       const { error: submitError } = await elements.submit();
+      
       if (submitError) {
+        PaymentDebugger.log('Elements Submit Error', { error: submitError.message }, 'error');
         setError(submitError.message || 'Payment failed');
         setIsLoading(false);
         return;
       }
 
+      PaymentDebugger.log('Confirming Payment');
       const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
@@ -49,8 +56,19 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
       });
 
       if (confirmError) {
+        PaymentDebugger.log('Payment Confirmation Error', { 
+          error: confirmError.message,
+          type: confirmError.type,
+          code: confirmError.code 
+        }, 'error');
         setError(confirmError.message || 'Payment failed');
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        PaymentDebugger.log('Payment Succeeded', { 
+          paymentIntentId: paymentIntent.id,
+          amount: paymentIntent.amount,
+          status: paymentIntent.status 
+        });
+        
         // Payment successful
         onSuccess({
           paymentIntentId: paymentIntent.id,
@@ -58,8 +76,17 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
           amount: paymentIntent.amount,
           currency: paymentIntent.currency,
         });
+      } else {
+        PaymentDebugger.log('Unexpected Payment Status', { 
+          status: paymentIntent?.status,
+          paymentIntentId: paymentIntent?.id 
+        }, 'warn');
       }
     } catch (err) {
+      PaymentDebugger.log('Payment Processing Error', { 
+        error: err.message,
+        stack: err.stack 
+      }, 'error');
       setError('An unexpected error occurred');
     } finally {
       setIsLoading(false);
@@ -85,6 +112,16 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
           <PaymentElement 
             options={{
               layout: 'tabs',
+            }}
+            onReady={() => {
+              PaymentDebugger.log('Payment Element Ready');
+            }}
+            onChange={(event) => {
+              PaymentDebugger.log('Payment Element Changed', { 
+                complete: event.complete,
+                empty: event.empty,
+                error: event.error?.message 
+              });
             }}
           />
         </div>
@@ -183,7 +220,10 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
         <div className="flex space-x-3">
           <button
             type="button"
-            onClick={onCancel}
+            onClick={() => {
+              PaymentDebugger.log('Checkout Cancelled by User');
+              onCancel();
+            }}
             className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
           >
             Cancel
