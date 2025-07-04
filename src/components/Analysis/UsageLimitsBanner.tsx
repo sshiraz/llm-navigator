@@ -1,0 +1,227 @@
+import React from 'react';
+import { AlertTriangle, Zap, TrendingUp, Clock, Gift } from 'lucide-react';
+import { UsageLimits } from '../../utils/costTracker';
+
+interface UsageLimitsBannerProps {
+  usageLimits: UsageLimits;
+  onUpgrade?: () => void;
+}
+
+export default function UsageLimitsBanner({ usageLimits, onUpgrade }: UsageLimitsBannerProps) {
+  const usagePercentage = (usageLimits.currentUsage.analyses / usageLimits.monthlyAnalyses) * 100;
+  const costPercentage = (usageLimits.currentUsage.cost / usageLimits.monthlyBudget) * 100;
+  
+  // For demo accounts (free/trial), show unlimited status
+  const isUnlimited = usageLimits.plan === 'free' || usageLimits.plan === 'trial';
+  const isNearLimit = !isUnlimited && (usagePercentage > 80 || costPercentage > 80);
+  const isAtLimit = !isUnlimited && (usagePercentage >= 100 || costPercentage >= 100);
+  
+  const resetDate = new Date(usageLimits.resetDate);
+  const daysUntilReset = Math.ceil((resetDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+
+  const getBannerColor = () => {
+    if (isUnlimited) return 'bg-emerald-50 border-emerald-200';
+    if (isAtLimit) return 'bg-red-50 border-red-200';
+    if (isNearLimit) return 'bg-yellow-50 border-yellow-200';
+    return 'bg-blue-50 border-blue-200';
+  };
+
+  const getIconColor = () => {
+    if (isUnlimited) return 'text-emerald-600';
+    if (isAtLimit) return 'text-red-600';
+    if (isNearLimit) return 'text-yellow-600';
+    return 'text-blue-600';
+  };
+
+  const getTextColor = () => {
+    if (isUnlimited) return 'text-emerald-900';
+    if (isAtLimit) return 'text-red-900';
+    if (isNearLimit) return 'text-yellow-900';
+    return 'text-blue-900';
+  };
+
+  if (isUnlimited) {
+    return (
+      <div className={`rounded-xl border-2 p-6 ${getBannerColor()}`}>
+        <div className="flex items-start justify-between">
+          <div className="flex items-start space-x-4">
+            <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+              <Gift className={`w-6 h-6 ${getIconColor()}`} />
+            </div>
+            
+            <div className="flex-1">
+              <h3 className={`text-lg font-semibold ${getTextColor()} mb-2`}>
+                🎉 Unlimited Demo Access
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {/* Analyses Usage */}
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className={getTextColor()}>Analyses Used</span>
+                    <span className={`font-medium ${getTextColor()}`}>
+                      {usageLimits.currentUsage.analyses} / ∞
+                    </span>
+                  </div>
+                  <div className="w-full bg-white rounded-full h-2">
+                    <div className="h-2 bg-emerald-500 rounded-full w-1/4"></div>
+                  </div>
+                </div>
+
+                {/* Cost Usage */}
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className={getTextColor()}>Demo Budget</span>
+                    <span className={`font-medium ${getTextColor()}`}>
+                      ${usageLimits.currentUsage.cost.toFixed(2)} / ∞
+                    </span>
+                  </div>
+                  <div className="w-full bg-white rounded-full h-2">
+                    <div className="h-2 bg-emerald-500 rounded-full w-1/4"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-4 text-sm">
+                <div className="flex items-center space-x-2">
+                  <Zap className={`w-4 h-4 ${getIconColor()}`} />
+                  <span className={getTextColor()}>
+                    Unlimited analyses for demo
+                  </span>
+                </div>
+                
+                {usageLimits.currentUsage.tokens > 0 && (
+                  <div className={`${getTextColor()}`}>
+                    {usageLimits.currentUsage.tokens.toLocaleString()} tokens used
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {onUpgrade && (
+            <button
+              onClick={onUpgrade}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium transition-colors hover:bg-emerald-700"
+            >
+              Upgrade for More
+            </button>
+          )}
+        </div>
+
+        <div className="mt-4 p-3 bg-white border border-emerald-200 rounded-lg">
+          <p className="text-sm text-emerald-800">
+            <strong>Demo Mode:</strong> Experience unlimited analyses to test our platform. 
+            Upgrade to any paid plan for advanced features like real-time crawling, competitor intelligence, and team collaboration.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`rounded-xl border-2 p-6 ${getBannerColor()}`}>
+      <div className="flex items-start justify-between">
+        <div className="flex items-start space-x-4">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+            isAtLimit ? 'bg-red-100' : isNearLimit ? 'bg-yellow-100' : 'bg-blue-100'
+          }`}>
+            {isAtLimit ? (
+              <AlertTriangle className={`w-6 h-6 ${getIconColor()}`} />
+            ) : isNearLimit ? (
+              <TrendingUp className={`w-6 h-6 ${getIconColor()}`} />
+            ) : (
+              <Zap className={`w-6 h-6 ${getIconColor()}`} />
+            )}
+          </div>
+          
+          <div className="flex-1">
+            <h3 className={`text-lg font-semibold ${getTextColor()} mb-2`}>
+              {isAtLimit 
+                ? 'Usage Limit Reached' 
+                : isNearLimit 
+                ? 'Approaching Usage Limit' 
+                : `${usageLimits.plan} Plan Usage`
+              }
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              {/* Analyses Usage */}
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className={getTextColor()}>Analyses Used</span>
+                  <span className={`font-medium ${getTextColor()}`}>
+                    {usageLimits.currentUsage.analyses} / {usageLimits.monthlyAnalyses}
+                  </span>
+                </div>
+                <div className="w-full bg-white rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all ${
+                      isAtLimit ? 'bg-red-500' : isNearLimit ? 'bg-yellow-500' : 'bg-blue-500'
+                    }`}
+                    style={{ width: `${Math.min(usagePercentage, 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Cost Usage */}
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className={getTextColor()}>API Budget Used</span>
+                  <span className={`font-medium ${getTextColor()}`}>
+                    ${usageLimits.currentUsage.cost.toFixed(2)} / ${usageLimits.monthlyBudget.toFixed(2)}
+                  </span>
+                </div>
+                <div className="w-full bg-white rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all ${
+                      isAtLimit ? 'bg-red-500' : isNearLimit ? 'bg-yellow-500' : 'bg-blue-500'
+                    }`}
+                    style={{ width: `${Math.min(costPercentage, 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4 text-sm">
+              <div className="flex items-center space-x-2">
+                <Clock className={`w-4 h-4 ${getIconColor()}`} />
+                <span className={getTextColor()}>
+                  Resets in {daysUntilReset} day{daysUntilReset !== 1 ? 's' : ''}
+                </span>
+              </div>
+              
+              {usageLimits.currentUsage.tokens > 0 && (
+                <div className={getTextColor()}>
+                  {usageLimits.currentUsage.tokens.toLocaleString()} tokens used
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {(isNearLimit || isAtLimit) && onUpgrade && (
+          <button
+            onClick={onUpgrade}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              isAtLimit 
+                ? 'bg-red-600 text-white hover:bg-red-700'
+                : 'bg-yellow-600 text-white hover:bg-yellow-700'
+            }`}
+          >
+            {isAtLimit ? 'Upgrade Now' : 'Upgrade Plan'}
+          </button>
+        )}
+      </div>
+
+      {isAtLimit && (
+        <div className="mt-4 p-3 bg-white border border-red-200 rounded-lg">
+          <p className="text-sm text-red-800">
+            <strong>Analysis blocked:</strong> You've reached your monthly limit. 
+            Upgrade your plan to continue analyzing websites or wait for your limits to reset.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
