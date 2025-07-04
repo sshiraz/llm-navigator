@@ -119,7 +119,8 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
       onUpgrade(planId);
     } else {
       if (!stripeConfig.isValid) {
-        alert('Payment processing is not configured. Please set up Stripe integration first.');
+        // Show configuration error
+        alert('Payment processing is not configured. Please set up Stripe integration first. Check the configuration status above for detailed instructions.');
         return;
       }
       setSelectedPlan(planId);
@@ -155,23 +156,56 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
         </p>
         
         {/* Stripe Status */}
-        <div className="max-w-2xl mx-auto mb-8">
+        <div className="max-w-4xl mx-auto mb-8">
           <StripeStatus />
         </div>
         
-        {/* Trial Banner */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl p-6 max-w-4xl mx-auto mb-8">
-          <div className="flex items-center justify-center space-x-3 mb-3">
-            <Gift className="w-6 h-6" />
-            <h2 className="text-xl font-bold">14-Day Free Trial Available</h2>
+        {/* Demo Mode Banner */}
+        {!stripeConfig.isValid && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 max-w-4xl mx-auto mb-8">
+            <div className="flex items-center justify-center space-x-3 mb-3">
+              <Gift className="w-6 h-6 text-blue-600" />
+              <h2 className="text-xl font-bold text-blue-900">Demo Mode Active</h2>
+            </div>
+            <p className="text-blue-800 mb-2">
+              Your app is fully functional in demo mode! All features work except real payment processing.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800 mt-4">
+              <div className="flex items-center space-x-2">
+                <Check className="w-4 h-4 text-emerald-500" />
+                <span>Unlimited demo analyses</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Check className="w-4 h-4 text-emerald-500" />
+                <span>All UI features functional</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Check className="w-4 h-4 text-emerald-500" />
+                <span>PDF report generation</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Check className="w-4 h-4 text-emerald-500" />
+                <span>Complete user experience</span>
+              </div>
+            </div>
           </div>
-          <p className="text-blue-100 mb-2">
-            Try any paid plan free for 14 days. Advanced fraud protection ensures fair access.
-          </p>
-          <p className="text-blue-200 text-sm">
-            One trial per person/organization every 90 days • No credit card required*
-          </p>
-        </div>
+        )}
+        
+        {/* Trial Banner - only show if Stripe is configured */}
+        {stripeConfig.isValid && (
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl p-6 max-w-4xl mx-auto mb-8">
+            <div className="flex items-center justify-center space-x-3 mb-3">
+              <Gift className="w-6 h-6" />
+              <h2 className="text-xl font-bold">14-Day Free Trial Available</h2>
+            </div>
+            <p className="text-blue-100 mb-2">
+              Try any paid plan free for 14 days. Advanced fraud protection ensures fair access.
+            </p>
+            <p className="text-blue-200 text-sm">
+              One trial per person/organization every 90 days • No credit card required*
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -179,7 +213,7 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
           const Icon = plan.icon;
           const isCurrent = currentPlan === plan.id;
           const isPopular = plan.popular;
-          const hasTrial = plan.trial;
+          const hasTrial = plan.trial && stripeConfig.isValid;
 
           return (
             <div 
@@ -245,11 +279,9 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
               {/* Primary CTA Button */}
               <button
                 onClick={() => handlePlanSelect(plan.id, false)}
-                disabled={isCurrent || (!stripeConfig.isValid && plan.id !== 'free')}
+                disabled={isCurrent}
                 className={`w-full py-3 px-4 rounded-lg font-medium transition-all text-sm mb-3 ${
                   isCurrent
-                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    : !stripeConfig.isValid && plan.id !== 'free'
                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                     : isPopular
                     ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg'
@@ -260,10 +292,10 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
               >
                 {isCurrent 
                   ? 'Current Plan' 
-                  : !stripeConfig.isValid && plan.id !== 'free'
-                  ? 'Setup Required'
                   : plan.id === 'free' 
                   ? 'Get Started Free'
+                  : !stripeConfig.isValid
+                  ? 'Demo Mode Only'
                   : hasTrial 
                   ? 'Start Free Trial' 
                   : 'Upgrade Now'
@@ -285,137 +317,12 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
               {!stripeConfig.isValid && plan.id !== 'free' && (
                 <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
                   <AlertCircle className="w-3 h-3 inline mr-1" />
-                  Stripe setup required
+                  Stripe setup required for payments
                 </div>
               )}
             </div>
           );
         })}
-      </div>
-
-      {/* Configuration Help */}
-      {!stripeConfig.isValid && (
-        <div className="mt-12 bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-4">
-            Complete Your Stripe Setup
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-medium text-blue-900 mb-2">Missing Configuration:</h4>
-              <ul className="space-y-1 text-sm text-blue-800">
-                {stripeConfig.issues.map((issue, index) => (
-                  <li key={index}>• {issue}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-medium text-blue-900 mb-2">Next Steps:</h4>
-              <ol className="space-y-1 text-sm text-blue-800">
-                <li>1. Create products in your Stripe dashboard</li>
-                <li>2. Copy the Price IDs to your .env file</li>
-                <li>3. Set up webhook endpoints</li>
-                <li>4. Test with Stripe test cards</li>
-              </ol>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Trial vs Direct Purchase Comparison */}
-      <div className="mt-12 bg-white rounded-xl border border-gray-200 p-8">
-        <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">Trial vs Direct Purchase</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="text-center p-6 bg-blue-50 rounded-xl border border-blue-200">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <Gift className="w-6 h-6 text-blue-600" />
-            </div>
-            <h4 className="text-lg font-semibold text-blue-900 mb-3">14-Day Free Trial</h4>
-            <ul className="text-sm text-blue-800 space-y-2 text-left">
-              <li>• Full access to all plan features</li>
-              <li>• No credit card required initially</li>
-              <li>• Advanced fraud protection</li>
-              <li>• One trial per person/organization</li>
-              <li>• 90-day cooldown between trials</li>
-              <li>• Automatic conversion after trial</li>
-            </ul>
-          </div>
-          
-          <div className="text-center p-6 bg-emerald-50 rounded-xl border border-emerald-200">
-            <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <CreditCard className="w-6 h-6 text-emerald-600" />
-            </div>
-            <h4 className="text-lg font-semibold text-emerald-900 mb-3">Direct Purchase</h4>
-            <ul className="text-sm text-emerald-800 space-y-2 text-left">
-              <li>• Immediate full access</li>
-              <li>• Credit card required upfront</li>
-              <li>• No trial restrictions</li>
-              <li>• Perfect for returning customers</li>
-              <li>• Bypass fraud protection checks</li>
-              <li>• Start billing immediately</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* Trial Details */}
-      <div className="mt-12 bg-white rounded-xl border border-gray-200 p-8">
-        <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">How the Free Trial Works</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-blue-600 font-bold">1</span>
-            </div>
-            <h4 className="font-semibold text-gray-900 mb-2">Sign Up</h4>
-            <p className="text-gray-600 text-sm">
-              Choose any paid plan and start your 14-day trial. Advanced fraud protection ensures fair access.
-            </p>
-          </div>
-          
-          <div className="text-center">
-            <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-indigo-600 font-bold">2</span>
-            </div>
-            <h4 className="font-semibold text-gray-900 mb-2">Full Access</h4>
-            <p className="text-gray-600 text-sm">
-              Use all features of your chosen plan for 14 days. Run analyses, compare competitors, generate reports.
-            </p>
-          </div>
-          
-          <div className="text-center">
-            <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-emerald-600 font-bold">3</span>
-            </div>
-            <h4 className="font-semibold text-gray-900 mb-2">Gentle Reminders</h4>
-            <p className="text-gray-600 text-sm">
-              We'll send friendly email reminders at day 7, 12, and 14 so you never lose track.
-            </p>
-          </div>
-          
-          <div className="text-center">
-            <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-yellow-600 font-bold">4</span>
-            </div>
-            <h4 className="font-semibold text-gray-900 mb-2">Choose Your Path</h4>
-            <p className="text-gray-600 text-sm">
-              Upgrade to continue with full features, downgrade to free, or pause your account.
-            </p>
-          </div>
-        </div>
-        
-        <div className="mt-6 p-4 bg-white border border-blue-200 rounded-lg">
-          <div className="flex items-start space-x-3">
-            <CreditCard className="w-5 h-5 text-blue-600 mt-0.5" />
-            <div>
-              <h5 className="font-medium text-blue-900 mb-1">Skip Trial Restrictions</h5>
-              <p className="text-blue-800 text-sm">
-                Use the "Skip Trial - Buy Now" button to bypass all trial restrictions and fraud protection checks. 
-                Perfect for returning customers or those who prefer immediate access with upfront payment.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Feature Highlights */}
@@ -453,10 +360,13 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
 
       <div className="mt-8 text-center">
         <p className="text-gray-600 mb-4">
-          Questions about our pricing or trial? We're here to help.
+          {stripeConfig.isValid 
+            ? "Questions about our pricing or trial? We're here to help."
+            : "Your app is fully functional in demo mode. Set up Stripe to enable real payment processing."
+          }
         </p>
         <div className="flex items-center justify-center space-x-6 text-sm text-gray-500">
-          <span>✓ Cancel anytime during trial</span>
+          <span>✓ {stripeConfig.isValid ? 'Cancel anytime during trial' : 'Unlimited demo access'}</span>
           <span>✓ 99.9% uptime SLA</span>
           <span>✓ SOC 2 compliant</span>
         </div>

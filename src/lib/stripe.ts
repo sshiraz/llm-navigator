@@ -1,14 +1,15 @@
 import { loadStripe } from '@stripe/stripe-js';
 
-// Temporary hardcoded values for testing (REMOVE BEFORE PRODUCTION)
-const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_your_actual_key_here';
+const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
 if (!stripePublishableKey) {
   console.warn('Stripe publishable key not found. Payment features will be disabled.');
 }
 
-// Initialize Stripe
-export const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
+// Initialize Stripe only if we have a valid key
+export const stripePromise = stripePublishableKey && !stripePublishableKey.includes('your_') 
+  ? loadStripe(stripePublishableKey) 
+  : null;
 
 // Stripe configuration
 export const STRIPE_CONFIG = {
@@ -27,22 +28,22 @@ export const STRIPE_CONFIG = {
   clientSecret: '', // Will be set dynamically
 };
 
-// Plan configurations - Updated to use environment variables with fallbacks
+// Plan configurations - Check for valid Price IDs
 export const STRIPE_PLANS = {
   starter: {
-    priceId: import.meta.env.VITE_STRIPE_STARTER_PRICE_ID || 'price_starter_fallback',
+    priceId: import.meta.env.VITE_STRIPE_STARTER_PRICE_ID || '',
     amount: 2900, // $29.00 in cents
     currency: 'usd',
     interval: 'month',
   },
   professional: {
-    priceId: import.meta.env.VITE_STRIPE_PROFESSIONAL_PRICE_ID || 'price_professional_fallback',
+    priceId: import.meta.env.VITE_STRIPE_PROFESSIONAL_PRICE_ID || '',
     amount: 9900, // $99.00 in cents
     currency: 'usd',
     interval: 'month',
   },
   enterprise: {
-    priceId: import.meta.env.VITE_STRIPE_ENTERPRISE_PRICE_ID || 'price_enterprise_fallback',
+    priceId: import.meta.env.VITE_STRIPE_ENTERPRISE_PRICE_ID || '',
     amount: 29900, // $299.00 in cents
     currency: 'usd',
     interval: 'month',
@@ -57,28 +58,57 @@ export const formatAmount = (amount: number, currency = 'usd') => {
   }).format(amount / 100);
 };
 
+// Check if a value is a placeholder
+const isPlaceholder = (value: string | undefined): boolean => {
+  if (!value) return true;
+  return value.includes('your_') || value.includes('placeholder') || value.includes('test_key');
+};
+
 // Validate Stripe configuration
 export const validateStripeConfig = () => {
   const issues = [];
   
-  if (!stripePublishableKey) {
-    issues.push('Missing VITE_STRIPE_PUBLISHABLE_KEY');
+  if (!stripePublishableKey || isPlaceholder(stripePublishableKey)) {
+    issues.push('Missing or invalid VITE_STRIPE_PUBLISHABLE_KEY');
   }
   
-  if (!import.meta.env.VITE_STRIPE_STARTER_PRICE_ID && !STRIPE_PLANS.starter.priceId.includes('fallback')) {
-    issues.push('Missing VITE_STRIPE_STARTER_PRICE_ID');
+  if (!STRIPE_PLANS.starter.priceId || isPlaceholder(STRIPE_PLANS.starter.priceId)) {
+    issues.push('Missing or invalid VITE_STRIPE_STARTER_PRICE_ID');
   }
   
-  if (!import.meta.env.VITE_STRIPE_PROFESSIONAL_PRICE_ID && !STRIPE_PLANS.professional.priceId.includes('fallback')) {
-    issues.push('Missing VITE_STRIPE_PROFESSIONAL_PRICE_ID');
+  if (!STRIPE_PLANS.professional.priceId || isPlaceholder(STRIPE_PLANS.professional.priceId)) {
+    issues.push('Missing or invalid VITE_STRIPE_PROFESSIONAL_PRICE_ID');
   }
   
-  if (!import.meta.env.VITE_STRIPE_ENTERPRISE_PRICE_ID && !STRIPE_PLANS.enterprise.priceId.includes('fallback')) {
-    issues.push('Missing VITE_STRIPE_ENTERPRISE_PRICE_ID');
+  if (!STRIPE_PLANS.enterprise.priceId || isPlaceholder(STRIPE_PLANS.enterprise.priceId)) {
+    issues.push('Missing or invalid VITE_STRIPE_ENTERPRISE_PRICE_ID');
   }
   
   return {
     isValid: issues.length === 0,
     issues
+  };
+};
+
+// Get setup instructions
+export const getStripeSetupInstructions = () => {
+  return {
+    title: "Stripe Configuration Required",
+    steps: [
+      "1. Go to dashboard.stripe.com and sign in",
+      "2. Make sure you're in Test mode (toggle in top-left)",
+      "3. Go to Developers → API keys",
+      "4. Copy your Publishable key (starts with pk_test_)",
+      "5. Go to Products and create three products:",
+      "   - Starter Plan: $29/month",
+      "   - Professional Plan: $99/month", 
+      "   - Enterprise Plan: $299/month",
+      "6. Copy each Price ID (starts with price_)",
+      "7. Add all keys to your .env file:",
+      "   VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...",
+      "   VITE_STRIPE_STARTER_PRICE_ID=price_...",
+      "   VITE_STRIPE_PROFESSIONAL_PRICE_ID=price_...",
+      "   VITE_STRIPE_ENTERPRISE_PRICE_ID=price_..."
+    ]
   };
 };
