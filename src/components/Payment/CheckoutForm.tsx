@@ -7,6 +7,7 @@ import {
 import { Shield, Lock, CreditCard, CheckCircle } from 'lucide-react';
 import { formatAmount, STRIPE_PLANS } from '../../lib/stripe';
 import { PaymentDebugger } from '../../utils/paymentDebugger';
+import PaymentErrorHandler from './PaymentErrorHandler';
 
 interface CheckoutFormProps {
   plan: string;
@@ -19,6 +20,7 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
+  const [showErrorHandler, setShowErrorHandler] = useState(false);
 
   const planConfig = STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS];
   const planPrice = planConfig ? formatAmount(planConfig.amount) : '$0';
@@ -28,20 +30,29 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
     PaymentDebugger.log('Checkout Form Submitted', { plan, planPrice });
 
     if (!stripe || !elements) {
+      const errorMsg = `Stripe not ready: stripe=${!!stripe}, elements=${!!elements}`;
       PaymentDebugger.log('Stripe Not Ready', { stripe: !!stripe, elements: !!elements }, 'error');
+      setError(errorMsg);
+      setShowErrorHandler(true);
       return;
     }
 
     setIsLoading(true);
     setError('');
+    setShowErrorHandler(false);
 
     try {
       PaymentDebugger.log('Submitting Payment Elements');
       const { error: submitError } = await elements.submit();
       
       if (submitError) {
-        PaymentDebugger.log('Elements Submit Error', { error: submitError.message }, 'error');
-        setError(submitError.message || 'Payment failed');
+        PaymentDebugger.log('Elements Submit Error', { 
+          error: submitError.message,
+          type: submitError.type,
+          code: submitError.code 
+        }, 'error');
+        setError(submitError.message || 'Payment validation failed');
+        setShowErrorHandler(true);
         setIsLoading(false);
         return;
       }
@@ -59,9 +70,28 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
         PaymentDebugger.log('Payment Confirmation Error', { 
           error: confirmError.message,
           type: confirmError.type,
-          code: confirmError.code 
+          code: confirmError.code,
+          decline_code: confirmError.decline_code,
+          payment_intent: confirmError.payment_intent?.id
         }, 'error');
-        setError(confirmError.message || 'Payment failed');
+        
+        let userFriendlyError = confirmError.message || 'Payment failed';
+        
+        // Provide more specific error messages
+        if (confirmError.type === 'card_error') {
+          if (confirmError.code === 'card_declined') {
+            userFriendlyError = 'Your card was declined. Please try a different payment method.';
+          } else if (confirmError.code === 'insufficient_funds') {
+            userFriendlyError = 'Insufficient funds. Please try a different payment method.';
+          } else if (confirmError.code === 'expired_card') {
+            userFriendlyError = 'Your card has expired. Please use a different payment method.';
+          }
+        } else if (confirmError.type === 'validation_error') {
+          userFriendlyError = 'Please check your payment information and try again.';
+        }
+        
+        setError(userFriendlyError);
+        setShowErrorHandler(true);
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
         PaymentDebugger.log('Payment Succeeded', { 
           paymentIntentId: paymentIntent.id,
@@ -81,17 +111,54 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
           status: paymentIntent?.status,
           paymentIntentId: paymentIntent?.id 
         }, 'warn');
+        
+        setError(`Payment status: ${paymentIntent?.status || 'unknown'}. Please contact support.`);
+        setShowErrorHandler(true);
       }
-    } catch (err) {
+    } catch (err: any) {
       PaymentDebugger.log('Payment Processing Error', { 
         error: err.message,
-        stack: err.stack 
+        stack: err.stack,
+        name: err.name
       }, 'error');
-      setError('An unexpected error occurred');
+      
+      let userFriendlyError = 'An unexpected error occurred during payment processing.';
+      
+      if (err.message?.includes('network') || err.message?.includes('fetch')) {
+        userFriendlyError = 'Network error. Please check your connection and try again.';
+      } else if (err.message?.includes('timeout')) {
+        userFriendlyError = 'Payment processing timed out. Please try again.';
+      }
+      
+      setError(userFriendlyError);
+      setShowErrorHandler(true);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleRetry = () => {
+    setShowErrorHandler(false);
+    setError('');
+    PaymentDebugger.log('Payment Retry Initiated');
+  };
+
+  if (showErrorHandler) {
+    return (
+      <PaymentErrorHandler
+        error={error}
+        onRetry={handleRetry}
+        onCancel={onCancel}
+        context={{
+          plan,
+          planPrice,
+          hasStripe: !!stripe,
+          hasElements: !!elements,
+          timestamp: new Date().toISOString()
+        }}
+      />
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -122,12 +189,22 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
                 empty: event.empty,
                 error: event.error?.message 
               });
+              
+              // Clear any previous errors when user starts typing
+              if (error && event.complete) {
+                setError('');
+              }
+            }}
+            onLoadError={(error) => {
+              PaymentDebugger.log('Payment Element Load Error', { error: error.message }, 'error');
+              setError('Failed to load payment form. Please refresh and try again.');
+              setShowErrorHandler(true);
             }}
           />
         </div>
 
         {/* Error Message */}
-        {error && (
+        {error && !showErrorHandler && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-800 text-sm">{error}</p>
           </div>

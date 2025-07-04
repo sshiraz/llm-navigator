@@ -161,6 +161,10 @@ export class PaymentDebugger {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+      if (!supabaseUrl || !anonKey) {
+        throw new Error('Missing Supabase configuration');
+      }
+
       const response = await fetch(`${supabaseUrl}/functions/v1/create-payment-intent`, {
         method: 'POST',
         headers: {
@@ -188,8 +192,12 @@ export class PaymentDebugger {
         });
         return { success: true, data };
       } else {
-        this.log('Payment Intent Test Failed', { error: data.error, status: response.status }, 'error');
-        return { success: false, error: data.error };
+        this.log('Payment Intent Test Failed', { 
+          error: data.error, 
+          status: response.status,
+          statusText: response.statusText 
+        }, 'error');
+        return { success: false, error: data.error || `HTTP ${response.status}: ${response.statusText}` };
       }
     } catch (error) {
       this.log('Payment Intent Test Error', { error: error.message }, 'error');
@@ -210,7 +218,10 @@ export class PaymentDebugger {
         this.log('Stripe confirmPayment result', {
           success: !result.error,
           error: result.error?.message,
-          paymentIntent: result.paymentIntent?.id
+          errorType: result.error?.type,
+          errorCode: result.error?.code,
+          paymentIntent: result.paymentIntent?.id,
+          paymentIntentStatus: result.paymentIntent?.status
         });
         return result;
       } catch (error) {
@@ -218,6 +229,27 @@ export class PaymentDebugger {
         throw error;
       }
     };
+  }
+
+  // Comprehensive system check
+  static async runSystemCheck() {
+    this.log('Starting System Check');
+    
+    const results = {
+      timestamp: new Date().toISOString(),
+      stripeConfig: this.checkStripeConfig(),
+      edgeFunctions: await this.checkEdgeFunctions(),
+      paymentTest: await this.testPaymentIntent(),
+      environment: {
+        isDev: import.meta.env.DEV,
+        mode: import.meta.env.MODE,
+        url: window.location.href,
+        userAgent: navigator.userAgent
+      }
+    };
+
+    this.log('System Check Complete', results);
+    return results;
   }
 
   // Debug panel for development
@@ -307,6 +339,7 @@ if (typeof window !== 'undefined') {
     checkStripe: () => PaymentDebugger.checkStripeConfig(),
     checkFunctions: () => PaymentDebugger.checkEdgeFunctions(),
     testPayment: (amount?: number, plan?: string) => PaymentDebugger.testPaymentIntent(amount, plan),
+    systemCheck: () => PaymentDebugger.runSystemCheck(),
     showPanel: () => PaymentDebugger.showDebugPanel(),
     hidePanel: () => PaymentDebugger.hideDebugPanel()
   };
