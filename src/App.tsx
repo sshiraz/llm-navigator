@@ -10,10 +10,8 @@ import CompetitorStrategy from './components/Reports/CompetitorStrategy';
 import LandingPage from './components/Landing/LandingPage';
 import AuthPage from './components/Auth/AuthPage';
 import ConfigurationStatus from './components/Setup/ConfigurationStatus';
-import PaymentDebugPanel from './components/Payment/PaymentDebugPanel';
 import { mockProjects, mockAnalyses } from './utils/mockData';
 import { Project, Analysis, User } from './types';
-import { PaymentDebugger } from './utils/paymentDebugger';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -31,30 +29,12 @@ function App() {
   const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
   const isBasicConfigured = supabaseUrl && supabaseKey;
 
-  // Enable payment debugging in development
-  React.useEffect(() => {
-    if (import.meta.env.DEV) {
-      PaymentDebugger.enableDebug();
-      PaymentDebugger.log('App Initialized', {
-        hasSupabaseUrl: !!supabaseUrl,
-        hasSupabaseKey: !!supabaseKey,
-        hasStripeKey: !!stripeKey,
-        environment: import.meta.env.MODE
-      });
-    }
-  }, []);
-
   const handleLogin = (userData: User) => {
-    PaymentDebugger.log('User Logged In', { 
-      userId: userData.id, 
-      subscription: userData.subscription 
-    });
     setUser(userData);
     setActiveSection('dashboard');
   };
 
   const handleLogout = () => {
-    PaymentDebugger.log('User Logged Out');
     setUser(null);
     setActiveSection('landing');
   };
@@ -116,7 +96,6 @@ function App() {
   };
 
   const handleUpgrade = (plan: string) => {
-    PaymentDebugger.log('Upgrade Initiated', { plan, currentUser: user?.id });
     console.log('Upgrading to plan:', plan);
     // Handle upgrade logic here
   };
@@ -183,12 +162,7 @@ function App() {
 
   // Show landing page or auth page without sidebar/header
   if (activeSection === 'landing' || activeSection === 'auth' || (!user && activeSection !== 'setup')) {
-    return (
-      <>
-        {renderContent()}
-        {import.meta.env.DEV && <PaymentDebugPanel />}
-      </>
-    );
+    return renderContent();
   }
 
   return (
@@ -206,9 +180,6 @@ function App() {
           {renderContent()}
         </main>
       </div>
-
-      {/* Payment Debug Panel - only in development */}
-      {import.meta.env.DEV && <PaymentDebugPanel />}
     </div>
   );
 }

@@ -6,8 +6,6 @@ import {
 } from '@stripe/react-stripe-js';
 import { Shield, Lock, CreditCard, CheckCircle } from 'lucide-react';
 import { formatAmount, STRIPE_PLANS } from '../../lib/stripe';
-import { PaymentDebugger } from '../../utils/paymentDebugger';
-import PaymentErrorHandler from './PaymentErrorHandler';
 
 interface CheckoutFormProps {
   plan: string;
@@ -20,44 +18,28 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
-  const [showErrorHandler, setShowErrorHandler] = useState(false);
 
   const planConfig = STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS];
   const planPrice = planConfig ? formatAmount(planConfig.amount) : '$0';
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    PaymentDebugger.log('Checkout Form Submitted', { plan, planPrice });
 
     if (!stripe || !elements) {
-      const errorMsg = `Stripe not ready: stripe=${!!stripe}, elements=${!!elements}`;
-      PaymentDebugger.log('Stripe Not Ready', { stripe: !!stripe, elements: !!elements }, 'error');
-      setError(errorMsg);
-      setShowErrorHandler(true);
       return;
     }
 
     setIsLoading(true);
     setError('');
-    setShowErrorHandler(false);
 
     try {
-      PaymentDebugger.log('Submitting Payment Elements');
       const { error: submitError } = await elements.submit();
-      
       if (submitError) {
-        PaymentDebugger.log('Elements Submit Error', { 
-          error: submitError.message,
-          type: submitError.type,
-          code: submitError.code 
-        }, 'error');
-        setError(submitError.message || 'Payment validation failed');
-        setShowErrorHandler(true);
+        setError(submitError.message || 'Payment failed');
         setIsLoading(false);
         return;
       }
 
-      PaymentDebugger.log('Confirming Payment');
       const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
@@ -67,38 +49,8 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
       });
 
       if (confirmError) {
-        PaymentDebugger.log('Payment Confirmation Error', { 
-          error: confirmError.message,
-          type: confirmError.type,
-          code: confirmError.code,
-          decline_code: confirmError.decline_code,
-          payment_intent: confirmError.payment_intent?.id
-        }, 'error');
-        
-        let userFriendlyError = confirmError.message || 'Payment failed';
-        
-        // Provide more specific error messages
-        if (confirmError.type === 'card_error') {
-          if (confirmError.code === 'card_declined') {
-            userFriendlyError = 'Your card was declined. Please try a different payment method.';
-          } else if (confirmError.code === 'insufficient_funds') {
-            userFriendlyError = 'Insufficient funds. Please try a different payment method.';
-          } else if (confirmError.code === 'expired_card') {
-            userFriendlyError = 'Your card has expired. Please use a different payment method.';
-          }
-        } else if (confirmError.type === 'validation_error') {
-          userFriendlyError = 'Please check your payment information and try again.';
-        }
-        
-        setError(userFriendlyError);
-        setShowErrorHandler(true);
+        setError(confirmError.message || 'Payment failed');
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-        PaymentDebugger.log('Payment Succeeded', { 
-          paymentIntentId: paymentIntent.id,
-          amount: paymentIntent.amount,
-          status: paymentIntent.status 
-        });
-        
         // Payment successful
         onSuccess({
           paymentIntentId: paymentIntent.id,
@@ -106,59 +58,13 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
           amount: paymentIntent.amount,
           currency: paymentIntent.currency,
         });
-      } else {
-        PaymentDebugger.log('Unexpected Payment Status', { 
-          status: paymentIntent?.status,
-          paymentIntentId: paymentIntent?.id 
-        }, 'warn');
-        
-        setError(`Payment status: ${paymentIntent?.status || 'unknown'}. Please contact support.`);
-        setShowErrorHandler(true);
       }
-    } catch (err: any) {
-      PaymentDebugger.log('Payment Processing Error', { 
-        error: err.message,
-        stack: err.stack,
-        name: err.name
-      }, 'error');
-      
-      let userFriendlyError = 'An unexpected error occurred during payment processing.';
-      
-      if (err.message?.includes('network') || err.message?.includes('fetch')) {
-        userFriendlyError = 'Network error. Please check your connection and try again.';
-      } else if (err.message?.includes('timeout')) {
-        userFriendlyError = 'Payment processing timed out. Please try again.';
-      }
-      
-      setError(userFriendlyError);
-      setShowErrorHandler(true);
+    } catch (err) {
+      setError('An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
   };
-
-  const handleRetry = () => {
-    setShowErrorHandler(false);
-    setError('');
-    PaymentDebugger.log('Payment Retry Initiated');
-  };
-
-  if (showErrorHandler) {
-    return (
-      <PaymentErrorHandler
-        error={error}
-        onRetry={handleRetry}
-        onCancel={onCancel}
-        context={{
-          plan,
-          planPrice,
-          hasStripe: !!stripe,
-          hasElements: !!elements,
-          timestamp: new Date().toISOString()
-        }}
-      />
-    );
-  }
 
   return (
     <div className="max-w-md mx-auto bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -180,31 +86,11 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
             options={{
               layout: 'tabs',
             }}
-            onReady={() => {
-              PaymentDebugger.log('Payment Element Ready');
-            }}
-            onChange={(event) => {
-              PaymentDebugger.log('Payment Element Changed', { 
-                complete: event.complete,
-                empty: event.empty,
-                error: event.error?.message 
-              });
-              
-              // Clear any previous errors when user starts typing
-              if (error && event.complete) {
-                setError('');
-              }
-            }}
-            onLoadError={(error) => {
-              PaymentDebugger.log('Payment Element Load Error', { error: error.message }, 'error');
-              setError('Failed to load payment form. Please refresh and try again.');
-              setShowErrorHandler(true);
-            }}
           />
         </div>
 
         {/* Error Message */}
-        {error && !showErrorHandler && (
+        {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-800 text-sm">{error}</p>
           </div>
@@ -297,10 +183,7 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
         <div className="flex space-x-3">
           <button
             type="button"
-            onClick={() => {
-              PaymentDebugger.log('Checkout Cancelled by User');
-              onCancel();
-            }}
+            onClick={onCancel}
             className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
           >
             Cancel

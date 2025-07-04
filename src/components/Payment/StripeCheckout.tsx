@@ -3,7 +3,6 @@ import { Elements } from '@stripe/react-stripe-js';
 import { stripePromise, STRIPE_CONFIG } from '../../lib/stripe';
 import CheckoutForm from './CheckoutForm';
 import { PaymentService } from '../../services/paymentService';
-import { PaymentDebugger } from '../../utils/paymentDebugger';
 import { Loader2, CreditCard } from 'lucide-react';
 
 interface StripeCheckoutProps {
@@ -20,27 +19,17 @@ export default function StripeCheckout({ userId, plan, email, onSuccess, onCance
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    PaymentDebugger.log('StripeCheckout Component Mounted', { userId, plan, email });
-    
     const createPaymentIntent = async () => {
       try {
         setLoading(true);
-        PaymentDebugger.log('Creating Payment Intent', { userId, plan, email });
-        
         const result = await PaymentService.createPaymentIntent(userId, plan, email);
         
         if (result.success && result.data) {
-          PaymentDebugger.log('Payment Intent Created', { 
-            clientSecretLength: result.data.clientSecret.length,
-            amount: result.data.amount 
-          });
           setClientSecret(result.data.clientSecret);
         } else {
-          PaymentDebugger.log('Payment Intent Creation Failed', { error: result.error }, 'error');
           setError(result.error || 'Failed to initialize payment');
         }
       } catch (err) {
-        PaymentDebugger.log('Payment Intent Creation Error', { error: err.message }, 'error');
         setError('Failed to initialize payment');
       } finally {
         setLoading(false);
@@ -50,22 +39,7 @@ export default function StripeCheckout({ userId, plan, email, onSuccess, onCance
     createPaymentIntent();
   }, [userId, plan, email]);
 
-  // Monitor Stripe instance when it's available
-  useEffect(() => {
-    if (stripePromise) {
-      stripePromise.then(stripe => {
-        if (stripe) {
-          PaymentDebugger.log('Stripe Instance Loaded', { 
-            stripeVersion: stripe._apiVersion || 'unknown' 
-          });
-          PaymentDebugger.monitorStripeEvents(stripe);
-        }
-      });
-    }
-  }, []);
-
   if (loading) {
-    PaymentDebugger.log('Showing Loading State');
     return (
       <div className="max-w-md mx-auto bg-white rounded-xl border border-gray-200 p-8">
         <div className="text-center">
@@ -82,7 +56,6 @@ export default function StripeCheckout({ userId, plan, email, onSuccess, onCance
   }
 
   if (error) {
-    PaymentDebugger.log('Showing Error State', { error });
     return (
       <div className="max-w-md mx-auto bg-white rounded-xl border border-gray-200 p-8">
         <div className="text-center">
@@ -113,11 +86,6 @@ export default function StripeCheckout({ userId, plan, email, onSuccess, onCance
   }
 
   if (!clientSecret || !stripePromise) {
-    PaymentDebugger.log('Missing Required Data', { 
-      hasClientSecret: !!clientSecret, 
-      hasStripePromise: !!stripePromise 
-    }, 'error');
-    
     return (
       <div className="max-w-md mx-auto bg-white rounded-xl border border-gray-200 p-8">
         <div className="text-center">
@@ -146,23 +114,12 @@ export default function StripeCheckout({ userId, plan, email, onSuccess, onCance
     clientSecret,
   };
 
-  PaymentDebugger.log('Rendering Stripe Elements', { 
-    hasClientSecret: !!clientSecret,
-    hasStripePromise: !!stripePromise 
-  });
-
   return (
     <Elements stripe={stripePromise} options={options}>
       <CheckoutForm
         plan={plan}
-        onSuccess={(paymentData) => {
-          PaymentDebugger.log('Checkout Success', paymentData);
-          onSuccess(paymentData);
-        }}
-        onCancel={() => {
-          PaymentDebugger.log('Checkout Cancelled');
-          onCancel();
-        }}
+        onSuccess={onSuccess}
+        onCancel={onCancel}
       />
     </Elements>
   );
