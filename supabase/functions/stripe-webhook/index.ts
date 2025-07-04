@@ -9,79 +9,49 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  console.log('Webhook received:', req.method, req.url)
-  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    console.log('Handling CORS preflight')
     return new Response('ok', { headers: corsHeaders })
   }
 
+  console.log('🔥 WEBHOOK RECEIVED - Starting processing...')
+  
   try {
-    // Get environment variables with validation
+    const signature = req.headers.get('stripe-signature')
+    const body = await req.text()
+    
+    console.log('📝 Request details:', {
+      hasSignature: !!signature,
+      bodyLength: body.length,
+      method: req.method
+    })
+    
+    if (!signature) {
+      console.error('❌ No stripe signature found')
+      return new Response('No stripe signature', { status: 400, headers: corsHeaders })
+    }
+
+    // Get environment variables
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
     const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-    console.log('Environment check:', {
+    console.log('🔑 Environment check:', {
       hasStripeKey: !!stripeSecretKey,
       hasWebhookSecret: !!webhookSecret,
       hasSupabaseUrl: !!supabaseUrl,
       hasServiceKey: !!supabaseServiceKey
     })
 
-    if (!stripeSecretKey) {
-      console.error('Missing STRIPE_SECRET_KEY')
-      return new Response('Missing Stripe secret key', { status: 500, headers: corsHeaders })
+    if (!stripeSecretKey || !webhookSecret || !supabaseUrl || !supabaseServiceKey) {
+      console.error('❌ Missing required environment variables')
+      return new Response('Server configuration error', { status: 500, headers: corsHeaders })
     }
 
-    if (!webhookSecret) {
-      console.error('Missing STRIPE_WEBHOOK_SECRET')
-      return new Response('Missing webhook secret', { status: 500, headers: corsHeaders })
-    }
-
-    if (!supabaseUrl) {
-      console.error('Missing SUPABASE_URL')
-      return new Response('Missing Supabase URL', { status: 500, headers: corsHeaders })
-    }
-
-    if (!supabaseServiceKey) {
-      console.error('Missing SUPABASE_SERVICE_ROLE_KEY')
-      return new Response('Missing Supabase service key', { status: 500, headers: corsHeaders })
-    }
-
-    const signature = req.headers.get('stripe-signature')
-    const body = await req.text()
-    
-    console.log('Request details:', {
-      hasSignature: !!signature,
-      bodyLength: body.length,
-      contentType: req.headers.get('content-type')
-    })
-
-    if (!signature) {
-      console.error('No stripe signature found')
-      return new Response('No stripe signature', { status: 400, headers: corsHeaders })
-    }
-
-    // Initialize Stripe
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     })
-
-    let event: Stripe.Event
-
-    try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
-      console.log('Webhook event verified:', event.type, event.id)
-    } catch (err) {
-      console.error('Webhook signature verification failed:', err.message)
-      return new Response(`Webhook signature verification failed: ${err.message}`, { 
-        status: 400, 
-        headers: corsHeaders 
-      })
-    }
 
     // Initialize Supabase with service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
@@ -91,55 +61,78 @@ serve(async (req) => {
       }
     })
 
-    console.log('Processing event:', event.type)
+    let event: Stripe.Event
+
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+      console.log('✅ Webhook signature verified successfully')
+      console.log('📋 Event details:', {
+        type: event.type,
+        id: event.id,
+        created: new Date(event.created * 1000).toISOString()
+      })
+    } catch (err) {
+      console.error('❌ Webhook signature verification failed:', err.message)
+      return new Response('Webhook signature verification failed', { 
+        status: 400, 
+        headers: corsHeaders 
+      })
+    }
 
     // Process the event
     try {
       switch (event.type) {
         case 'payment_intent.succeeded':
+          console.log('💰 Processing payment_intent.succeeded')
           const paymentIntent = event.data.object as Stripe.PaymentIntent
-          console.log('Processing payment success:', paymentIntent.id)
+          console.log('💳 Payment Intent details:', {
+            id: paymentIntent.id,
+            amount: paymentIntent.amount,
+            currency: paymentIntent.currency,
+            status: paymentIntent.status,
+            metadata: paymentIntent.metadata
+          })
           await handlePaymentSuccess(paymentIntent, supabase)
           break
 
         case 'customer.subscription.created':
         case 'customer.subscription.updated':
+          console.log(`📋 Processing ${event.type}`)
           const subscription = event.data.object as Stripe.Subscription
-          console.log('Processing subscription change:', subscription.id)
           await handleSubscriptionChange(subscription, supabase)
           break
 
         case 'customer.subscription.deleted':
+          console.log('🗑️ Processing subscription deletion')
           const deletedSubscription = event.data.object as Stripe.Subscription
-          console.log('Processing subscription cancellation:', deletedSubscription.id)
           await handleSubscriptionCancellation(deletedSubscription, supabase)
           break
 
         case 'invoice.payment_failed':
+          console.log('❌ Processing payment failure')
           const failedInvoice = event.data.object as Stripe.Invoice
-          console.log('Processing payment failure:', failedInvoice.id)
           await handlePaymentFailure(failedInvoice, supabase)
           break
 
         default:
-          console.log(`Unhandled event type: ${event.type}`)
+          console.log(`ℹ️ Unhandled event type: ${event.type}`)
       }
 
-      console.log('Webhook processed successfully')
-      return new Response(JSON.stringify({ received: true, eventType: event.type }), { 
+      console.log('✅ Webhook processed successfully')
+      return new Response('Webhook handled successfully', { 
         status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: corsHeaders 
       })
     } catch (error) {
-      console.error('Webhook handler error:', error)
-      return new Response(`Webhook handler error: ${error.message}`, { 
+      console.error('❌ Webhook handler error:', error)
+      return new Response('Webhook handler error', { 
         status: 500, 
         headers: corsHeaders 
       })
     }
   } catch (error) {
-    console.error('Webhook processing error:', error)
-    return new Response(`Webhook processing error: ${error.message}`, { 
+    console.error('❌ Webhook processing error:', error)
+    return new Response('Webhook processing error', { 
       status: 500, 
       headers: corsHeaders 
     })
@@ -147,25 +140,68 @@ serve(async (req) => {
 })
 
 async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabase: any) {
-  console.log('Processing payment success for:', paymentIntent.id)
+  console.log('🎯 Starting handlePaymentSuccess')
+  console.log('💰 Payment Intent Full Details:', JSON.stringify(paymentIntent, null, 2))
   
   const userId = paymentIntent.metadata.userId
   const plan = paymentIntent.metadata.plan
   const email = paymentIntent.metadata.email
+  const amount = paymentIntent.amount
 
-  console.log('Payment metadata:', { userId, plan, email })
+  console.log('📊 Extracted metadata:', {
+    userId,
+    plan,
+    email,
+    amount,
+    amountInDollars: amount / 100
+  })
 
   if (!userId || !plan) {
-    console.error('Missing userId or plan in payment intent metadata')
-    throw new Error('Missing required metadata')
+    console.error('❌ Missing userId or plan in payment intent metadata')
+    console.error('Available metadata keys:', Object.keys(paymentIntent.metadata))
+    return
   }
 
+  // Determine plan based on amount if plan is not set correctly
+  let finalPlan = plan
+  if (amount === 2900) { // $29.00
+    finalPlan = 'starter'
+    console.log('💡 Amount is $29.00 - setting plan to starter')
+  } else if (amount === 9900) { // $99.00
+    finalPlan = 'professional'
+    console.log('💡 Amount is $99.00 - setting plan to professional')
+  } else if (amount === 29900) { // $299.00
+    finalPlan = 'enterprise'
+    console.log('💡 Amount is $299.00 - setting plan to enterprise')
+  }
+
+  console.log(`🎯 Final plan determined: ${finalPlan}`)
+
   try {
+    // First, let's check if the user exists
+    const { data: existingUser, error: fetchError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single()
+
+    if (fetchError) {
+      console.error('❌ Error fetching user:', fetchError)
+      throw fetchError
+    }
+
+    console.log('👤 Found user:', {
+      id: existingUser.id,
+      email: existingUser.email,
+      currentSubscription: existingUser.subscription,
+      paymentMethodAdded: existingUser.payment_method_added
+    })
+
     // Update user subscription
-    const { data: userData, error: userError } = await supabase
+    const { data: updatedUser, error: userError } = await supabase
       .from('users')
       .update({
-        subscription: plan,
+        subscription: finalPlan,
         payment_method_added: true,
         updated_at: new Date().toISOString(),
       })
@@ -173,108 +209,106 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabas
       .select()
 
     if (userError) {
-      console.error('Error updating user subscription:', userError)
+      console.error('❌ Error updating user subscription:', userError)
       throw userError
     }
 
-    console.log('Successfully updated user:', userData)
+    console.log('✅ Successfully updated user:', updatedUser)
 
     // Log payment
-    const { data: paymentData, error: paymentError } = await supabase
+    const { data: paymentRecord, error: paymentError } = await supabase
       .from('payments')
       .insert({
         user_id: userId,
         stripe_payment_intent_id: paymentIntent.id,
-        plan: plan,
-        amount: paymentIntent.amount,
+        plan: finalPlan,
+        amount: amount,
         currency: paymentIntent.currency,
         status: 'succeeded',
       })
       .select()
 
     if (paymentError) {
-      console.error('Error logging payment:', paymentError)
+      console.error('❌ Error logging payment:', paymentError)
       // Don't throw here as the main subscription update succeeded
     } else {
-      console.log('Payment logged successfully:', paymentData)
+      console.log('✅ Payment logged successfully:', paymentRecord)
     }
 
-    console.log('Payment success handled successfully')
+    console.log('🎉 Payment success handled completely!')
   } catch (error) {
-    console.error('Error in handlePaymentSuccess:', error)
+    console.error('💥 Error in handlePaymentSuccess:', error)
     throw error
   }
 }
 
 async function handleSubscriptionChange(subscription: Stripe.Subscription, supabase: any) {
-  console.log('Processing subscription change:', subscription.id)
+  console.log('📋 Processing subscription change:', subscription.id)
   
   const userId = subscription.metadata.userId
   const plan = subscription.metadata.plan
 
   if (!userId) {
-    console.error('Missing userId in subscription metadata')
+    console.error('❌ Missing userId in subscription metadata')
     return
   }
 
   try {
     const subscriptionStatus = subscription.status === 'active' ? plan : 'free'
     
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('users')
       .update({
         subscription: subscriptionStatus,
         updated_at: new Date().toISOString(),
       })
       .eq('id', userId)
-      .select()
 
     if (error) {
-      console.error('Error updating subscription:', error)
+      console.error('❌ Error updating subscription:', error)
       throw error
     }
 
-    console.log(`Successfully updated user ${userId} subscription to ${subscriptionStatus}:`, data)
+    console.log(`✅ Successfully updated user ${userId} subscription to ${subscriptionStatus}`)
   } catch (error) {
-    console.error('Error in handleSubscriptionChange:', error)
+    console.error('💥 Error in handleSubscriptionChange:', error)
     throw error
   }
 }
 
 async function handleSubscriptionCancellation(subscription: Stripe.Subscription, supabase: any) {
-  console.log('Processing subscription cancellation:', subscription.id)
+  console.log('🗑️ Processing subscription cancellation:', subscription.id)
   
   const userId = subscription.metadata.userId
 
   if (!userId) {
-    console.error('Missing userId in subscription metadata')
+    console.error('❌ Missing userId in subscription metadata')
     return
   }
 
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('users')
       .update({
         subscription: 'free',
         updated_at: new Date().toISOString(),
       })
       .eq('id', userId)
-      .select()
 
     if (error) {
-      console.error('Error cancelling subscription:', error)
+      console.error('❌ Error cancelling subscription:', error)
       throw error
     }
 
-    console.log(`Successfully cancelled subscription for user ${userId}:`, data)
+    console.log(`✅ Successfully cancelled subscription for user ${userId}`)
   } catch (error) {
-    console.error('Error in handleSubscriptionCancellation:', error)
+    console.error('💥 Error in handleSubscriptionCancellation:', error)
     throw error
   }
 }
 
 async function handlePaymentFailure(invoice: Stripe.Invoice, supabase: any) {
-  console.log('Processing payment failure:', invoice.id)
+  console.log('❌ Processing payment failure:', invoice.id)
   
   const customerId = invoice.customer as string
   
@@ -283,5 +317,5 @@ async function handlePaymentFailure(invoice: Stripe.Invoice, supabase: any) {
   // 2. Find the user in your database
   // 3. Send notification or downgrade account
   
-  console.log(`Payment failed for customer ${customerId}`)
+  console.log(`💸 Payment failed for customer ${customerId}`)
 }
