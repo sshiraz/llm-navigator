@@ -24,7 +24,10 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         {/* Navigation Buttons */}
         <div className="flex items-center space-x-3">
           <button 
-            onClick={() => window.location.hash = '#contact'}
+            onClick={() => {
+              window.location.hash = '#contact';
+              window.location.reload();
+            }}
             className="flex items-center space-x-2 px-4 py-2 bg-white/10 backdrop-blur-sm text-white rounded-lg hover:bg-white/20 transition-all border border-white/20"
           >
             <Mail className="w-4 h-4" />
@@ -345,7 +348,10 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </button>
             
             <button 
-              onClick={() => window.location.hash = '#contact'}
+              onClick={() => {
+                window.location.hash = '#contact';
+                window.location.reload();
+              }}
               className="px-8 py-4 bg-transparent border-2 border-white text-white text-lg font-semibold rounded-xl hover:bg-white/10 transition-colors shadow-lg flex items-center space-x-2"
             >
               <Mail className="w-5 h-5" />
@@ -361,9 +367,39 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           {/* Footer Links */}
           <div className="absolute bottom-4 left-0 right-0 text-center">
             <div className="text-blue-200 text-sm space-x-6">
-              <a href="#privacy" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#terms" className="hover:text-white transition-colors">Terms of Service</a>
-              <a href="#contact" className="hover:text-white transition-colors">Contact Us</a>
+              <a 
+                href="#privacy" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.hash = '#privacy';
+                  window.location.reload();
+                }}
+                className="hover:text-white transition-colors"
+              >
+                Privacy Policy
+              </a>
+              <a 
+                href="#terms" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.hash = '#terms';
+                  window.location.reload();
+                }}
+                className="hover:text-white transition-colors"
+              >
+                Terms of Service
+              </a>
+              <a 
+                href="#contact" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.hash = '#contact';
+                  window.location.reload();
+                }}
+                className="hover:text-white transition-colors"
+              >
+                Contact Us
+              </a>
             </div>
           </div>
         </div>

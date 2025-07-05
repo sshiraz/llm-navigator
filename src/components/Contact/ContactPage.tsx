@@ -274,7 +274,7 @@ export default function ContactPage() {
                       required
                     />
                     <label htmlFor="privacy" className="ml-2 block text-sm text-gray-700">
-                      I agree to the <a href="#privacy" className="text-blue-600 hover:text-blue-700">Privacy Policy</a> and consent to being contacted.
+                      I agree to the <a href="#privacy" onClick={(e) => {e.preventDefault(); window.location.hash = '#privacy'; window.location.reload();}} className="text-blue-600 hover:text-blue-700">Privacy Policy</a> and consent to being contacted.
                     </label>
                   </div>
                   

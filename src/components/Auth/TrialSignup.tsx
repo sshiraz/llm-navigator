@@ -331,7 +331,7 @@ export default function TrialSignup({ selectedPlan, skipTrial = false, onSuccess
       {/* Terms */}
       <div className="mt-6 text-xs text-gray-500 text-center space-y-1">
         <p>
-          By {skipTrial ? 'purchasing' : 'starting your trial'}, you agree to our <a href="#terms" className="text-blue-600 hover:text-blue-700">Terms of Service</a> and <a href="#privacy" className="text-blue-600 hover:text-blue-700">Privacy Policy</a>.
+          By {skipTrial ? 'purchasing' : 'starting your trial'}, you agree to our <a href="#terms" onClick={(e) => {e.preventDefault(); window.location.hash = '#terms'; window.location.reload();}} className="text-blue-600 hover:text-blue-700">Terms of Service</a> and <a href="#privacy" onClick={(e) => {e.preventDefault(); window.location.hash = '#privacy'; window.location.reload();}} className="text-blue-600 hover:text-blue-700">Privacy Policy</a>.
         </p>
         {!skipTrial && ' Cancel anytime during your 14-day trial period.'}
       </div>

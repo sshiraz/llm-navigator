@@ -262,7 +262,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           {!isLogin && (
             <div className="mt-4 text-xs text-gray-500 text-center space-y-1">
               <p>
-                By creating an account, you agree to our <a href="#terms" className="text-blue-600 hover:text-blue-700">Terms of Service</a> and <a href="#privacy" className="text-blue-600 hover:text-blue-700">Privacy Policy</a>.
+                By creating an account, you agree to our <a href="#terms" onClick={(e) => {e.preventDefault(); window.location.hash = '#terms'; window.location.reload();}} className="text-blue-600 hover:text-blue-700">Terms of Service</a> and <a href="#privacy" onClick={(e) => {e.preventDefault(); window.location.hash = '#privacy'; window.location.reload();}} className="text-blue-600 hover:text-blue-700">Privacy Policy</a>.
               </p>
               <br />
               14-day free trial • No credit card required

@@ -216,7 +216,14 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
                 
                 {!isCurrentPlan && plan.id !== 'enterprise' && (
                   <button
-                    onClick={() => plan.id === 'enterprise' ? window.location.hash = '#contact' : handlePlanSelect(plan.id, true)}
+                    onClick={() => {
+                      if (plan.id === 'enterprise') {
+                        window.location.hash = '#contact';
+                        window.location.reload();
+                      } else {
+                        handlePlanSelect(plan.id, true);
+                      }
+                    }}
                     className="w-full py-2 px-6 rounded-xl font-medium text-sm transition-all duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
                   >
                     {plan.id === 'enterprise' ? 'Contact Sales' : 'Skip Trial - Buy Now'}
@@ -236,7 +243,10 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
           We offer tailored enterprise solutions with custom pricing, dedicated support, and specialized features for large organizations.
         </p>
         <button 
-          onClick={() => window.location.hash = '#contact'}
+          onClick={() => {
+            window.location.hash = '#contact';
+            window.location.reload();
+          }}
           className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl"
         >
           Contact Our Sales Team

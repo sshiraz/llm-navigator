@@ -143,7 +143,7 @@ function App() {
 
   const renderContent = () => {
     // Show auth page if no user is logged in and trying to access protected routes
-    if (!user && ['dashboard', 'new-analysis', 'analysis-results', 'project-detail', 'pricing', 'competitor-strategy'].includes(activeSection)) {
+    if (!user && ['dashboard', 'new-analysis', 'analysis-results', 'project-detail', 'pricing', 'competitor-strategy', 'contact', 'privacy', 'terms'].includes(activeSection)) {
       return <AuthPage onLogin={handleLogin} />;
     }
 
@@ -202,7 +202,7 @@ function App() {
   };
 
   // Show landing page or auth page without sidebar/header
-  if (activeSection === 'landing' || activeSection === 'auth' || !user) {
+  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || !user) {
     return (
       <>
         {renderContent()}

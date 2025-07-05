@@ -420,7 +420,7 @@ export default function CheckoutForm({ selectedPlan, planPrice, onSuccess, onCan
         {/* Terms */}
         <div className="mt-6 text-xs text-gray-500 text-center space-y-1">
           <p>
-            By completing this purchase, you agree to our <a href="#terms" className="text-blue-600 hover:text-blue-700">Terms of Service</a> and <a href="#privacy" className="text-blue-600 hover:text-blue-700">Privacy Policy</a>.
+            By completing this purchase, you agree to our <a href="#terms" onClick={(e) => {e.preventDefault(); window.location.hash = '#terms'; window.location.reload();}} className="text-blue-600 hover:text-blue-700">Terms of Service</a> and <a href="#privacy" onClick={(e) => {e.preventDefault(); window.location.hash = '#privacy'; window.location.reload();}} className="text-blue-600 hover:text-blue-700">Privacy Policy</a>.
           </p>
           Your subscription will automatically renew monthly until cancelled.
         </div>
