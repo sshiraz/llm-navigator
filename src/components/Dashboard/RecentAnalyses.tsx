@@ -120,6 +120,7 @@ export default function RecentAnalyses({ analyses, onDelete }: RecentAnalysesPro
                         href={`#analysis-results`}
                         onClick={() => {
                           // Store the current analysis in localStorage to view it
+                          // Store the current analysis in localStorage to view it
                           localStorage.setItem('currentAnalysis', JSON.stringify(analysis));
                         }}
                         className="text-blue-600 hover:text-blue-800 flex items-center space-x-1 text-sm"

@@ -45,6 +45,7 @@ export const mockAnalyses: Analysis[] = [
   {
     id: '2',
     projectId: '1',
+    userId: '1',
     website: 'hubspot.com',
     keywords: ['marketing automation', 'lead generation'],
     score: 94,
@@ -75,6 +76,7 @@ export const mockAnalyses: Analysis[] = [
   {
     id: '3',
     projectId: '1',
+    userId: '1',
     website: 'mailchimp.com',
     keywords: ['email marketing', 'marketing automation'],
     score: 87,
@@ -105,6 +107,7 @@ export const mockAnalyses: Analysis[] = [
   {
     id: '5',
     projectId: '1',
+    userId: '1',
     website: 'pardot.com',
     keywords: ['B2B marketing', 'lead generation'],
     score: 83,
@@ -135,6 +138,7 @@ export const mockAnalyses: Analysis[] = [
   {
     id: '4',
     projectId: '1',
+    userId: '1',
     website: 'activecampaign.com',
     keywords: ['marketing automation', 'email marketing'],
     score: 79,
@@ -165,6 +169,7 @@ export const mockAnalyses: Analysis[] = [
   {
     id: '6',
     projectId: '1',
+    userId: '1',
     website: 'convertkit.com',
     keywords: ['email marketing', 'creator economy'],
     score: 71,
@@ -195,6 +200,7 @@ export const mockAnalyses: Analysis[] = [
   {
     id: '1',
     projectId: '1',
+    userId: '1',
     website: 'convologix.com',
     keywords: ['marketing automation', 'chatbots', 'customer service automation'],
     score: 58,

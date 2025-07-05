@@ -32,6 +32,7 @@ export interface Competitor {
 export interface Analysis {
   id: string;
   projectId: string;
+  userId: string;
   website: string;
   keywords: string[];
   score: number;

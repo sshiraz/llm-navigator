@@ -14,16 +14,38 @@ interface DashboardProps {
 export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardProps) {
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   
+  // Get current user from localStorage
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  
   useEffect(() => {
+    // Load current user from localStorage
+    try {
+      const userStr = localStorage.getItem('currentUser');
+      if (userStr) {
+        setCurrentUser(JSON.parse(userStr));
+      }
+    } catch (error) {
+      console.error('Error loading current user:', error);
+    }
+    
     // Load analyses from localStorage
     try {
       const storedAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
-      setAnalyses(storedAnalyses);
+      
+      // Filter analyses to only show those belonging to the current user
+      if (currentUser) {
+        const userAnalyses = storedAnalyses.filter((analysis: Analysis) => 
+          analysis.userId === currentUser.id
+        );
+        setAnalyses(userAnalyses);
+      } else {
+        setAnalyses([]);
+      }
     } catch (error) {
       console.error('Error loading analyses from localStorage:', error);
       setAnalyses([]);
     }
-  }, []);
+  }, [currentUser]);
   
   const totalAnalyses = analyses.length;
   const avgScore = analyses.length > 0 
@@ -35,10 +57,10 @@ export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardP
     
   const handleDeleteAnalysis = (analysisId: string) => {
     try {
-      // Filter out the deleted analysis
-      const updatedAnalyses = analyses.filter(a => a.id !== analysisId);
+      const existingAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
+      const updatedAnalyses = existingAnalyses.filter((a: Analysis) => a.id !== analysisId);
       // Update state
-      setAnalyses(updatedAnalyses);
+      setAnalyses(analyses.filter(a => a.id !== analysisId));
       // Save to localStorage
       localStorage.setItem('analyses', JSON.stringify(updatedAnalyses));
     } catch (error) {

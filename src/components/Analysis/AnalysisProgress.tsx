@@ -48,7 +48,18 @@ export default function AnalysisProgress({ website, keywords, user, onComplete, 
           .then((result) => {
             // Store the analysis in localStorage for persistence
             try {
+              // Make sure the analysis has the user's ID
+              const analysisWithUserId = {
+                ...result,
+                userId: user.id
+              };
+              
               localStorage.setItem('currentAnalysis', JSON.stringify(result));
+              
+              // Also update the analyses list in localStorage
+              const existingAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
+              const updatedAnalyses = [analysisWithUserId, ...existingAnalyses.filter((a: any) => a.id !== result.id)];
+              localStorage.setItem('analyses', JSON.stringify(updatedAnalyses));
             } catch (err) {
               console.error('Error storing analysis in localStorage:', err);
             }

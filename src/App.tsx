@@ -163,6 +163,7 @@ function App() {
     const newAnalysis: Analysis = {
       id: Date.now().toString(),
       projectId: selectedProject?.id || '1',
+      userId: user?.id || 'anonymous',
       website,
       keywords,
       score: Math.floor(Math.random() * 40) + 60, // 60-100
@@ -204,9 +205,11 @@ function App() {
     
     // Store analyses in localStorage
     try {
-      const existingAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
-      existingAnalyses.unshift(newAnalysis); // Add to beginning of array
-      localStorage.setItem('analyses', JSON.stringify(existingAnalyses));
+      if (user) {
+        const existingAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
+        existingAnalyses.unshift(newAnalysis); // Add to beginning of array
+        localStorage.setItem('analyses', JSON.stringify(existingAnalyses));
+      }
     } catch (error) {
       console.error('Error storing analysis in localStorage:', error);
     }
