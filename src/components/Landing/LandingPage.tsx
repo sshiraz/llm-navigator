@@ -1,17 +1,11 @@
 import React from 'react';
-import { Search, TrendingUp, Target, Zap, CheckCircle, ArrowRight, BarChart3, Users, Shield, LogIn, Settings } from 'lucide-react';
+import { Search, TrendingUp, Target, Zap, CheckCircle, ArrowRight, BarChart3, Users, Shield, LogIn } from 'lucide-react';
 
 interface LandingPageProps {
   onGetStarted: () => void;
 }
 
 export default function LandingPage({ onGetStarted }: LandingPageProps) {
-  const handleSetupClick = () => {
-    // Navigate to setup page
-    window.location.hash = '#setup';
-    window.location.reload();
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
       {/* Navigation Header */}
@@ -29,14 +23,6 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
         {/* Navigation Buttons */}
         <div className="flex items-center space-x-3">
-          <button 
-            onClick={handleSetupClick}
-            className="flex items-center space-x-2 px-4 py-2 bg-white/10 backdrop-blur-sm text-white rounded-lg hover:bg-white/20 transition-all border border-white/20"
-          >
-            <Settings className="w-4 h-4" />
-            <span>Setup Status</span>
-          </button>
-          
           <button 
             onClick={onGetStarted}
             className="flex items-center space-x-2 px-4 py-2 bg-white/10 backdrop-blur-sm text-white rounded-lg hover:bg-white/20 transition-all border border-white/20"

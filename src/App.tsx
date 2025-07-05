@@ -9,7 +9,6 @@ import PricingTiers from './components/Subscription/PricingTiers';
 import CompetitorStrategy from './components/Reports/CompetitorStrategy';
 import LandingPage from './components/Landing/LandingPage';
 import AuthPage from './components/Auth/AuthPage';
-import ConfigurationStatus from './components/Setup/ConfigurationStatus';
 import { mockProjects, mockAnalyses } from './utils/mockData';
 import { Project, Analysis, User } from './types';
 
@@ -28,11 +27,29 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get('session_id');
     const plan = params.get('plan');
+    const userId = params.get('user_id');
     
-    if (sessionId && plan) {
+    if (sessionId && plan && userId) {
       // Handle successful checkout
       console.log('Checkout successful!', { sessionId, plan });
       // You would typically verify the session and update the user's subscription here
+      
+      // For demo purposes, update the user's subscription in localStorage
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          const updatedUser = {
+            ...parsedUser,
+            subscription: plan,
+            paymentMethodAdded: true
+          };
+          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+          setUser(updatedUser);
+        } catch (e) {
+          console.error('Failed to update stored user', e);
+        }
+      }
     }
   }, []);
 
@@ -45,11 +62,15 @@ function App() {
   const handleLogin = (userData: User) => {
     setUser(userData);
     setActiveSection('dashboard');
+    // Store user data in localStorage for persistence
+    localStorage.setItem('currentUser', JSON.stringify(userData));
   };
 
   const handleLogout = () => {
     setUser(null);
     setActiveSection('landing');
+    // Clear user data from localStorage
+    localStorage.removeItem('currentUser');
   };
 
   const handleProjectSelect = (project: Project) => {
@@ -118,13 +139,8 @@ function App() {
   };
 
   const renderContent = () => {
-    // Show configuration status if accessing setup
-    if (activeSection === 'setup') {
-      return <ConfigurationStatus />;
-    }
-
     // Show auth page if no user is logged in and trying to access protected routes
-    if (!user && ['dashboard', 'new-analysis', 'analysis-results', 'project-detail', 'pricing', 'competitor-strategy'].includes(activeSection)) {
+    if (!user && ['dashboard', 'new-analysis', 'analysis-results', 'project-detail', 'pricing', 'competitor-strategy', 'setup'].includes(activeSection)) {
       return <AuthPage onLogin={handleLogin} />;
     }
 
@@ -174,7 +190,7 @@ function App() {
   };
 
   // Show landing page or auth page without sidebar/header
-  if (activeSection === 'landing' || activeSection === 'auth' || (!user && activeSection !== 'setup')) {
+  if (activeSection === 'landing' || activeSection === 'auth' || !user) {
     return (
       <>
         {renderContent()}
