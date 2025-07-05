@@ -11,7 +11,7 @@ export class ManualSubscriptionFix {
     message: string;
     error?: any;
   }> {
-    PaymentLogger.log('info', 'ManualFix', `Attempting manual subscription fix for user ${userId} to plan ${plan}`);
+    PaymentLogger.log('info', 'ManualFix', `Attempting manual subscription fix for user ${userId} to plan ${plan}`, { userId, plan });
     
     try {
       // First check if user exists
@@ -29,6 +29,9 @@ export class ManualSubscriptionFix {
           error: userError
         };
       }
+
+      // Log the current user state
+      PaymentLogger.log('info', 'ManualFix', `Current user state:`, user);
       
       // Update user subscription
       const { data, error } = await supabase
@@ -51,6 +54,27 @@ export class ManualSubscriptionFix {
       }
       
       PaymentLogger.log('info', 'ManualFix', `Successfully updated subscription for user ${userId} to ${plan}`, data);
+
+      // Also log a payment record to keep track of manual fixes
+      try {
+        const { error: paymentError } = await supabase
+          .from('payments')
+          .insert({
+            user_id: userId,
+            stripe_payment_intent_id: `manual_fix_${Date.now()}`,
+            plan: plan,
+            amount: plan === 'starter' ? 2900 : plan === 'professional' ? 9900 : 29900,
+            currency: 'usd',
+            status: 'succeeded',
+            created_at: new Date().toISOString()
+          });
+          
+        if (paymentError) {
+          PaymentLogger.log('warn', 'ManualFix', 'Failed to log payment record, but subscription was updated', paymentError);
+        }
+      } catch (paymentError) {
+        PaymentLogger.log('warn', 'ManualFix', 'Error logging payment record', paymentError);
+      }
       
       return {
         success: true,
