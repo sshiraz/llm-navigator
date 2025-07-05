@@ -6,6 +6,7 @@ import NewAnalysis from './components/Analysis/NewAnalysis';
 import AnalysisResults from './components/Analysis/AnalysisResults';
 import ProjectDetail from './components/Projects/ProjectDetail';
 import PricingTiers from './components/Subscription/PricingTiers';
+import UserDashboard from './components/Admin/UserDashboard';
 import ContactPage from './components/Contact/ContactPage';
 import PrivacyPolicy from './components/Legal/PrivacyPolicy';
 import TermsOfService from './components/Legal/TermsOfService';
@@ -20,7 +21,7 @@ function App() {
   const [activeSection, setActiveSection] = useState(() => {
     // Check URL hash for initial section
     const hash = window.location.hash.slice(1);
-    return hash || 'landing';
+    return hash || 'landing'; 
   });
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
@@ -228,7 +229,7 @@ function App() {
 
   const renderContent = () => {
     // Public pages that don't require login
-    if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms') {
+    if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users') {
       switch (activeSection) {
         case 'landing':
           return <LandingPage onGetStarted={handleGetStarted} />;
@@ -240,6 +241,8 @@ function App() {
           return <PrivacyPolicy />;
         case 'terms':
           return <TermsOfService />;
+        case 'admin-users':
+          return <UserDashboard />;
         default:
           return <LandingPage onGetStarted={handleGetStarted} />;
       }
@@ -279,8 +282,8 @@ function App() {
       case 'competitor-strategy':
         return (
           <CompetitorStrategy 
-            userAnalysis={mockAnalyses[0]} 
-            competitorAnalyses={mockAnalyses.slice(1)} 
+            userAnalysis={mockAnalyses.find(a => a.userId === user?.id) || mockAnalyses[0]} 
+            competitorAnalyses={mockAnalyses.filter(a => a.userId !== user?.id)} 
           />
         );
       
@@ -290,7 +293,7 @@ function App() {
   };
 
   // Show landing page or auth page without sidebar/header
-  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms') {
+  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users') {
     return (
       <>
         {renderContent()}
