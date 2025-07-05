@@ -32,7 +32,9 @@ export default function AutomaticWebhookFixer() {
     try {
       // 1. Check if webhook endpoint is accessible
       const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook`;
-      PaymentLogger.log('info', 'WebhookFixer', `Testing webhook at: ${webhookUrl}`);
+      PaymentLogger.log('info', 'WebhookFixer', `Testing webhook at: ${webhookUrl}`, {
+        timestamp: new Date().toISOString()
+      });
       
       const webhookResponse = await fetch(webhookUrl, {
         method: 'POST',
@@ -43,11 +45,14 @@ export default function AutomaticWebhookFixer() {
           'x-test-request': 'true' // Mark as test request
         },
         body: JSON.stringify({ 
-          type: 'test_event',
+          type: 'payment_intent.succeeded',
           test: true,
           data: {
             object: {
-              id: 'test_' + Date.now(),
+              id: 'pi_test_' + Date.now(),
+              amount: 2900,
+              currency: 'usd',
+              status: 'succeeded',
               metadata: {
                 userId: 'test-user',
                 plan: 'starter'
@@ -92,20 +97,29 @@ export default function AutomaticWebhookFixer() {
       
       // Check webhook response
       if (webhookResponse.status === 404) {
-        newIssues.push('Webhook function is not deployed');
+        newIssues.push('Webhook function is not deployed - deploy it with "supabase functions deploy stripe-webhook"');
       } else if (webhookResponse.status === 401 || webhookResponse.status === 403) {
-        newIssues.push('Webhook authentication failed - service role key may be incorrect');
+        newIssues.push('Webhook authentication failed - SUPABASE_SERVICE_ROLE_KEY may be incorrect or missing');
       } else if (webhookResponse.status === 400) {
         // 400 is expected for signature verification failure
         const responseText = await webhookResponse.text();
         if (responseText.includes('signature verification failed') || responseText.includes('test request')) {
           // This is actually good - it means the webhook is deployed and checking signatures
-          PaymentLogger.log('info', 'WebhookFixer', 'Webhook signature verification is working');
+          PaymentLogger.log('info', 'WebhookFixer', 'Webhook signature verification is working', {
+            status: webhookResponse.status,
+            text: responseText.substring(0, 100) // Limit text length for logging
+          });
         } else {
-          newIssues.push('Webhook returned unexpected 400 error');
+          newIssues.push(`Webhook returned unexpected 400 error: ${responseText.substring(0, 100)}`);
         }
       } else if (webhookResponse.status !== 200) {
-        newIssues.push(`Webhook returned unexpected status: ${webhookResponse.status}`);
+        let responseText = '';
+        try {
+          responseText = await webhookResponse.text();
+        } catch (e) {
+          // Ignore error if we can't get the response text
+        }
+        newIssues.push(`Webhook returned unexpected status: ${webhookResponse.status} - ${responseText.substring(0, 100)}`);
       }
       
       // Check Edge Functions deployment

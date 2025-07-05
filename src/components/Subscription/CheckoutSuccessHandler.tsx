@@ -23,7 +23,7 @@ export default function CheckoutSuccessHandler({
 
   useEffect(() => {
     verifyPaymentAndUpdateSubscription();
-  }, []);
+  }, [sessionId, plan, userId]);
 
   const verifyPaymentAndUpdateSubscription = async () => {
     PaymentLogger.trackPaymentFlow('Verifying Stripe checkout session', { 
@@ -33,7 +33,7 @@ export default function CheckoutSuccessHandler({
     });
 
     // Log the verification attempt with more details
-    PaymentLogger.log('info', 'CheckoutSuccessHandler', 'Verifying payment and updating subscription', {
+    PaymentLogger.log('info', 'CheckoutSuccessHandler', `Verifying payment for session ${sessionId}`, {
       sessionId,
       plan,
       userId,
@@ -49,10 +49,10 @@ export default function CheckoutSuccessHandler({
       // First check if the subscription is already updated
       const checkResult = await ManualSubscriptionFix.checkSubscriptionStatus(userId);
       
-      if (checkResult.currentPlan === plan) {
+      if (checkResult.currentPlan === plan && checkResult.hasPayment) {
         // Subscription is already updated
         setStatus('success');
-        setMessage('Your subscription is already active! Your account has been updated.');
+        setMessage(`Your ${plan} plan is already active! Your account has been updated.`);
         PaymentLogger.trackPaymentFlow('Subscription already updated', { 
           userId, 
           plan,
@@ -67,7 +67,7 @@ export default function CheckoutSuccessHandler({
 
       if (result.success) {
         setStatus('success');
-        setMessage('Your payment was successful! Your subscription has been updated.');
+        setMessage(`Your payment was successful! Your subscription has been updated to the ${plan} plan.`);
         PaymentLogger.trackPaymentFlow('Subscription updated successfully', { 
           userId, 
           plan 
@@ -82,7 +82,13 @@ export default function CheckoutSuccessHandler({
     } catch (error) {
       setStatus('error');
       setMessage(`An error occurred: ${error.message}`);
-      PaymentLogger.log('error', 'CheckoutSuccessHandler', 'Error verifying payment', error);
+      PaymentLogger.log('error', 'CheckoutSuccessHandler', `Error verifying payment for session ${sessionId}`, {
+        error: error.message,
+        stack: error.stack,
+        sessionId,
+        plan,
+        userId
+      });
       onError(error.message);
     }
   };

@@ -16,7 +16,9 @@ export default function WebhookDebugger() {
     try {
       // First, test with a simple request to check if the endpoint is accessible
       const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook`;
-      PaymentLogger.log('info', 'WebhookDebugger', `Testing webhook at: ${webhookUrl}`);
+      PaymentLogger.log('info', 'WebhookDebugger', `Testing webhook at: ${webhookUrl}`, {
+        timestamp: new Date().toISOString()
+      });
       
       const response = await fetch(webhookUrl, {
         method: 'POST',
@@ -27,11 +29,14 @@ export default function WebhookDebugger() {
           'x-test-request': 'true' // Mark as test request
         },
         body: JSON.stringify({ 
-          type: 'test_event',
+          type: 'payment_intent.succeeded',
           test: true,
           data: {
             object: {
-              id: 'test_' + Date.now(),
+              id: 'pi_test_' + Date.now(),
+              amount: 2900,
+              currency: 'usd',
+              status: 'succeeded',
               metadata: {
                 userId: 'test-user',
                 plan: 'starter'
@@ -61,7 +66,10 @@ export default function WebhookDebugger() {
       
       if (response.status === 400) {
         if (text.includes('signature verification failed') || text.includes('test request')) {
-          PaymentLogger.log('warn', 'WebhookDebugger', 'Webhook signature verification failed - this is expected for test requests', result);
+          PaymentLogger.log('info', 'WebhookDebugger', 'Webhook signature verification failed - this is expected for test requests', {
+            status: response.status,
+            text: text.substring(0, 100) // Limit text length for logging
+          });
         } else {
           PaymentLogger.log('error', 'WebhookDebugger', 'Webhook returned unexpected 400 error', result);
         }

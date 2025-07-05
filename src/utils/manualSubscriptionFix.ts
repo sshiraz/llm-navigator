@@ -11,7 +11,11 @@ export class ManualSubscriptionFix {
     message: string;
     error?: any;
   }> {
-    PaymentLogger.log('info', 'ManualFix', `Attempting manual subscription fix for user ${userId} to plan ${plan}`, { userId, plan });
+    PaymentLogger.log('info', 'ManualFix', `Attempting manual subscription fix for user ${userId} to plan ${plan}`, { 
+      userId, 
+      plan,
+      timestamp: new Date().toISOString()
+    });
     
     try {
       // First check if user exists
@@ -25,13 +29,27 @@ export class ManualSubscriptionFix {
         PaymentLogger.log('error', 'ManualFix', `User not found: ${userId}`, userError);
         return {
           success: false,
-          message: 'User not found',
+          message: `User with ID ${userId} not found`,
           error: userError
         };
       }
 
       // Log the current user state
-      PaymentLogger.log('info', 'ManualFix', `Current user state:`, user);
+      PaymentLogger.log('info', 'ManualFix', `Current user state:`, {
+        id: user.id,
+        email: user.email,
+        currentSubscription: user.subscription,
+        paymentMethodAdded: user.payment_method_added
+      });
+      
+      // Check if subscription already matches the requested plan
+      if (user.subscription === plan && user.payment_method_added === true) {
+        PaymentLogger.log('info', 'ManualFix', `User ${userId} already has ${plan} plan, no update needed`);
+        return {
+          success: true,
+          message: `Subscription already set to ${plan}`
+        };
+      }
       
       // Update user subscription
       const { data, error } = await supabase
@@ -57,17 +75,21 @@ export class ManualSubscriptionFix {
 
       // Also log a payment record to keep track of manual fixes
       try {
+        const paymentData = {
+          user_id: userId,
+          stripe_payment_intent_id: `manual_fix_${Date.now()}`,
+          plan: plan,
+          amount: plan === 'starter' ? 2900 : plan === 'professional' ? 9900 : 29900,
+          currency: 'usd',
+          status: 'succeeded',
+          created_at: new Date().toISOString()
+        };
+        
+        PaymentLogger.log('info', 'ManualFix', 'Creating payment record', paymentData);
+        
         const { error: paymentError } = await supabase
           .from('payments')
-          .insert({
-            user_id: userId,
-            stripe_payment_intent_id: `manual_fix_${Date.now()}`,
-            plan: plan,
-            amount: plan === 'starter' ? 2900 : plan === 'professional' ? 9900 : 29900,
-            currency: 'usd',
-            status: 'succeeded',
-            created_at: new Date().toISOString()
-          });
+          .insert(paymentData);
           
         if (paymentError) {
           PaymentLogger.log('warn', 'ManualFix', 'Failed to log payment record, but subscription was updated', paymentError);
@@ -99,6 +121,8 @@ export class ManualSubscriptionFix {
     currentPlan: string;
     hasPayment: boolean;
   }> {
+    PaymentLogger.log('info', 'ManualFix', `Checking subscription status for user ${userId}`);
+    
     try {
       // Get user details
       const { data: user, error: userError } = await supabase
@@ -108,6 +132,7 @@ export class ManualSubscriptionFix {
         .single();
       
       if (userError) {
+        PaymentLogger.log('error', 'ManualFix', `Error fetching user ${userId}`, userError);
         return {
           needsFix: false,
           currentPlan: 'unknown',
@@ -127,8 +152,21 @@ export class ManualSubscriptionFix {
       const hasPayment = !paymentsError && payments && payments.length > 0;
       const currentPlan = user.subscription;
       
+      if (hasPayment) {
+        PaymentLogger.log('info', 'ManualFix', `User ${userId} has payments`, {
+          latestPayment: payments[0],
+          currentPlan
+        });
+      }
+      
       // If there's a successful payment but subscription is still free/trial
       const needsFix = hasPayment && (currentPlan === 'free' || currentPlan === 'trial');
+      
+      PaymentLogger.log('info', 'ManualFix', `Subscription status for user ${userId}`, {
+        needsFix,
+        currentPlan,
+        hasPayment
+      });
       
       return {
         needsFix,
@@ -150,6 +188,8 @@ export class ManualSubscriptionFix {
    */
   static async getLatestPayment(userId: string) {
     try {
+      PaymentLogger.log('info', 'ManualFix', `Getting latest payment for user ${userId}`);
+      
       const { data, error } = await supabase
         .from('payments')
         .select('*')
@@ -158,12 +198,15 @@ export class ManualSubscriptionFix {
         .limit(1);
       
       if (error || !data || data.length === 0) {
+        PaymentLogger.log('info', 'ManualFix', `No payments found for user ${userId}`, error);
         return null;
       }
       
+      PaymentLogger.log('info', 'ManualFix', `Found latest payment for user ${userId}`, data[0]);
       return data[0];
     } catch (error) {
       console.error('Error getting latest payment:', error);
+      PaymentLogger.log('error', 'ManualFix', `Error getting latest payment for user ${userId}`, error);
       return null;
     }
   }

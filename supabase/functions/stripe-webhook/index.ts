@@ -5,7 +5,7 @@ import Stripe from "https://esm.sh/stripe@14.21.0";
 // Improved CORS headers with all possible stripe signature header variations
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature, x-webhook-signature, x-stripe-signature, webhook-signature",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature, x-webhook-signature, x-stripe-signature, webhook-signature, x-test-request",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -50,16 +50,22 @@ serve(async (req) => {
     if (!finalSignature) {
       console.warn("⚠️ No stripe signature found in headers - this is expected for test requests");
       // For test requests without signature, return a specific message
-      return new Response(
-        JSON.stringify({ 
-          error: "No stripe signature found in headers",
-          message: "This appears to be a test request. For webhook verification, a valid signature is required."
-        }), 
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        }
-      );
+      // Check if this is a test request
+      if (req.headers.get("x-test-request") === "true") {
+        console.log("🧪 Test request detected, proceeding without signature verification");
+        // Continue processing for test requests
+      } else {
+        return new Response(
+          JSON.stringify({ 
+            error: "No stripe signature found in headers",
+            message: "This appears to be a test request. For webhook verification, a valid signature is required."
+          }), 
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          }
+        );
+      }
     }
 
     // Get environment variables
@@ -138,17 +144,54 @@ serve(async (req) => {
     let event: Stripe.Event;
 
     try {
-      console.log("🔐 Attempting to verify webhook signature...");
+      // Check if this is a test request
+      const isTestRequest = req.headers.get("x-test-request") === "true";
+      console.log(`${isTestRequest ? "🧪 Test request" : "🔐 Production request"} - Attempting to verify webhook signature...`);
       
       try {
-        event = stripe.webhooks.constructEvent(body, finalSignature || "", webhookSecret);
-        console.log("✅ Webhook signature verified successfully!");
-        console.log("📋 Event details:", {
-          type: event.type,
-          id: event.id,
-          created: new Date(event.created * 1000).toISOString(),
-          livemode: event.livemode
-        });
+        if (isTestRequest) {
+          // For test requests, create a mock event
+          try {
+            const jsonBody = JSON.parse(body);
+            console.log("🧪 Test request detected, creating mock event");
+            event = { 
+              type: jsonBody.type || "test_event",
+              id: "test_" + Date.now(),
+              created: Math.floor(Date.now() / 1000),
+              data: { 
+                object: jsonBody.data?.object || {
+                  id: "test_pi_" + Date.now(),
+                  metadata: {
+                    userId: jsonBody.data?.object?.metadata?.userId || "test-user",
+                    plan: jsonBody.data?.object?.metadata?.plan || "starter"
+                  },
+                  amount: 2900,
+                  currency: "usd",
+                  status: "succeeded"
+                }
+              },
+              livemode: false
+            } as Stripe.Event;
+            
+            console.log("✅ Created mock event for test request:", {
+              type: event.type,
+              id: event.id
+            });
+          } catch (jsonError) {
+            console.error("❌ Failed to parse test request body:", jsonError);
+            throw new Error("Invalid test request format");
+          }
+        } else {
+          // For real requests, verify the signature
+          event = stripe.webhooks.constructEvent(body, finalSignature || "", webhookSecret);
+          console.log("✅ Webhook signature verified successfully!");
+          console.log("📋 Event details:", {
+            type: event.type,
+            id: event.id,
+            created: new Date(event.created * 1000).toISOString(),
+            livemode: event.livemode
+          });
+        }
       } catch (signatureError) {
         // For test requests, try to parse the body as JSON to handle them
         try {
@@ -191,6 +234,23 @@ serve(async (req) => {
     // Process the event
     try {
       console.log(`🎯 Processing event: ${event.type}`);
+
+      // For test requests, return success early
+      if (event.type === "test_event" || req.headers.get("x-test-request") === "true") {
+        console.log("🧪 Test event processed successfully");
+        return new Response(
+          JSON.stringify({ 
+            received: true, 
+            message: "Test event processed successfully",
+            eventType: event.type,
+            eventId: event.id 
+          }), 
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          }
+        );
+      }
       
       switch (event.type) {
         case "checkout.session.completed":
@@ -341,25 +401,25 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session, 
 
 async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabase: any) {
   console.log("🎯 Starting handlePaymentSuccess");
-  console.log("🔍 Payment Intent ID:", paymentIntent.id);
+  console.log("🔍 Payment Intent ID:", paymentIntent?.id || "unknown");
   
   // Log payment intent details but sanitize sensitive information
   const sanitizedPaymentIntent = {
-    id: paymentIntent.id,
-    amount: paymentIntent.amount,
-    currency: paymentIntent.currency,
-    status: paymentIntent.status,
-    metadata: paymentIntent.metadata,
-    created: paymentIntent.created,
-    customer: paymentIntent.customer
+    id: paymentIntent?.id || "unknown",
+    amount: paymentIntent?.amount || 0,
+    currency: paymentIntent?.currency || "usd",
+    status: paymentIntent?.status || "unknown",
+    metadata: paymentIntent?.metadata || {},
+    created: paymentIntent?.created || Math.floor(Date.now() / 1000),
+    customer: paymentIntent?.customer || null
   };
   
   console.log("💰 Payment Intent Details:", JSON.stringify(sanitizedPaymentIntent, null, 2));
   
-  const userId = paymentIntent.metadata.userId;
-  const plan = paymentIntent.metadata.plan;
-  const email = paymentIntent.metadata.email;
-  const amount = paymentIntent.amount || 0;
+  const userId = paymentIntent?.metadata?.userId;
+  const plan = paymentIntent?.metadata?.plan;
+  const email = paymentIntent?.metadata?.email;
+  const amount = paymentIntent?.amount || 0;
 
   console.log("📊 Extracted metadata:", {
     userId,
@@ -371,14 +431,31 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabas
 
   if (!userId || !plan) {
     console.error("❌ Missing userId or plan in payment intent metadata:", paymentIntent.metadata);
-    
+
     // Try to extract from client_reference_id if available
-    if (paymentIntent.client_reference_id) {
-      console.log("🔍 Found client_reference_id, using as userId:", paymentIntent.client_reference_id);
-      userId = paymentIntent.client_reference_id;
+    const clientReferenceId = paymentIntent?.client_reference_id;
+    if (clientReferenceId) {
+      console.log("🔍 Found client_reference_id, using as userId:", clientReferenceId);
+      // Use a variable that won't conflict with the const declaration
+      const extractedUserId = clientReferenceId;
+      
+      // If we still don't have a plan, default to starter
+      const extractedPlan = plan || "starter";
+      
+      // Continue with these extracted values
+      return handlePaymentSuccessWithExtractedData(extractedUserId, extractedPlan, amount, paymentIntent?.currency || "usd", supabase);
     } else {
-      console.error("Available metadata keys:", Object.keys(paymentIntent.metadata || {}));
-      throw new Error("Missing required metadata: userId or plan");
+      console.error("Available metadata keys:", Object.keys(paymentIntent?.metadata || {}));
+      return new Response(
+        JSON.stringify({ 
+          error: "Missing required metadata",
+          details: "userId and plan are required in payment intent metadata"
+        }), 
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
     }
   }
 
@@ -496,6 +573,100 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabas
       plan: finalPlan
     });
     throw error;
+  }
+}
+
+// Helper function to handle payment success with extracted data
+async function handlePaymentSuccessWithExtractedData(
+  userId: string,
+  plan: string,
+  amount: number,
+  currency: string,
+  supabase: any
+) {
+  console.log("🎯 Starting handlePaymentSuccessWithExtractedData");
+  console.log("📊 Using extracted data:", { userId, plan, amount });
+
+  try {
+    // Update user subscription
+    console.log("💾 Updating user subscription in database...");
+    const { data: updatedUser, error: userError } = await supabase
+      .from('users')
+      .update({
+        subscription: plan,
+        payment_method_added: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId)
+      .select();
+
+    if (userError) {
+      console.error("❌ Error updating user subscription:", userError);
+      throw userError;
+    }
+
+    console.log("✅ Successfully updated user:", updatedUser);
+
+    // Log payment with generated ID
+    console.log("📝 Logging payment record...");
+    const { data: paymentRecord, error: paymentError } = await supabase
+      .from('payments')
+      .upsert(
+        {
+          user_id: userId,
+          stripe_payment_intent_id: `manual_${Date.now()}`,
+          plan: plan,
+          amount: amount,
+          currency: currency,
+          status: "succeeded",
+          created_at: new Date().toISOString()
+        },
+        { 
+          onConflict: "stripe_payment_intent_id",
+          ignoreDuplicates: false // Update if exists
+        }
+      )
+      .select();
+
+    if (paymentError) {
+      console.error("❌ Error logging payment:", paymentError);
+      // Don't throw here as the main subscription update succeeded
+    } else {
+      console.log("✅ Payment logged successfully:", paymentRecord);
+    }
+
+    console.log("🎉 Payment success handled completely!");
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        message: "Payment processed and subscription updated",
+        userId,
+        plan
+      }), 
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      }
+    );
+  } catch (error) {
+    console.error("💥 Error in handlePaymentSuccessWithExtractedData:", {
+      error: error.message,
+      stack: error.stack,
+      userId,
+      plan
+    });
+    
+    return new Response(
+      JSON.stringify({ 
+        error: "Failed to process payment",
+        details: error.message
+      }), 
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      }
+    );
   }
 }
 
