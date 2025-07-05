@@ -38,6 +38,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setError(null);
     
     // Generate a unique user ID for demo purposes
     const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -46,8 +47,8 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     setTimeout(() => {
       if (isLogin) {
         // Check if user exists in localStorage
-        const existingUsers = JSON.parse(localStorage.getItem('users') || '[]');
-        const user = existingUsers.find((u: any) => u.email === formData.email);
+        const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
+        const user = existingUsersList.find((u: any) => u.email === formData.email);
         
         if (!user) {
           setError('No account found with this email address');
@@ -79,8 +80,8 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         onLogin(userData);
       } else {
         // Check if email already exists
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        const existingUser = users.find((u: any) => u.email === formData.email);
+        const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
+        const existingUser = existingUsersList.find((u: any) => u.email === formData.email);
         
         if (existingUser) {
           setError('An account with this email already exists');
@@ -106,13 +107,13 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         };
         
         // Store user in localStorage
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const usersList = JSON.parse(localStorage.getItem('users') || '[]');
         const newUser = {
           ...user,
           password: formData.password // In a real app, this would be hashed
         };
-        users.push(newUser);
-        localStorage.setItem('users', JSON.stringify(users));
+        usersList.push(newUser);
+        localStorage.setItem('users', JSON.stringify(usersList));
         
         // Store current user in localStorage
         localStorage.setItem('currentUser', JSON.stringify(user));
