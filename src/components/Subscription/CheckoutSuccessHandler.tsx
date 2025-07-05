@@ -48,6 +48,22 @@ export default function CheckoutSuccessHandler({
       // 2. Update the user's subscription
       // First check if the subscription is already updated
       const checkResult = await ManualSubscriptionFix.checkSubscriptionStatus(userId);
+
+      // Store updated user in localStorage
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          const updatedUser = {
+            ...parsedUser,
+            subscription: plan,
+            paymentMethodAdded: true
+          };
+          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        } catch (e) {
+          console.error('Failed to update stored user', e);
+        }
+      }
       
       if (checkResult.currentPlan === plan && checkResult.hasPayment) {
         // Subscription is already updated

@@ -21,6 +21,18 @@ import AutomaticWebhookFixer from './components/Debug/AutomaticWebhookFixer';
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [activeSection, setActiveSection] = useState(() => {
+    // Check if we have a stored user
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        return 'dashboard';
+      } catch (e) {
+        console.error('Failed to parse stored user', e);
+      }
+    }
+    
     // Check URL hash for initial section
     const hash = window.location.hash.slice(1);
     return hash || 'landing';
@@ -33,10 +45,11 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get('session_id') || '';
     const plan = params.get('plan') || '';
+    const userId = params.get('user_id') || '';
     
     if (sessionId && plan) {
       // Handle successful checkout
-      console.log('Checkout successful!', { sessionId, plan, user });
+      console.log('Checkout successful!', { sessionId, plan, userId });
       // You would typically verify the session and update the user's subscription here
       if (user) {
         const updatedUser = {
@@ -44,10 +57,29 @@ function App() {
           subscription: plan
         };
         setUser(updatedUser);
-        alert(`Your subscription has been updated to ${plan}!`);
+        // Store updated user in localStorage to persist across page refreshes
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        alert(`Your subscription has been updated to ${plan}! You're all set.`);
+      } else if (userId) {
+        // Try to restore user from localStorage
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+          try {
+            const parsedUser = JSON.parse(storedUser);
+            const updatedUser = {
+              ...parsedUser,
+              subscription: plan
+            };
+            setUser(updatedUser);
+            localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+            setActiveSection('dashboard');
+          } catch (e) {
+            console.error('Failed to parse stored user', e);
+          }
+        }
       }
     }
-  }, []);
+  }, [user]);
 
   // Check if basic configuration is present
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -57,11 +89,15 @@ function App() {
 
   const handleLogin = (userData: User) => {
     setUser(userData);
+    // Store user in localStorage to persist across page refreshes
+    localStorage.setItem('currentUser', JSON.stringify(userData));
     setActiveSection('dashboard');
   };
 
   const handleLogout = () => {
     setUser(null);
+    // Clear stored user
+    localStorage.removeItem('currentUser');
     setActiveSection('landing');
   };
 

@@ -70,11 +70,25 @@ export default function TrialSignup({ selectedPlan, skipTrial = false, onSuccess
     // Simulate trial account creation
     setTimeout(() => {
       console.log('Creating trial account:', { 
-        ...formData, 
+        ...formData,
+        id: Date.now().toString(), // Generate a temporary ID
         plan: selectedPlan, 
         skipTrial,
         requiresPayment 
       });
+      
+      // Store user data in localStorage
+      const userData = {
+        id: Date.now().toString(),
+        email: formData.email,
+        name: formData.name,
+        subscription: selectedPlan,
+        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        createdAt: new Date().toISOString(),
+        avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2'
+      };
+      localStorage.setItem('currentUser', JSON.stringify(userData));
+      
       setIsProcessing(false);
       onSuccess();
     }, 2000);

@@ -86,7 +86,8 @@ export default function StripeRedirectCheckout({ plan, onCancel }: StripeRedirec
       // For demo purposes, simulate a successful payment
       setTimeout(() => {
         // Update the URL with success parameters
-        window.location.href = `${window.location.origin}?session_id=demo_session_id&plan=${plan}`;
+        const currentUser = localStorage.getItem('currentUser');
+        window.location.href = `${window.location.origin}?session_id=demo_session_id&plan=${plan}&user_id=${currentUser || 'temp_user_id'}`;
       }, 1000);
     }
   };
