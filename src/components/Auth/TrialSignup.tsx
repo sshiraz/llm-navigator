@@ -79,7 +79,7 @@ export default function TrialSignup({ selectedPlan, skipTrial = false, onSuccess
       
       // Store user data in localStorage
       const userData = {
-        id: Date.now().toString(),
+        id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         email: formData.email,
         name: formData.name,
         subscription: selectedPlan,

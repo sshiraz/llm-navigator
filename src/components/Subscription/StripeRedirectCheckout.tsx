@@ -86,8 +86,22 @@ export default function StripeRedirectCheckout({ plan, onCancel }: StripeRedirec
       // For demo purposes, simulate a successful payment
       setTimeout(() => {
         // Update the URL with success parameters
-        const currentUser = localStorage.getItem('currentUser');
-        window.location.href = `${window.location.origin}?session_id=demo_session_id&plan=${plan}&user_id=${currentUser || 'temp_user_id'}`;
+        const currentUserStr = localStorage.getItem('currentUser');
+        let userId = 'temp_user_id';
+        
+        if (currentUserStr) {
+          try {
+            const currentUser = JSON.parse(currentUserStr);
+            userId = currentUser.id;
+          } catch (e) {
+            console.error('Failed to parse stored user', e);
+          }
+        }
+        
+        // Create a unique session ID to prevent duplicate processing
+        const uniqueSessionId = `demo_session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        
+        window.location.href = `${window.location.origin}?session_id=${uniqueSessionId}&plan=${plan}&user_id=${userId}`;
       }, 1000);
     }
   };

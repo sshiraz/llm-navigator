@@ -43,14 +43,19 @@ function App() {
   // Check URL parameters for checkout success
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get('session_id') || '';
-    const plan = params.get('plan') || '';
-    const userId = params.get('user_id') || '';
+    // Only process checkout parameters once by checking and clearing them
+    const sessionId = params.get('session_id');
+    const plan = params.get('plan');
+    const userId = params.get('user_id');
     
     if (sessionId && plan) {
       // Handle successful checkout
       console.log('Checkout successful!', { sessionId, plan, userId });
-      // You would typically verify the session and update the user's subscription here
+      
+      // Clear URL parameters to prevent infinite loop
+      const newUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, document.title, newUrl);
+      
       if (user) {
         const updatedUser = {
           ...user,
@@ -59,7 +64,14 @@ function App() {
         setUser(updatedUser);
         // Store updated user in localStorage to persist across page refreshes
         localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-        alert(`Your subscription has been updated to ${plan}! You're all set.`);
+        // Use a non-blocking notification instead of alert to prevent disruption
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50';
+        notification.innerHTML = `<strong>Success!</strong> Your subscription has been updated to ${plan}! You're all set.`;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+          notification.remove();
+        }, 5000);
       } else if (userId) {
         // Try to restore user from localStorage
         const storedUser = localStorage.getItem('currentUser');
