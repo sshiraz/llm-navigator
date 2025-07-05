@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bug, Download, Trash2, RefreshCw, AlertTriangle, CheckCircle, Clock, Database, Webhook, CreditCard } from 'lucide-react';
+import { Bug, Download, Trash2, RefreshCw, AlertTriangle, CheckCircle, Clock, Database, Webhook, CreditCard, Zap } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
 import { supabase } from '../../lib/supabase';
 
