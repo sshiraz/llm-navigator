@@ -14,9 +14,11 @@ export class AnalysisEngine {
   // Main analysis method that routes to simulation or real analysis
   static async analyzeWebsite(
     website: string, 
-    keywords: string[], 
+    keywords: string[],
     user: User
   ): Promise<Analysis> {
+    console.log('AnalysisEngine.analyzeWebsite called with:', { website, keywords, user });
+    
     // Check usage limits first
     const usageCheck = await CostTracker.checkUsageLimits(user.id, user.subscription);
     if (!usageCheck.allowed) {
@@ -33,6 +35,7 @@ export class AnalysisEngine {
     const analysisType = this.shouldUseRealAnalysis(user) ? 'real' : 'simulated';
     
     // Track usage before analysis
+    console.log('Tracking analysis usage for:', { userId: user.id, analysisType, website });
     const usage = await CostTracker.trackAnalysisUsage(user.id, analysisType, website, keywords);
     
     try {
@@ -42,6 +45,7 @@ export class AnalysisEngine {
         return await this.performSimulatedAnalysis(website, keywords, user, usage);
       }
     } catch (error) {
+      console.error('Analysis failed in analyzeWebsite:', error);
       // Update usage record with error
       console.error('Analysis failed:', error);
       throw error;
@@ -55,6 +59,7 @@ export class AnalysisEngine {
     user: User,
     usage: any
   ): Promise<Analysis> {
+    console.log('Performing simulated analysis for:', website);
     // Show realistic loading time
     await new Promise(resolve => setTimeout(resolve, this.SIMULATION_DELAY));
 
@@ -75,6 +80,7 @@ export class AnalysisEngine {
        metrics.naturalLanguage + metrics.keywordRelevance) / 5
     );
 
+    console.log('Simulated analysis complete with score:', overallScore);
     return {
       id: usage.analysisId,
       projectId: '1',
@@ -109,6 +115,7 @@ export class AnalysisEngine {
     user: User,
     usage: any
   ): Promise<Analysis> {
+    console.log('Performing real analysis for:', website);
     // Show longer loading time for real analysis
     await new Promise(resolve => setTimeout(resolve, this.REAL_ANALYSIS_DELAY));
 
@@ -129,6 +136,7 @@ export class AnalysisEngine {
       const metrics = this.combineMetrics(technicalMetrics, semanticMetrics);
       const overallScore = this.calculateOverallScore(metrics);
 
+      console.log('Real analysis complete with score:', overallScore);
       return {
         id: usage.analysisId,
         projectId: '1',
@@ -149,6 +157,7 @@ export class AnalysisEngine {
         }
       };
     } catch (error) {
+      console.error('Real analysis failed, falling back to simulation:', error);
       console.error('Real analysis failed:', error);
       // Fallback to simulated analysis if real analysis fails
       return this.performSimulatedAnalysis(website, keywords, user, usage);

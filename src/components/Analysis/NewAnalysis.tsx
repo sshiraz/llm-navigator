@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Globe, Target, Sparkles, ArrowRight, Lightbulb, Zap, AlertCircle } from 'lucide-react';
 import AnalysisProgress from './AnalysisProgress';
 import UsageLimitsBanner from './UsageLimitsBanner';
@@ -28,6 +28,14 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Store the website and keywords in localStorage for persistence
+    try {
+      localStorage.setItem('lastAnalysisWebsite', website);
+      localStorage.setItem('lastAnalysisKeywords', keywords);
+    } catch (error) {
+      console.error('Error storing analysis parameters:', error);
+    }
     
     // Store the website and keywords in localStorage for persistence
     try {
@@ -60,6 +68,7 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     
     setIsAnalyzing(true);
     setCurrentAnalysis({ website: website.trim(), keywords: keywordList });
+    console.log('Starting analysis for:', website.trim(), keywordList);
   };
   
   // Load last analysis parameters from localStorage
@@ -85,6 +94,7 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     setCurrentAnalysis(null);
     onAnalyze(analysis.website, analysis.keywords);
   };
+  console.log('Current analysis state:', { isAnalyzing, currentAnalysis });
 
   const handleAnalysisError = (error: string) => {
     setIsAnalyzing(false);
@@ -105,6 +115,24 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
   const canAnalyze = usageLimits ? 
     (usageLimits.currentUsage.analyses < usageLimits.monthlyAnalyses) : 
     true;
+    
+  // Load last analysis parameters from localStorage
+  useEffect(() => {
+    try {
+      const savedWebsite = localStorage.getItem('lastAnalysisWebsite');
+      const savedKeywords = localStorage.getItem('lastAnalysisKeywords');
+      
+      if (savedWebsite) {
+        setWebsite(savedWebsite);
+      }
+      
+      if (savedKeywords) {
+        setKeywords(savedKeywords);
+      }
+    } catch (error) {
+      console.error('Error loading saved analysis parameters:', error);
+    }
+  }, []);
 
   if (isAnalyzing && currentAnalysis) {
     return (

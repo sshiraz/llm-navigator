@@ -3,7 +3,7 @@ import { ArrowLeft, ExternalLink, Clock, Zap, AlertCircle, CheckCircle, Download
 import { Analysis } from '../../types';
 import MetricsBreakdown from './MetricsBreakdown';
 import { mockAnalyses } from '../../utils/mockData';
-import { generatePDFReport } from '../../utils/pdfGenerator';
+import { generatePDFReport } from '../../utils/pdfGenerator'; 
 
 interface AnalysisResultsProps {
   analysis: Analysis;
@@ -46,6 +46,7 @@ export default function AnalysisResults({ analysis, onBack }: AnalysisResultsPro
 
   const handleDownloadPDF = async () => {
     if (reportRef.current) {
+      console.log('Generating PDF report for analysis:', analysis.id);
       await generatePDFReport(reportRef.current, analysis);
     }
   };
@@ -53,6 +54,7 @@ export default function AnalysisResults({ analysis, onBack }: AnalysisResultsPro
   const handleViewInsights = (analysisId: string) => {
     const targetAnalysis = mockAnalyses.find(a => a.id === analysisId);
     if (targetAnalysis) {
+      console.log('Viewing insights for analysis:', analysisId);
       // Create a detailed insights modal or navigate to detailed view
       const insightsWindow = window.open('', '_blank', 'width=800,height=600');
       if (insightsWindow) {

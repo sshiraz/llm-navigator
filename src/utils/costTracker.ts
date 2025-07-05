@@ -63,10 +63,11 @@ export class CostTracker {
   // Track API usage for an analysis
   static async trackAnalysisUsage(
     userId: string,
-    analysisType: 'real' | 'simulated',
+    analysisType: string,
     website: string,
     keywords: string[]
   ): Promise<ApiUsage> {
+    console.log('CostTracker.trackAnalysisUsage called with:', { userId, analysisType, website });
     const analysisId = `analysis_${Date.now()}`;
     const timestamp = new Date().toISOString();
 
@@ -86,6 +87,7 @@ export class CostTracker {
     const estimatedTokens = this.estimateTokenUsage(website, keywords);
     const costs = this.calculateCosts(estimatedTokens);
 
+    console.log('Generated usage data:', { analysisId, costs });
     const usage: ApiUsage = {
       userId,
       analysisId,
@@ -96,6 +98,7 @@ export class CostTracker {
       success: true
     };
 
+    console.log('Storing usage data in localStorage');
     // Store usage in database (simulated)
     await this.storeUsage(usage);
     
@@ -105,6 +108,7 @@ export class CostTracker {
   // Estimate token usage for an analysis
   private static estimateTokenUsage(website: string, keywords: string[]) {
     // Rough estimates based on typical analysis
+    console.log('Estimating token usage for:', website);
     const contentTokens = 2000; // Average webpage content
     const keywordTokens = keywords.join(' ').length * 1.3; // ~1.3 tokens per character
     const systemPromptTokens = 500; // Analysis prompt
@@ -118,6 +122,7 @@ export class CostTracker {
 
   // Calculate costs based on token usage
   private static calculateCosts(tokens: { input: number; output: number; embeddings: number }) {
+    console.log('Calculating costs for tokens:', tokens);
     const crawling = 0.03; // Fixed crawling cost
     const embeddings = (tokens.embeddings / 1000) * this.API_COSTS.embeddings;
     const insights = (tokens.input / 1000) * this.API_COSTS.gpt4_input + 
@@ -136,6 +141,7 @@ export class CostTracker {
     allowed: boolean;
     reason?: string;
     currentUsage: UsageLimits;
+    console.log('Checking usage limits for:', userId, userPlan);
   }> {
     const limits = this.PLAN_LIMITS[userPlan as keyof typeof this.PLAN_LIMITS];
     if (!limits) {
@@ -148,6 +154,7 @@ export class CostTracker {
 
     const currentUsage = await this.getCurrentUsage(userId);
     
+    console.log('Current usage:', currentUsage, 'Limits:', limits);
     // For demo accounts (free/trial), always allow unlimited usage
     if (userPlan === 'free' || userPlan === 'trial') {
       return {
@@ -184,6 +191,7 @@ export class CostTracker {
   // Get current month usage for user
   private static async getCurrentUsage(userId: string): Promise<{
     analyses: number;
+    console.log('Getting current usage for user:', userId);
     cost: number;
     tokens: number;
   }> {
@@ -191,6 +199,7 @@ export class CostTracker {
     // For demo, return minimal usage to show unlimited capability
     const mockUsage = {
       analyses: Math.floor(Math.random() * 3), // 0-2 analyses used (low for demo)
+      console.log('Generated mock usage data for user:', userId);
       cost: Math.round(Math.random() * 0.5 * 100) / 100, // $0.00-$0.50 used
       tokens: Math.floor(Math.random() * 5000) // 0-5k tokens used
     };
@@ -200,6 +209,7 @@ export class CostTracker {
 
   // Format usage limits for display
   private static formatUsageLimits(plan: string, usage: any): UsageLimits {
+    console.log('Formatting usage limits for plan:', plan);
     const limits = this.PLAN_LIMITS[plan as keyof typeof this.PLAN_LIMITS];
     const nextMonth = new Date();
     nextMonth.setMonth(nextMonth.getMonth() + 1, 1);
@@ -220,6 +230,7 @@ export class CostTracker {
 
   // Store usage in database (simulated)
   private static async storeUsage(usage: ApiUsage): Promise<void> {
+    console.log('Storing API usage in localStorage');
     // In production: Store in database
     console.log('Storing API usage:', usage);
     
@@ -237,6 +248,7 @@ export class CostTracker {
     topUsers: Array<{ userId: string; cost: number; analyses: number }>;
     costBreakdown: { crawling: number; embeddings: number; insights: number };
     errorRate: number;
+    console.log('Getting usage analytics for timeframe:', timeframe);
   }> {
     // In production: Query database for analytics
     const usage = JSON.parse(localStorage.getItem('api_usage') || '[]') as ApiUsage[];
@@ -256,6 +268,7 @@ export class CostTracker {
   }
 
   private static getTopUsers(usage: ApiUsage[]) {
+    console.log('Calculating top users from usage data');
     const userStats = usage.reduce((acc, u) => {
       if (!acc[u.userId]) {
         acc[u.userId] = { cost: 0, analyses: 0 };
@@ -272,6 +285,7 @@ export class CostTracker {
   }
 
   private static getCostBreakdown(usage: ApiUsage[]) {
+    console.log('Calculating cost breakdown from usage data');
     return usage.reduce(
       (acc, u) => ({
         crawling: acc.crawling + u.costs.crawling,
@@ -287,6 +301,7 @@ export class CostTracker {
     allowed: boolean;
     resetTime?: number;
     remaining?: number;
+    console.log('Checking rate limit for user:', userId);
   }> {
     // For demo accounts, always allow unlimited rate
     return {
@@ -297,6 +312,7 @@ export class CostTracker {
 
   // Cost optimization suggestions
   static getCostOptimizationSuggestions(usage: ApiUsage[]): string[] {
+    console.log('Generating cost optimization suggestions');
     const suggestions = [];
     const totalCost = usage.reduce((sum, u) => sum + u.costs.total, 0);
     const avgCost = totalCost / usage.length;

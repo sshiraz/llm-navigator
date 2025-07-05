@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Zap, CheckCircle, AlertCircle, Sparkles, DollarSign } from 'lucide-react';
 import { User } from '../../types';
-import { AnalysisEngine } from '../../utils/analysisEngine';
+import { AnalysisEngine } from '../../utils/analysisEngine'; 
 
 interface AnalysisProgressProps {
   website: string;
@@ -16,6 +16,7 @@ export default function AnalysisProgress({ website, keywords, user, onComplete, 
   const [progress, setProgress] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [estimatedCost, setEstimatedCost] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const isRealAnalysis = AnalysisEngine.shouldUseRealAnalysis(user);
 
@@ -44,9 +45,18 @@ export default function AnalysisProgress({ website, keywords, user, onComplete, 
         setIsComplete(true);
         // Trigger actual analysis
         AnalysisEngine.analyzeWebsite(website, keywords, user)
-          .then(onComplete)
+          .then((result) => {
+            // Store the analysis in localStorage for persistence
+            try {
+              localStorage.setItem('currentAnalysis', JSON.stringify(result));
+            } catch (err) {
+              console.error('Error storing analysis in localStorage:', err);
+            }
+            onComplete(result);
+          })
           .catch((error) => {
             console.error('Analysis failed:', error);
+            setError(error.message || 'Analysis failed. Please try again.');
             if (onError) {
               onError(error.message || 'Analysis failed. Please try again.');
             }
@@ -76,6 +86,24 @@ export default function AnalysisProgress({ website, keywords, user, onComplete, 
 
     runStep();
   }, [website, keywords, user]);
+
+  if (error) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-red-900 mb-3">Analysis Failed</h3>
+          <p className="text-red-800 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.hash = 'new-analysis'}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto">
