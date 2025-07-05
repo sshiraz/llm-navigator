@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CreditCard, Lock, Shield, CheckCircle, AlertCircle, Calendar, User, Building } from 'lucide-react';
-import StripeCheckout from '../Payment/StripeCheckout';
+import CreditCardForm from '../Payment/CreditCardForm';
 
 interface CheckoutFormProps {
   selectedPlan: string;
@@ -32,6 +32,7 @@ export default function CheckoutForm({ selectedPlan, planPrice, onSuccess, onCan
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [step, setStep] = useState<'details' | 'payment'>('details');
   const [isProcessing, setIsProcessing] = useState(false);
+  const planAmount = planPrice * 100; // Convert to cents for Stripe
 
   // Validate form
   const validateForm = () => {
@@ -86,7 +87,7 @@ export default function CheckoutForm({ selectedPlan, planPrice, onSuccess, onCan
   if (step === 'payment') {
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="mb-6 text-center">
+        <div className="mb-4 text-center">
           <button
             onClick={() => setStep('details')}
             className="text-blue-600 hover:text-blue-700 text-sm font-medium"
@@ -95,11 +96,12 @@ export default function CheckoutForm({ selectedPlan, planPrice, onSuccess, onCan
           </button>
         </div>
         
-        <StripeCheckout
-          userId="temp_user_id" // This would be generated after account creation
+        <CreditCardForm
           plan={selectedPlan}
-          email={formData.email}
-          onSuccess={handlePaymentSuccess}
+          amount={planAmount}
+          onSuccess={(paymentData) => {
+            handlePaymentSuccess(paymentData);
+          }}
           onCancel={() => setStep('details')}
         />
       </div>

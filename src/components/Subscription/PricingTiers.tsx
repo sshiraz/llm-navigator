@@ -12,7 +12,7 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
   const [selectedPlan, setSelectedPlan] = React.useState<string | null>(null);
   const [showTrialSignup, setShowTrialSignup] = React.useState(false);
   const [skipTrial, setSkipTrial] = React.useState(false);
-  const [showCheckout, setShowCheckout] = React.useState(false);
+  const [showStripeCheckout, setShowStripeCheckout] = React.useState(false);
 
   const plans = [
     {
@@ -88,7 +88,7 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
     
     // For other plans, show trial signup or checkout
     if (skipTrialOption) {
-      setShowCheckout(true);
+      setShowStripeCheckout(true);
     } else {
       setShowTrialSignup(true);
     }
@@ -101,8 +101,8 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
     }
   };
 
-  const handleCheckoutSuccess = () => {
-    setShowCheckout(false);
+  const handleStripeCheckoutSuccess = () => {
+    setShowStripeCheckout(false);
     if (selectedPlan) {
       console.log(`Upgrading to plan: ${selectedPlan}`);
       onUpgrade(selectedPlan);
@@ -121,11 +121,11 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
     );
   }
 
-  if (showCheckout && selectedPlan) {
+  if (showStripeCheckout && selectedPlan) {
     return (
       <StripeRedirectCheckout
         plan={selectedPlan}
-        onCancel={() => setShowCheckout(false)}
+        onCancel={() => setShowStripeCheckout(false)}
       />
     );
   }
