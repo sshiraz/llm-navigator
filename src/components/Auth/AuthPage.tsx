@@ -53,8 +53,6 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           subscription: 'free',
           createdAt: new Date().toISOString()
         };
-        // Store user in localStorage
-        localStorage.setItem('currentUser', JSON.stringify(user));
         onLogin(user);
       } else {
         // Signup logic - check fraud prevention for trials
@@ -73,8 +71,6 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
           createdAt: new Date().toISOString()
         };
-        // Store user in localStorage
-        localStorage.setItem('currentUser', JSON.stringify(user));
         onLogin(user);
       }
       setIsLoading(false);

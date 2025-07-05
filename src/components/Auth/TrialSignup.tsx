@@ -101,22 +101,6 @@ export default function TrialSignup({ selectedPlan, skipTrial = false, onSuccess
   const handleCheckoutSuccess = (paymentData: any) => {
     console.log('Payment successful:', paymentData);
     
-    // Update user subscription in localStorage
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
-        const updatedUser = {
-          ...userData,
-          subscription: selectedPlan,
-          paymentMethodAdded: true
-        };
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-      } catch (e) {
-        console.error('Failed to update stored user', e);
-      }
-    }
-    
     onSuccess();
   };
 

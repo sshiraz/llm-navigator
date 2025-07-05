@@ -104,21 +104,6 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
   const handleStripeCheckoutSuccess = () => {
     setShowStripeCheckout(false);
     if (selectedPlan) {
-      // Update user in localStorage
-      const storedUser = localStorage.getItem('currentUser');
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          const updatedUser = {
-            ...parsedUser,
-            subscription: selectedPlan,
-            paymentMethodAdded: true
-          };
-          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-        } catch (e) {
-          console.error('Failed to update stored user', e);
-        }
-      }
       onUpgrade(selectedPlan);
     }
   };

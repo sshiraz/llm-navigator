@@ -12,27 +12,10 @@ import AuthPage from './components/Auth/AuthPage';
 import ConfigurationStatus from './components/Setup/ConfigurationStatus';
 import { mockProjects, mockAnalyses } from './utils/mockData';
 import { Project, Analysis, User } from './types';
-import PaymentDebugger from './components/Debug/PaymentDebugger';
-import WebhookDebugger from './components/Debug/WebhookDebugger';
-import SubscriptionFixTool from './components/Debug/SubscriptionFixTool';
-import WebhookSecretUpdater from './components/Debug/WebhookSecretUpdater';
-import AutomaticWebhookFixer from './components/Debug/AutomaticWebhookFixer';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [activeSection, setActiveSection] = useState(() => {
-    // Check if we have a stored user
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        return 'dashboard';
-      } catch (e) {
-        console.error('Failed to parse stored user', e);
-      }
-    }
-    
     // Check URL hash for initial section
     const hash = window.location.hash.slice(1);
     return hash || 'landing';
@@ -43,55 +26,15 @@ function App() {
   // Check URL parameters for checkout success
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    // Only process checkout parameters once by checking and clearing them
     const sessionId = params.get('session_id');
     const plan = params.get('plan');
-    const userId = params.get('user_id');
     
     if (sessionId && plan) {
       // Handle successful checkout
-      console.log('Checkout successful!', { sessionId, plan, userId });
-      
-      // Clear URL parameters to prevent infinite loop
-      const newUrl = window.location.pathname + window.location.hash;
-      window.history.replaceState({}, document.title, newUrl);
-      
-      if (user) {
-        const updatedUser = {
-          ...user,
-          subscription: plan
-        };
-        setUser(updatedUser);
-        // Store updated user in localStorage to persist across page refreshes
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-        // Use a non-blocking notification instead of alert to prevent disruption
-        const notification = document.createElement('div');
-        notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50';
-        notification.innerHTML = `<strong>Success!</strong> Your subscription has been updated to ${plan}! You're all set.`;
-        document.body.appendChild(notification);
-        setTimeout(() => {
-          notification.remove();
-        }, 5000);
-      } else if (userId) {
-        // Try to restore user from localStorage
-        const storedUser = localStorage.getItem('currentUser');
-        if (storedUser) {
-          try {
-            const parsedUser = JSON.parse(storedUser);
-            const updatedUser = {
-              ...parsedUser,
-              subscription: plan
-            };
-            setUser(updatedUser);
-            localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-            setActiveSection('dashboard');
-          } catch (e) {
-            console.error('Failed to parse stored user', e);
-          }
-        }
-      }
+      console.log('Checkout successful!', { sessionId, plan });
+      // You would typically verify the session and update the user's subscription here
     }
-  }, [user]);
+  }, []);
 
   // Check if basic configuration is present
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -101,15 +44,11 @@ function App() {
 
   const handleLogin = (userData: User) => {
     setUser(userData);
-    // Store user in localStorage to persist across page refreshes
-    localStorage.setItem('currentUser', JSON.stringify(userData));
     setActiveSection('dashboard');
   };
 
   const handleLogout = () => {
     setUser(null);
-    // Clear stored user
-    localStorage.removeItem('currentUser');
     setActiveSection('landing');
   };
 
@@ -171,15 +110,7 @@ function App() {
 
   const handleUpgrade = (plan: string) => {
     console.log('Upgrading to plan:', plan);
-    // Update user subscription
-    if (user) {
-      const updatedUser = {
-        ...user,
-        subscription: plan
-      };
-      setUser(updatedUser);
-      setActiveSection('dashboard');
-    }
+    // Handle upgrade logic here
   };
 
   const handleGetStarted = () => {
@@ -247,12 +178,6 @@ function App() {
     return (
       <>
         {renderContent()}
-        {/* Debug tools */}
-        <PaymentDebugger />
-        <WebhookDebugger />
-        <SubscriptionFixTool />
-        <WebhookSecretUpdater />
-        <AutomaticWebhookFixer />
       </>
     );
   }
@@ -272,13 +197,6 @@ function App() {
           {renderContent()}
         </main>
       </div>
-      
-      {/* Debug tools */}
-      <PaymentDebugger />
-      <WebhookDebugger />
-      <SubscriptionFixTool />
-      <WebhookSecretUpdater />
-      <AutomaticWebhookFixer />
     </div>
   );
 }
