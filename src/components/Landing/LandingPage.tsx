@@ -355,7 +355,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               className="px-8 py-4 bg-transparent border-2 border-white text-white text-lg font-semibold rounded-xl hover:bg-white/10 transition-colors shadow-lg flex items-center space-x-2"
             >
               <Mail className="w-5 h-5" />
-              <span>Contact Sales</span>
+              <span>Email Us</span>
             </button>
             
             <div className="text-blue-100 text-sm">

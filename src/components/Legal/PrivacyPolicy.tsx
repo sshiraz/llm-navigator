@@ -122,12 +122,10 @@ export default function PrivacyPolicy() {
 
             <h2>11. Contact Us</h2>
             <p>
-              If you have any questions or concerns about this Privacy Policy or our data practices, please contact us at:
+              If you have any questions or concerns about this Privacy Policy or our data practices, please email us at:
             </p>
             <p>
-              Email: privacy@llmnavigator.com<br />
-              Address: 123 AI Avenue, Suite 400, San Francisco, CA 94107<br />
-              Phone: +1 (800) 555-1234
+              Email: <a href="mailto:info@convologix.com">info@convologix.com</a>
             </p>
           </div>
         </div>

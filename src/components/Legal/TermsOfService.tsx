@@ -164,12 +164,10 @@ export default function TermsOfService() {
 
             <h2>15. Contact Information</h2>
             <p>
-              If you have any questions about these Terms, please contact us at:
+              If you have any questions about these Terms, please email us at:
             </p>
             <p>
-              Email: legal@llmnavigator.com<br />
-              Address: 123 AI Avenue, Suite 400, San Francisco, CA 94107<br />
-              Phone: +1 (800) 555-1234
+              Email: <a href="mailto:info@convologix.com">info@convologix.com</a>
             </p>
           </div>
         </div>
