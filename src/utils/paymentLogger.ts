@@ -74,6 +74,74 @@ export class PaymentLogger {
   static trackPaymentFlow(step: string, data?: any) {
     this.log('info', 'PaymentFlow', `Step: ${step}`, data);
   }
+  
+  // Generate a comprehensive payment debug report
+  static generateDebugReport() {
+    const allLogs = [...this.getLogsFromStorage(), ...this.logs];
+    
+    // Create comprehensive log export
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      totalLogs: allLogs.length,
+      environment: {
+        supabaseUrl: import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Missing',
+        supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Set' : 'Missing',
+        stripeKey: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? 'Set' : 'Missing',
+        starterPriceId: import.meta.env.VITE_STRIPE_STARTER_PRICE_ID ? 'Set' : 'Missing',
+        professionalPriceId: import.meta.env.VITE_STRIPE_PROFESSIONAL_PRICE_ID ? 'Set' : 'Missing',
+        enterprisePriceId: import.meta.env.VITE_STRIPE_ENTERPRISE_PRICE_ID ? 'Set' : 'Missing'
+      },
+      webhookStatus: this.getWebhookStatus(allLogs),
+      paymentStatus: this.getPaymentStatus(allLogs),
+      logs: allLogs
+    };
+    
+    return exportData;
+  }
+  
+  // Extract webhook status from logs
+  private static getWebhookStatus(logs: any[]) {
+    const webhookLogs = logs.filter(log => 
+      log.component === 'Webhook' || 
+      log.component === 'WebhookDebugger' ||
+      (log.component === 'Debug' && log.message.includes('webhook'))
+    );
+    
+    const latestStatus = webhookLogs.length > 0 ? webhookLogs[0] : null;
+    
+    return {
+      lastTested: latestStatus ? latestStatus.timestamp : null,
+      success: latestStatus ? !latestStatus.level.includes('error') : false,
+      details: latestStatus ? latestStatus.data : null
+    };
+  }
+  
+  // Extract payment status from logs
+  private static getPaymentStatus(logs: any[]) {
+    const paymentLogs = logs.filter(log => 
+      log.component === 'PaymentFlow' || 
+      log.component === 'PaymentService'
+    );
+    
+    const successLog = paymentLogs.find(log => 
+      log.message.includes('Payment succeeded') || 
+      log.message.includes('success')
+    );
+    
+    const errorLog = paymentLogs.find(log => 
+      log.level === 'error' && 
+      (log.message.includes('payment') || log.message.includes('Payment'))
+    );
+    
+    return {
+      hasSuccessfulPayment: !!successLog,
+      hasPaymentError: !!errorLog,
+      lastPaymentTimestamp: successLog ? successLog.timestamp : null,
+      lastErrorTimestamp: errorLog ? errorLog.timestamp : null,
+      lastPaymentDetails: successLog ? successLog.data : null,
+      lastErrorDetails: errorLog ? errorLog.data : null
+    };
+  }
 
   // Track webhook events
   static trackWebhook(event: string, success: boolean, data?: any) {

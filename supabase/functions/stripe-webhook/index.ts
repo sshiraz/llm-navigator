@@ -2,9 +2,10 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@14.21.0'
 
+// Improved CORS headers with stripe-signature
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature, x-webhook-signature',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
@@ -15,8 +16,20 @@ serve(async (req) => {
   }
 
   console.log('🔥 WEBHOOK RECEIVED - Starting processing...')
-  console.log('📋 Request method:', req.method)
-  console.log('📋 Request headers:', Object.fromEntries(req.headers.entries()))
+  
+  // Log request details but sanitize sensitive information
+  const sanitizedHeaders = Object.fromEntries(
+    Array.from(req.headers.entries()).map(([key, value]) => {
+      // Mask sensitive values but show part of them for debugging
+      if (key.toLowerCase() === 'authorization' || key.toLowerCase() === 'stripe-signature') {
+        return [key, value.substring(0, 10) + '...'];
+      }
+      return [key, value];
+    })
+  );
+  
+  console.log('📋 Request method:', req.method);
+  console.log('📋 Request headers:', sanitizedHeaders);
   
   try {
     const signature = req.headers.get('stripe-signature')
@@ -24,9 +37,9 @@ serve(async (req) => {
     
     console.log('📝 Request details:', {
       hasSignature: !!signature,
-      bodyLength: body.length,
+      bodyLength: body ? body.length : 0,
       method: req.method,
-      signaturePreview: signature ? signature.substring(0, 50) + '...' : 'none'
+      signaturePreview: signature ? signature.substring(0, 10) + '...' : 'none'
     })
     
     if (!signature) {
@@ -45,6 +58,13 @@ serve(async (req) => {
     const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    // If we're missing the Supabase URL, try to get it from the request URL
+    if (!supabaseUrl) {
+      const requestUrl = new URL(req.url);
+      const potentialSupabaseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
+      console.log('🔍 Attempting to derive Supabase URL from request:', potentialSupabaseUrl);
+    }
 
     console.log('🔑 Environment check:', {
       hasStripeKey: !!stripeSecretKey,
@@ -95,8 +115,9 @@ serve(async (req) => {
     // Initialize Supabase with service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
-        autoRefreshToken: false,
-        persistSession: false
+        autoRefreshToken: false, 
+        persistSession: false,
+        detectSessionInUrl: false
       }
     })
 
@@ -105,7 +126,7 @@ serve(async (req) => {
     try {
       console.log('🔐 Attempting to verify webhook signature...')
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
-      console.log('✅ Webhook signature verified successfully')
+      console.log('✅ Webhook signature verified successfully!')
       console.log('📋 Event details:', {
         type: event.type,
         id: event.id,
@@ -115,7 +136,7 @@ serve(async (req) => {
     } catch (err) {
       console.error('❌ Webhook signature verification failed:', {
         error: err.message,
-        signatureReceived: signature,
+        signatureReceived: signature ? signature.substring(0, 10) + '...' : 'none',
         webhookSecretUsed: webhookSecret ? webhookSecret.substring(0, 7) + '...' : 'none',
         bodyLength: body.length
       })
@@ -222,7 +243,19 @@ serve(async (req) => {
 
 async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabase: any) {
   console.log('🎯 Starting handlePaymentSuccess')
-  console.log('💰 Payment Intent Full Details:', JSON.stringify(paymentIntent, null, 2))
+  
+  // Log payment intent details but sanitize sensitive information
+  const sanitizedPaymentIntent = {
+    id: paymentIntent.id,
+    amount: paymentIntent.amount,
+    currency: paymentIntent.currency,
+    status: paymentIntent.status,
+    metadata: paymentIntent.metadata,
+    created: paymentIntent.created,
+    customer: paymentIntent.customer
+  };
+  
+  console.log('💰 Payment Intent Details:', JSON.stringify(sanitizedPaymentIntent, null, 2))
   
   const userId = paymentIntent.metadata.userId
   const plan = paymentIntent.metadata.plan
@@ -259,25 +292,44 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabas
   console.log(`🎯 Final plan determined: ${finalPlan}`)
 
   try {
-    // First, let's check if the user exists
+    // First, check if this payment has already been processed
+    console.log('🔍 Checking if payment has already been processed...')
+    const { data: existingPayment, error: paymentCheckError } = await supabase
+      .from('payments')
+      .select('id, status')
+      .eq('stripe_payment_intent_id', paymentIntent.id)
+      .maybeSingle()
+    
+    if (paymentCheckError) {
+      console.warn('⚠️ Error checking existing payment:', paymentCheckError)
+      // Continue processing as this is non-fatal
+    } else if (existingPayment) {
+      console.log('⚠️ Payment already processed:', existingPayment)
+      // Still continue to ensure user subscription is updated
+    }
+    
+    // Check if user exists
     console.log('🔍 Looking up user in database...')
     const { data: existingUser, error: fetchError } = await supabase
       .from('users')
-      .select('*')
+      .select('id, email, subscription, payment_method_added')
       .eq('id', userId)
-      .single()
-
+      .maybeSingle()
+    
     if (fetchError) {
       console.error('❌ Error fetching user:', fetchError)
-      throw fetchError
+      // Continue anyway - we'll try to update based on userId
+    } else if (existingUser) {
+      console.log('👤 Found user:', {
+        id: existingUser.id,
+        email: existingUser.email,
+        currentSubscription: existingUser.subscription,
+        paymentMethodAdded: existingUser.payment_method_added
+      })
+    } else {
+      console.warn('⚠️ User not found in database:', userId)
+      // Continue anyway - the update will fail if user doesn't exist
     }
-
-    console.log('👤 Found user:', {
-      id: existingUser.id,
-      email: existingUser.email,
-      currentSubscription: existingUser.subscription,
-      paymentMethodAdded: existingUser.payment_method_added
-    })
 
     // Update user subscription
     console.log('💾 Updating user subscription in database...')
@@ -291,7 +343,10 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabas
       .eq('id', userId)
       .select()
 
-    if (userError) {
+    if (userError && userError.code === 'PGRST116') {
+      console.error('❌ User not found during update:', userError)
+      throw new Error(`User with ID ${userId} not found`)
+    } else if (userError) {
       console.error('❌ Error updating user subscription:', userError)
       throw userError
     }
@@ -302,14 +357,21 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabas
     console.log('📝 Logging payment record...')
     const { data: paymentRecord, error: paymentError } = await supabase
       .from('payments')
-      .insert({
-        user_id: userId,
-        stripe_payment_intent_id: paymentIntent.id,
-        plan: finalPlan,
-        amount: amount,
-        currency: paymentIntent.currency,
-        status: 'succeeded',
-      })
+      .upsert(
+        {
+          user_id: userId,
+          stripe_payment_intent_id: paymentIntent.id,
+          plan: finalPlan,
+          amount: amount,
+          currency: paymentIntent.currency,
+          status: 'succeeded',
+          created_at: new Date().toISOString()
+        },
+        { 
+          onConflict: 'stripe_payment_intent_id',
+          ignoreDuplicates: false // Update if exists
+        }
+      )
       .select()
 
     if (paymentError) {
@@ -333,6 +395,8 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabas
 
 async function handleSubscriptionChange(subscription: Stripe.Subscription, supabase: any) {
   console.log('📋 Processing subscription change:', subscription.id)
+  console.log('📋 Subscription status:', subscription.status)
+  console.log('📋 Subscription metadata:', subscription.metadata)
   
   const userId = subscription.metadata.userId
   const plan = subscription.metadata.plan
@@ -343,7 +407,13 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, supab
   }
 
   try {
-    const subscriptionStatus = subscription.status === 'active' ? plan : 'free'
+    // Determine the plan based on subscription status
+    let subscriptionStatus = 'free'
+    if (subscription.status === 'active' || subscription.status === 'trialing') {
+      subscriptionStatus = plan || 'starter' // Default to starter if plan not specified
+    }
+    
+    console.log(`📋 Setting subscription status to: ${subscriptionStatus}`)
     
     const { error } = await supabase
       .from('users')
@@ -398,13 +468,56 @@ async function handleSubscriptionCancellation(subscription: Stripe.Subscription,
 
 async function handlePaymentFailure(invoice: Stripe.Invoice, supabase: any) {
   console.log('❌ Processing payment failure:', invoice.id)
+  console.log('❌ Invoice details:', {
+    id: invoice.id,
+    customer: invoice.customer,
+    status: invoice.status,
+    amount_due: invoice.amount_due,
+    currency: invoice.currency
+  })
   
   const customerId = invoice.customer as string
   
-  // In a real implementation, you might want to:
-  // 1. Get customer details from Stripe
-  // 2. Find the user in your database
-  // 3. Send notification or downgrade account
+  try {
+    // Get customer details from Stripe to find the user
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+      apiVersion: '2023-10-16',
+    })
+    
+    const customer = await stripe.customers.retrieve(customerId)
+    
+    if (customer.deleted) {
+      console.log('❌ Customer has been deleted')
+      return
+    }
+    
+    // Find user by customer metadata
+    const userId = customer.metadata.userId
+    
+    if (!userId) {
+      console.error('❌ No userId in customer metadata')
+      return
+    }
+    
+    console.log(`❌ Payment failed for user ${userId}`)
+    
+    // Log the payment failure
+    await supabase.from('payments').insert({
+      user_id: userId,
+      stripe_payment_intent_id: invoice.payment_intent as string,
+      stripe_subscription_id: invoice.subscription as string,
+      amount: invoice.amount_due,
+      currency: invoice.currency,
+      status: 'failed',
+    })
+    
+    // Note: In a production app, you might want to:
+    // 1. Send a notification to the user
+    // 2. Downgrade their account after multiple failures
+    // 3. Add a warning banner in the UI
+  } catch (error) {
+    console.error('❌ Error handling payment failure:', error)
+  }
   
   console.log(`💸 Payment failed for customer ${customerId}`)
 }

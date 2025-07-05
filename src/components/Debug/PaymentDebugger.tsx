@@ -135,20 +135,8 @@ export default function PaymentDebugger() {
 
   const exportLogs = () => {
     try {
-      const allLogs = [...PaymentLogger.getLogsFromStorage(), ...PaymentLogger.getLogs()];
-      
-      // Create comprehensive log export
-      const exportData = {
-        exportDate: new Date().toISOString(),
-        totalLogs: allLogs.length,
-        environment: {
-          supabaseUrl: import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Missing',
-          supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Set' : 'Missing',
-          stripeKey: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? 'Set' : 'Missing'
-        },
-        webhookStatus,
-        logs: allLogs
-      };
+      const exportData = PaymentLogger.generateDebugReport();
+      const allLogs = exportData.logs;
       
       // Create formatted text version
       const logText = allLogs.map(log => {
@@ -167,6 +155,9 @@ ENVIRONMENT STATUS:
 - Supabase URL: ${exportData.environment.supabaseUrl}
 - Supabase Key: ${exportData.environment.supabaseKey}
 - Stripe Key: ${exportData.environment.stripeKey}
+- Starter Price ID: ${exportData.environment.starterPriceId}
+- Professional Price ID: ${exportData.environment.professionalPriceId}
+- Enterprise Price ID: ${exportData.environment.enterprisePriceId}
 
 WEBHOOK STATUS:
 ${webhookStatus ? JSON.stringify(webhookStatus, null, 2) : 'Not tested'}

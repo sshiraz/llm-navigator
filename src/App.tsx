@@ -14,6 +14,7 @@ import PaymentDebugger from './components/Debug/PaymentDebugger';
 import WebhookDebugger from './components/Debug/WebhookDebugger';
 import SubscriptionFixTool from './components/Debug/SubscriptionFixTool';
 import WebhookSecretUpdater from './components/Debug/WebhookSecretUpdater';
+import AutomaticWebhookFixer from './components/Debug/AutomaticWebhookFixer';
 import { mockProjects, mockAnalyses } from './utils/mockData';
 import { Project, Analysis, User } from './types';
 import { PaymentLogger } from './utils/paymentLogger';
@@ -177,6 +178,7 @@ function App() {
       <WebhookDebugger />
       <SubscriptionFixTool />
       <WebhookSecretUpdater />
+      <AutomaticWebhookFixer />
       <Sidebar 
         activeSection={activeSection} 
         onSectionChange={setActiveSection}
