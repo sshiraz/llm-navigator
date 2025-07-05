@@ -58,14 +58,23 @@ function App() {
 
   // Load user from localStorage on initial load
   useEffect(() => {
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-      } catch (e) {
-        console.error('Failed to parse stored user', e);
+    try {
+      const storedUser = localStorage.getItem('currentUser');
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+          // If we're on the auth page but already logged in, redirect to dashboard
+          if (activeSection === 'auth') {
+            setActiveSection('dashboard');
+          }
+        } catch (e) {
+          console.error('Failed to parse stored user', e);
+          localStorage.removeItem('currentUser'); // Clear invalid data
+        }
       }
+    } catch (error) {
+      console.error('Error accessing localStorage:', error);
     }
   }, []);
 

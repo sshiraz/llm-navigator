@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Search, ArrowRight, Mail, Lock, User, Building, Globe } from 'lucide-react';
-import { FraudPrevention } from '../../utils/fraudPrevention'; 
-import { FraudPreventionCheck, User as UserType } from '../../types';
+import { FraudPrevention } from '../../utils/fraudPrevention';
+import { FraudPreventionCheck, User } from '../../types';
 
 interface AuthPageProps {
-  onLogin: (user: UserType) => void;
+  onLogin: (user: User) => void;
 }
 
 export default function AuthPage({ onLogin }: AuthPageProps) {
@@ -38,83 +38,94 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    setError(null);
     
     // Simulate API call
     setTimeout(() => {
       if (isLogin) {
         // Check if user exists in localStorage
-        const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
-        const user = existingUsersList.find((u: any) => u.email === formData.email);
+        try {
+          const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
+          const user = existingUsersList.find((u: any) => u.email === formData.email);
         
-        if (!user) {
-          setError('No account found with this email address');
+          if (!user) {
+            setError('No account found with this email address');
+            setIsLoading(false);
+            return;
+          }
+        
+          // Validate password (in a real app, this would be done securely on the server)
+          if (user.password !== formData.password) {
+            setError('Invalid password');
+            setIsLoading(false);
+            return;
+          }
+        
+          // Login successful - remove password before storing in state
+          const { password, ...userWithoutPassword } = user;
+          const userData = {
+            ...userWithoutPassword,
+            avatar: userWithoutPassword.avatar || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2'
+          };
+        
+          // Store current user in localStorage
+          localStorage.setItem('currentUser', JSON.stringify(userData));
+        
+          onLogin(userData as User);
+        } catch (error) {
+          console.error('Error parsing users from localStorage:', error);
+          setError('An error occurred during login. Please try again.');
           setIsLoading(false);
-          return;
         }
-        
-        // Validate password (in a real app, this would be done securely on the server)
-        if (user.password !== formData.password) {
-          setError('Invalid password');
-          setIsLoading(false);
-          return;
-        }
-        
-        // Login successful - remove password before storing in state
-        const { password, ...userWithoutPassword } = user;
-        const userData = {
-          ...userWithoutPassword,
-          avatar: userWithoutPassword.avatar || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2'
-        };
-        
-        // Store current user in localStorage
-        localStorage.setItem('currentUser', JSON.stringify(userData));
-        
-        onLogin(userData as UserType);
       } else {
         // Check if email already exists
-        const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
-        const existingUser = existingUsersList.find((u: any) => u.email === formData.email);
-        
-        if (existingUser) {
-          setError('An account with this email already exists');
-          setIsLoading(false);
-          return;
-        }
-        
-        // Generate a unique user ID for demo purposes
-        const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-        
-        // Signup logic - check fraud prevention for trials
-        if (fraudCheck && !fraudCheck.isAllowed) {
-          alert(fraudCheck.reason);
-          setIsLoading(false);
-          return;
-        }
+        try {
+          const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
+          const existingUser = existingUsersList.find((u: any) => u.email === formData.email);
+          
+          if (existingUser) {
+            setError('An account with this email already exists');
+            setIsLoading(false);
+            return;
+          }
+          
+          // Generate a unique user ID for demo purposes
+          const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+          
+          // Signup logic - check fraud prevention for trials
+          if (fraudCheck && !fraudCheck.isAllowed) {
+            alert(fraudCheck.reason);
+            setIsLoading(false);
+            return;
+          }
 
-        const user = {
-          id: userId,
-          email: formData.email,
-          name: formData.name,
-          avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-          subscription: 'trial',
-          trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
-          createdAt: new Date().toISOString()
-        };
-        
-        // Store user in localStorage
-        const usersList = JSON.parse(localStorage.getItem('users') || '[]');
-        const newUser = {
-          ...user,
-          password: formData.password // In a real app, this would be hashed
-        };
-        usersList.push(newUser);
-        localStorage.setItem('users', JSON.stringify(usersList)); 
-        
-        // Store current user in localStorage
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        
-        onLogin(user);
+          const user = {
+            id: userId,
+            email: formData.email,
+            name: formData.name,
+            avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
+            subscription: 'trial',
+            trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
+            createdAt: new Date().toISOString()
+          };
+          
+          // Store user in localStorage
+          const usersList = JSON.parse(localStorage.getItem('users') || '[]');
+          const newUser = {
+            ...user,
+            password: formData.password // In a real app, this would be hashed
+          };
+          usersList.push(newUser);
+          localStorage.setItem('users', JSON.stringify(usersList)); 
+          
+          // Store current user in localStorage
+          localStorage.setItem('currentUser', JSON.stringify(user));
+          
+          onLogin(user);
+        } catch (error) {
+          console.error('Error during signup:', error);
+          setError('An error occurred during signup. Please try again.');
+          setIsLoading(false);
+        }
       }
       setIsLoading(false);
     }, 1000);
