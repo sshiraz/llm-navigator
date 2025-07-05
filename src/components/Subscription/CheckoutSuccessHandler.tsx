@@ -32,14 +32,39 @@ export default function CheckoutSuccessHandler({
       userId 
     });
 
+    // Log the verification attempt with more details
+    PaymentLogger.log('info', 'CheckoutSuccessHandler', 'Verifying payment and updating subscription', {
+      sessionId,
+      plan,
+      userId,
+      timestamp: new Date().toISOString()
+    });
+
     try {
       // 1. Verify the session with Stripe
       // In a real implementation, you would verify the session with Stripe
       // For this demo, we'll assume the session is valid if it exists
       
       // 2. Update the user's subscription
-      const result = await ManualSubscriptionFix.fixSubscription(userId, plan);
+      // First check if the subscription is already updated
+      const checkResult = await ManualSubscriptionFix.checkSubscriptionStatus(userId);
       
+      if (checkResult.currentPlan === plan) {
+        // Subscription is already updated
+        setStatus('success');
+        setMessage('Your subscription is already active! Your account has been updated.');
+        PaymentLogger.trackPaymentFlow('Subscription already updated', { 
+          userId, 
+          plan,
+          currentPlan: checkResult.currentPlan
+        });
+        onSuccess();
+        return;
+      }
+      
+      // If not updated, fix it
+      const result = await ManualSubscriptionFix.fixSubscription(userId, plan);
+
       if (result.success) {
         setStatus('success');
         setMessage('Your payment was successful! Your subscription has been updated.');

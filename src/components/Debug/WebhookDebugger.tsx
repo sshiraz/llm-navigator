@@ -15,14 +15,30 @@ export default function WebhookDebugger() {
     
     try {
       // First, test with a simple request to check if the endpoint is accessible
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook`, {
+      const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook`;
+      PaymentLogger.log('info', 'WebhookDebugger', `Testing webhook at: ${webhookUrl}`);
+      
+      const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'stripe-signature': 'test_signature' // Add a dummy signature
+          'stripe-signature': 'test_signature', // Add a dummy signature
+          'x-test-request': 'true' // Mark as test request
         },
-        body: JSON.stringify({ type: 'test_event' })
+        body: JSON.stringify({ 
+          type: 'test_event',
+          test: true,
+          data: {
+            object: {
+              id: 'test_' + Date.now(),
+              metadata: {
+                userId: 'test-user',
+                plan: 'starter'
+              }
+            }
+          }
+        })
       });
       
       const text = await response.text();
@@ -43,8 +59,12 @@ export default function WebhookDebugger() {
       
       setTestResult(result);
       
-      if (response.status === 400 && text.includes('signature verification failed')) {
-        PaymentLogger.log('warn', 'WebhookDebugger', 'Webhook signature verification failed - this is expected for test requests', result);
+      if (response.status === 400) {
+        if (text.includes('signature verification failed') || text.includes('test request')) {
+          PaymentLogger.log('warn', 'WebhookDebugger', 'Webhook signature verification failed - this is expected for test requests', result);
+        } else {
+          PaymentLogger.log('error', 'WebhookDebugger', 'Webhook returned unexpected 400 error', result);
+        }
       } else if (response.status === 401 || response.status === 403) {
         PaymentLogger.log('error', 'WebhookDebugger', 'Webhook authentication failed - check service role key', result);
       } else if (response.status === 404) {

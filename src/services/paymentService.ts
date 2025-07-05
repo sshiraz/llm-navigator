@@ -183,11 +183,16 @@ export class PaymentService {
     plan: string,
     paymentIntentId: string
   ): Promise<{ success: boolean; error?: string }> {
-    PaymentLogger.trackPaymentFlow('Handling payment success', { userId, plan, paymentIntentId });
+    PaymentLogger.trackPaymentFlow('Handling payment success manually', { userId, plan, paymentIntentId });
     
     try {
       // Update user subscription in database
-      PaymentLogger.trackDatabaseUpdate('users', 'UPDATE subscription', false, { userId, plan });
+      PaymentLogger.trackDatabaseUpdate('users', 'UPDATE subscription', false, { 
+        userId, 
+        plan,
+        payment_method_added: true,
+        updated_at: new Date().toISOString()
+      });
       
       const { error } = await supabase
         .from('users')
@@ -207,16 +212,19 @@ export class PaymentService {
       PaymentLogger.trackDatabaseUpdate('users', 'UPDATE subscription', true, { userId, plan });
 
       // Log the payment
-      PaymentLogger.trackDatabaseUpdate('payments', 'INSERT payment record', false, { userId, paymentIntentId });
-      
-      await supabase.from('payments').insert({
+      const paymentData = {
         user_id: userId,
         stripe_payment_intent_id: paymentIntentId,
         plan,
-        amount: STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS].amount,
+        amount: STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS]?.amount || 0,
         currency: 'usd',
-        status: 'succeeded'
-      });
+        status: 'succeeded',
+        created_at: new Date().toISOString()
+      };
+      
+      PaymentLogger.trackDatabaseUpdate('payments', 'INSERT payment record', false, paymentData);
+      
+      await supabase.from('payments').insert(paymentData);
 
       PaymentLogger.trackDatabaseUpdate('payments', 'INSERT payment record', true, { userId, paymentIntentId });
       PaymentLogger.trackPaymentFlow('Payment success handled completely', { userId, plan });

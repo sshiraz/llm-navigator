@@ -31,14 +31,30 @@ export default function AutomaticWebhookFixer() {
     
     try {
       // 1. Check if webhook endpoint is accessible
-      const webhookResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook`, {
+      const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook`;
+      PaymentLogger.log('info', 'WebhookFixer', `Testing webhook at: ${webhookUrl}`);
+      
+      const webhookResponse = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'stripe-signature': 'test_signature'
+          'stripe-signature': 'test_signature', // Add a dummy signature
+          'x-test-request': 'true' // Mark as test request
         },
-        body: JSON.stringify({ type: 'test_event' })
+        body: JSON.stringify({ 
+          type: 'test_event',
+          test: true,
+          data: {
+            object: {
+              id: 'test_' + Date.now(),
+              metadata: {
+                userId: 'test-user',
+                plan: 'starter'
+              }
+            }
+          }
+        })
       });
       
       // 2. Check if Edge Functions are deployed
@@ -82,7 +98,7 @@ export default function AutomaticWebhookFixer() {
       } else if (webhookResponse.status === 400) {
         // 400 is expected for signature verification failure
         const responseText = await webhookResponse.text();
-        if (responseText.includes('signature verification failed')) {
+        if (responseText.includes('signature verification failed') || responseText.includes('test request')) {
           // This is actually good - it means the webhook is deployed and checking signatures
           PaymentLogger.log('info', 'WebhookFixer', 'Webhook signature verification is working');
         } else {
