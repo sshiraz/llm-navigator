@@ -214,8 +214,14 @@ export default function AutomaticWebhookFixer() {
   if (!isOpen) {
     return (
       <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-20 right-4 bg-blue-600 text-white rounded-lg px-4 py-2 flex items-center space-x-2 shadow-lg hover:bg-blue-700 transition-colors z-50"
+        onClick={() => {
+          setIsOpen(true);
+          // Reset state when opening
+          setStatus('idle');
+          setIssues([]);
+          setFixSteps([]);
+        }}
+        className="fixed bottom-20 right-4 bg-blue-600 text-white rounded-lg px-4 py-2 flex items-center space-x-2 shadow-lg hover:bg-blue-700 transition-colors z-40"
       >
         <Webhook className="w-5 h-5" />
         <span>Fix Webhook</span>

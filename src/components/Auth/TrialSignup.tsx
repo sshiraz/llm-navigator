@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Shield, CreditCard, Mail, User, CheckCircle, XCircle, Gift, Zap } from 'lucide-react';
 import { FraudPrevention } from '../../utils/fraudPrevention';
-import { FraudPreventionCheck } from '../../types';
-import CheckoutForm from './CheckoutForm';
+import { FraudPreventionCheck, User as UserType } from '../../types';
+import CreditCardForm from '../Payment/CreditCardForm';
 
 interface TrialSignupProps {
   selectedPlan: string;
@@ -24,6 +24,7 @@ export default function TrialSignup({ selectedPlan, skipTrial = false, onSuccess
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [userId, setUserId] = useState<string>('');
 
   const planPrices = {
     starter: 29,
@@ -78,12 +79,15 @@ export default function TrialSignup({ selectedPlan, skipTrial = false, onSuccess
       });
       
       // Store user data in localStorage
-      const userData = {
-        id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      setUserId(userId);
+      
+      const userData: UserType = {
+        id: userId,
         email: formData.email,
         name: formData.name,
-        subscription: selectedPlan,
-        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        subscription: skipTrial ? selectedPlan : 'trial',
+        trialEndsAt: skipTrial ? undefined : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
         createdAt: new Date().toISOString(),
         avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2'
       };
@@ -96,6 +100,23 @@ export default function TrialSignup({ selectedPlan, skipTrial = false, onSuccess
 
   const handleCheckoutSuccess = (paymentData: any) => {
     console.log('Payment successful:', paymentData);
+    
+    // Update user subscription in localStorage
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        const updatedUser = {
+          ...userData,
+          subscription: selectedPlan,
+          paymentMethodAdded: true
+        };
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      } catch (e) {
+        console.error('Failed to update stored user', e);
+      }
+    }
+    
     onSuccess();
   };
 
@@ -108,10 +129,10 @@ export default function TrialSignup({ selectedPlan, skipTrial = false, onSuccess
   // Show checkout form for skip trial
   if (showCheckout) {
     return (
-      <CheckoutForm
-        selectedPlan={selectedPlan}
-        planPrice={planPrice}
-        onSuccess={handleCheckoutSuccess}
+      <CreditCardForm
+        plan={selectedPlan}
+        amount={planPrice * 100} // Convert to cents
+        onSuccess={(paymentData) => handleCheckoutSuccess(paymentData)}
         onCancel={() => setShowCheckout(false)}
       />
     );

@@ -37,19 +37,24 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    
+    // Generate a unique user ID for demo purposes
+    const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
     // Simulate API call
     setTimeout(() => {
       if (isLogin) {
         // Login logic
         const user = {
-          id: '1',
+          id: userId,
           email: formData.email,
           name: formData.name || 'User',
           avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
           subscription: 'free',
           createdAt: new Date().toISOString()
         };
+        // Store user in localStorage
+        localStorage.setItem('currentUser', JSON.stringify(user));
         onLogin(user);
       } else {
         // Signup logic - check fraud prevention for trials
@@ -60,7 +65,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         }
 
         const user = {
-          id: Date.now().toString(),
+          id: userId,
           email: formData.email,
           name: formData.name,
           avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
@@ -68,6 +73,8 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
           createdAt: new Date().toISOString()
         };
+        // Store user in localStorage
+        localStorage.setItem('currentUser', JSON.stringify(user));
         onLogin(user);
       }
       setIsLoading(false);

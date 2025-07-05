@@ -214,8 +214,11 @@ ${JSON.stringify(exportData, null, 2)}`;
   if (!isOpen) {
     return (
       <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 right-20 w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-700 transition-colors z-50"
+        onClick={() => {
+          setIsOpen(true);
+          loadLogs();
+        }}
+        className="fixed bottom-4 right-20 w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-700 transition-colors z-30"
         title="Open Payment Debugger"
       >
         <Bug className="w-6 h-6" />

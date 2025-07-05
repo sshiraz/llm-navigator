@@ -139,12 +139,14 @@ export default function CreditCardForm({ plan, amount, onSuccess, onCancel }: Cr
         <p className="text-gray-600 mb-6">
           Your payment has been processed successfully. Your subscription has been updated to the {plan} plan.
         </p>
-        <button
-          onClick={() => onSuccess({ plan })}
-          className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-        >
-          Continue to Dashboard
-        </button>
+        <div className="flex justify-center">
+          <button
+            onClick={() => onSuccess({ plan })}
+            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
+            Continue to Dashboard
+          </button>
+        </div>
       </div>
     );
   }
