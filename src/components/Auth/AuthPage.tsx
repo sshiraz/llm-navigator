@@ -260,8 +260,10 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           </div>
 
           {!isLogin && (
-            <div className="mt-4 text-xs text-gray-500 text-center">
-              By creating an account, you agree to our Terms of Service and Privacy Policy.
+            <div className="mt-4 text-xs text-gray-500 text-center space-y-1">
+              <p>
+                By creating an account, you agree to our <a href="#terms" className="text-blue-600 hover:text-blue-700">Terms of Service</a> and <a href="#privacy" className="text-blue-600 hover:text-blue-700">Privacy Policy</a>.
+              </p>
               <br />
               14-day free trial • No credit card required
             </div>

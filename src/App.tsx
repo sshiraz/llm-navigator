@@ -7,6 +7,8 @@ import AnalysisResults from './components/Analysis/AnalysisResults';
 import ProjectDetail from './components/Projects/ProjectDetail';
 import PricingTiers from './components/Subscription/PricingTiers';
 import ContactPage from './components/Contact/ContactPage';
+import PrivacyPolicy from './components/Legal/PrivacyPolicy';
+import TermsOfService from './components/Legal/TermsOfService';
 import CompetitorStrategy from './components/Reports/CompetitorStrategy';
 import LandingPage from './components/Landing/LandingPage';
 import AuthPage from './components/Auth/AuthPage';
@@ -151,6 +153,12 @@ function App() {
       
       case 'contact':
         return <ContactPage />;
+
+      case 'privacy':
+        return <PrivacyPolicy />;
+        
+      case 'terms':
+        return <TermsOfService />;
       
       case 'auth':
         return <AuthPage onLogin={handleLogin} />;

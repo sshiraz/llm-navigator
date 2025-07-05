@@ -326,7 +326,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 py-20">
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 py-20 relative">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold text-white mb-6">
             Ready to Dominate AI Search?
@@ -355,6 +355,15 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             <div className="text-blue-100 text-sm">
               <div>✓ 14-day free trial</div>
               <div>✓ No credit card required</div>
+            </div>
+          </div>
+          
+          {/* Footer Links */}
+          <div className="absolute bottom-4 left-0 right-0 text-center">
+            <div className="text-blue-200 text-sm space-x-6">
+              <a href="#privacy" className="hover:text-white transition-colors">Privacy Policy</a>
+              <a href="#terms" className="hover:text-white transition-colors">Terms of Service</a>
+              <a href="#contact" className="hover:text-white transition-colors">Contact Us</a>
             </div>
           </div>
         </div>
