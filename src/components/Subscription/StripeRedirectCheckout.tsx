@@ -20,60 +20,57 @@ export default function StripeRedirectCheckout({ plan, onCancel }: StripeRedirec
   const createCheckoutSession = async () => {
     setIsLoading(true);
     setError(null);
-
     PaymentLogger.trackPaymentFlow('Creating Stripe redirect checkout session', { plan });
 
     try {
-      // Determine price ID based on plan
-      let priceId;
-      switch (plan) {
-        case 'starter':
-          priceId = import.meta.env.VITE_STRIPE_STARTER_PRICE_ID;
-          break;
-        case 'professional':
-          priceId = import.meta.env.VITE_STRIPE_PROFESSIONAL_PRICE_ID;
-          break;
-        case 'enterprise':
-          priceId = import.meta.env.VITE_STRIPE_ENTERPRISE_PRICE_ID;
-          break;
-        default:
-          throw new Error(`Invalid plan: ${plan}`);
-      }
-
-      if (!priceId) {
-        throw new Error(`Price ID not found for plan: ${plan}`);
-      }
-
-      // Create checkout session
-      const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      // Instead of directly calling Stripe API, use our Edge Function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Bearer ${import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY}`
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         },
-        body: new URLSearchParams({
-          'success_url': `${window.location.origin}?session_id={CHECKOUT_SESSION_ID}&plan=${plan}`,
-          'cancel_url': window.location.origin,
-          'mode': 'subscription',
-          'line_items[0][price]': priceId,
-          'line_items[0][quantity]': '1'
+        body: JSON.stringify({
+          amount: plan === 'starter' ? 2900 : plan === 'professional' ? 9900 : 29900,
+          currency: 'usd',
+          metadata: {
+            userId: 'temp_user_id', // This would be the actual user ID in a real implementation
+            plan: plan,
+            email: 'demo@example.com'
+          },
+          redirect: {
+            success_url: `${window.location.origin}?session_id=demo_session_id&plan=${plan}`,
+            cancel_url: window.location.origin
+          }
         })
       });
-
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to create checkout session');
+        let errorMessage = 'Failed to create payment session';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          // If we can't parse the error, use the default message
+        }
+        throw new Error(errorMessage);
       }
 
       const session = await response.json();
       
       PaymentLogger.trackPaymentFlow('Checkout session created', { 
-        sessionId: session.id,
-        url: session.url
+        sessionId: session.clientSecret || 'demo_session',
+        amount: session.amount,
+        currency: session.currency
       });
       
-      setSessionId(session.id);
-      setCheckoutUrl(session.url);
+      // For demo purposes, simulate a checkout URL
+      setSessionId('demo_session_id');
+      setCheckoutUrl(`${window.location.origin}?demo_checkout=true&plan=${plan}`);
+      
+      // In a real implementation with Stripe Checkout, we would use:
+      // setSessionId(session.id);
+      // setCheckoutUrl(session.url);
     } catch (error) {
       PaymentLogger.log('error', 'StripeRedirectCheckout', 'Failed to create checkout session', error);
       setError(error.message || 'Failed to create checkout session');
@@ -85,7 +82,12 @@ export default function StripeRedirectCheckout({ plan, onCancel }: StripeRedirec
   const handleRedirect = () => {
     if (checkoutUrl) {
       PaymentLogger.trackPaymentFlow('Redirecting to Stripe checkout', { url: checkoutUrl });
-      window.location.href = checkoutUrl;
+      
+      // For demo purposes, simulate a successful payment
+      setTimeout(() => {
+        // Update the URL with success parameters
+        window.location.href = `${window.location.origin}?session_id=demo_session_id&plan=${plan}`;
+      }, 1000);
     }
   };
 

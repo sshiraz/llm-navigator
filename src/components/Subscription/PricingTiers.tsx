@@ -76,6 +76,7 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
   const handlePlanSelect = (planId: string, skipTrialOption = false) => {
     if (planId === currentPlan) return;
     
+    console.log(`Selected plan: ${planId}, skip trial: ${skipTrialOption}`);
     setSelectedPlan(planId);
     setSkipTrial(skipTrialOption);
     
@@ -103,6 +104,7 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
   const handleCheckoutSuccess = () => {
     setShowCheckout(false);
     if (selectedPlan) {
+      console.log(`Upgrading to plan: ${selectedPlan}`);
       onUpgrade(selectedPlan);
     }
   };

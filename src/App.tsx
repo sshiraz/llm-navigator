@@ -31,13 +31,21 @@ function App() {
   // Check URL parameters for checkout success
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get('session_id');
-    const plan = params.get('plan');
+    const sessionId = params.get('session_id') || '';
+    const plan = params.get('plan') || '';
     
     if (sessionId && plan) {
       // Handle successful checkout
-      console.log('Checkout successful!', { sessionId, plan });
+      console.log('Checkout successful!', { sessionId, plan, user });
       // You would typically verify the session and update the user's subscription here
+      if (user) {
+        const updatedUser = {
+          ...user,
+          subscription: plan
+        };
+        setUser(updatedUser);
+        alert(`Your subscription has been updated to ${plan}!`);
+      }
     }
   }, []);
 
