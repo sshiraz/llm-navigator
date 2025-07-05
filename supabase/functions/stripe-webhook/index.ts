@@ -15,6 +15,8 @@ serve(async (req) => {
   }
 
   console.log('🔥 WEBHOOK RECEIVED - Starting processing...')
+  console.log('📋 Request method:', req.method)
+  console.log('📋 Request headers:', Object.fromEntries(req.headers.entries()))
   
   try {
     const signature = req.headers.get('stripe-signature')
@@ -23,12 +25,19 @@ serve(async (req) => {
     console.log('📝 Request details:', {
       hasSignature: !!signature,
       bodyLength: body.length,
-      method: req.method
+      method: req.method,
+      signaturePreview: signature ? signature.substring(0, 50) + '...' : 'none'
     })
     
     if (!signature) {
-      console.error('❌ No stripe signature found')
-      return new Response('No stripe signature', { status: 400, headers: corsHeaders })
+      console.error('❌ No stripe signature found in headers')
+      return new Response(
+        JSON.stringify({ error: 'No stripe signature found' }), 
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
     // Get environment variables
@@ -41,12 +50,42 @@ serve(async (req) => {
       hasStripeKey: !!stripeSecretKey,
       hasWebhookSecret: !!webhookSecret,
       hasSupabaseUrl: !!supabaseUrl,
-      hasServiceKey: !!supabaseServiceKey
+      hasServiceKey: !!supabaseServiceKey,
+      stripeKeyPrefix: stripeSecretKey ? stripeSecretKey.substring(0, 7) + '...' : 'none',
+      webhookSecretPrefix: webhookSecret ? webhookSecret.substring(0, 7) + '...' : 'none'
     })
 
-    if (!stripeSecretKey || !webhookSecret || !supabaseUrl || !supabaseServiceKey) {
-      console.error('❌ Missing required environment variables')
-      return new Response('Server configuration error', { status: 500, headers: corsHeaders })
+    if (!stripeSecretKey) {
+      console.error('❌ Missing STRIPE_SECRET_KEY environment variable')
+      return new Response(
+        JSON.stringify({ error: 'Missing Stripe secret key' }), 
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    if (!webhookSecret) {
+      console.error('❌ Missing STRIPE_WEBHOOK_SECRET environment variable')
+      return new Response(
+        JSON.stringify({ error: 'Missing webhook secret' }), 
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('❌ Missing Supabase environment variables')
+      return new Response(
+        JSON.stringify({ error: 'Missing Supabase configuration' }), 
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
     const stripe = new Stripe(stripeSecretKey, {
@@ -64,23 +103,38 @@ serve(async (req) => {
     let event: Stripe.Event
 
     try {
+      console.log('🔐 Attempting to verify webhook signature...')
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
       console.log('✅ Webhook signature verified successfully')
       console.log('📋 Event details:', {
         type: event.type,
         id: event.id,
-        created: new Date(event.created * 1000).toISOString()
+        created: new Date(event.created * 1000).toISOString(),
+        livemode: event.livemode
       })
     } catch (err) {
-      console.error('❌ Webhook signature verification failed:', err.message)
-      return new Response('Webhook signature verification failed', { 
-        status: 400, 
-        headers: corsHeaders 
+      console.error('❌ Webhook signature verification failed:', {
+        error: err.message,
+        signatureReceived: signature,
+        webhookSecretUsed: webhookSecret ? webhookSecret.substring(0, 7) + '...' : 'none',
+        bodyLength: body.length
       })
+      return new Response(
+        JSON.stringify({ 
+          error: 'Webhook signature verification failed',
+          details: err.message 
+        }), 
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
     // Process the event
     try {
+      console.log(`🎯 Processing event: ${event.type}`)
+      
       switch (event.type) {
         case 'payment_intent.succeeded':
           console.log('💰 Processing payment_intent.succeeded')
@@ -119,23 +173,50 @@ serve(async (req) => {
       }
 
       console.log('✅ Webhook processed successfully')
-      return new Response('Webhook handled successfully', { 
-        status: 200, 
-        headers: corsHeaders 
-      })
+      return new Response(
+        JSON.stringify({ 
+          received: true, 
+          eventType: event.type,
+          eventId: event.id 
+        }), 
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     } catch (error) {
-      console.error('❌ Webhook handler error:', error)
-      return new Response('Webhook handler error', { 
-        status: 500, 
-        headers: corsHeaders 
+      console.error('❌ Webhook handler error:', {
+        error: error.message,
+        stack: error.stack,
+        eventType: event?.type,
+        eventId: event?.id
       })
+      return new Response(
+        JSON.stringify({ 
+          error: 'Webhook handler error',
+          details: error.message 
+        }), 
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
   } catch (error) {
-    console.error('❌ Webhook processing error:', error)
-    return new Response('Webhook processing error', { 
-      status: 500, 
-      headers: corsHeaders 
+    console.error('❌ Webhook processing error:', {
+      error: error.message,
+      stack: error.stack
     })
+    return new Response(
+      JSON.stringify({ 
+        error: 'Webhook processing error',
+        details: error.message 
+      }), 
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
   }
 })
 
@@ -159,7 +240,7 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabas
   if (!userId || !plan) {
     console.error('❌ Missing userId or plan in payment intent metadata')
     console.error('Available metadata keys:', Object.keys(paymentIntent.metadata))
-    return
+    throw new Error('Missing required metadata: userId or plan')
   }
 
   // Determine plan based on amount if plan is not set correctly
@@ -179,6 +260,7 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabas
 
   try {
     // First, let's check if the user exists
+    console.log('🔍 Looking up user in database...')
     const { data: existingUser, error: fetchError } = await supabase
       .from('users')
       .select('*')
@@ -198,6 +280,7 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabas
     })
 
     // Update user subscription
+    console.log('💾 Updating user subscription in database...')
     const { data: updatedUser, error: userError } = await supabase
       .from('users')
       .update({
@@ -216,6 +299,7 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabas
     console.log('✅ Successfully updated user:', updatedUser)
 
     // Log payment
+    console.log('📝 Logging payment record...')
     const { data: paymentRecord, error: paymentError } = await supabase
       .from('payments')
       .insert({
@@ -237,7 +321,12 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabas
 
     console.log('🎉 Payment success handled completely!')
   } catch (error) {
-    console.error('💥 Error in handlePaymentSuccess:', error)
+    console.error('💥 Error in handlePaymentSuccess:', {
+      error: error.message,
+      stack: error.stack,
+      userId,
+      plan: finalPlan
+    })
     throw error
   }
 }
@@ -250,7 +339,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, supab
 
   if (!userId) {
     console.error('❌ Missing userId in subscription metadata')
-    return
+    throw new Error('Missing userId in subscription metadata')
   }
 
   try {
@@ -283,7 +372,7 @@ async function handleSubscriptionCancellation(subscription: Stripe.Subscription,
 
   if (!userId) {
     console.error('❌ Missing userId in subscription metadata')
-    return
+    throw new Error('Missing userId in subscription metadata')
   }
 
   try {
