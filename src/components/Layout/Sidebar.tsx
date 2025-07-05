@@ -48,6 +48,9 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
                   ? 'bg-blue-600 text-white shadow-lg'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
+              onClick={() => {
+                window.location.hash = item.id;
+              }}
             >
               <Icon className="w-5 h-5" />
               <span className="font-medium">{item.label}</span>

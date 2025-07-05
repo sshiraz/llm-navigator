@@ -17,7 +17,9 @@ export default function ProjectDetail({ project, onBack }: ProjectDetailProps) {
       {/* Header */}
       <div className="mb-8">
         <button
-          onClick={onBack}
+          onClick={() => {
+            window.location.hash = 'dashboard';
+          }}
           className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 mb-4 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
