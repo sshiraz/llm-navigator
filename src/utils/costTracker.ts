@@ -141,8 +141,8 @@ export class CostTracker {
     allowed: boolean;
     reason?: string;
     currentUsage: UsageLimits;
-    console.log('Checking usage limits for:', userId, userPlan);
   }> {
+    console.log('Checking usage limits for:', userId, userPlan);
     const limits = this.PLAN_LIMITS[userPlan as keyof typeof this.PLAN_LIMITS];
     if (!limits) {
       return {
@@ -191,19 +191,19 @@ export class CostTracker {
   // Get current month usage for user
   private static async getCurrentUsage(userId: string): Promise<{
     analyses: number;
-    console.log('Getting current usage for user:', userId);
     cost: number;
     tokens: number;
   }> {
+    console.log('Getting current usage for user:', userId);
     // In production, query database for current month usage
     // For demo, return minimal usage to show unlimited capability
     const mockUsage = {
       analyses: Math.floor(Math.random() * 3), // 0-2 analyses used (low for demo)
-      console.log('Generated mock usage data for user:', userId);
       cost: Math.round(Math.random() * 0.5 * 100) / 100, // $0.00-$0.50 used
       tokens: Math.floor(Math.random() * 5000) // 0-5k tokens used
     };
 
+    console.log('Generated mock usage data for user:', userId);
     return mockUsage;
   }
 
@@ -248,8 +248,8 @@ export class CostTracker {
     topUsers: Array<{ userId: string; cost: number; analyses: number }>;
     costBreakdown: { crawling: number; embeddings: number; insights: number };
     errorRate: number;
-    console.log('Getting usage analytics for timeframe:', timeframe);
   }> {
+    console.log('Getting usage analytics for timeframe:', timeframe);
     // In production: Query database for analytics
     const usage = JSON.parse(localStorage.getItem('api_usage') || '[]') as ApiUsage[];
     
@@ -301,8 +301,8 @@ export class CostTracker {
     allowed: boolean;
     resetTime?: number;
     remaining?: number;
-    console.log('Checking rate limit for user:', userId);
   }> {
+    console.log('Checking rate limit for user:', userId);
     // For demo accounts, always allow unlimited rate
     return {
       allowed: true,
