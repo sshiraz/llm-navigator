@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, TrendingUp, Target, Zap, CheckCircle, ArrowRight, BarChart3, Users, Shield, LogIn } from 'lucide-react';
+import { Search, TrendingUp, Target, Zap, CheckCircle, ArrowRight, BarChart3, Users, Shield, LogIn, Mail } from 'lucide-react';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -23,6 +23,14 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
         {/* Navigation Buttons */}
         <div className="flex items-center space-x-3">
+          <button 
+            onClick={() => window.location.hash = '#contact'}
+            className="flex items-center space-x-2 px-4 py-2 bg-white/10 backdrop-blur-sm text-white rounded-lg hover:bg-white/20 transition-all border border-white/20"
+          >
+            <Mail className="w-4 h-4" />
+            <span>Contact Us</span>
+          </button>
+          
           <button 
             onClick={onGetStarted}
             className="flex items-center space-x-2 px-4 py-2 bg-white/10 backdrop-blur-sm text-white rounded-lg hover:bg-white/20 transition-all border border-white/20"
@@ -330,10 +338,18 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
             <button 
               onClick={onGetStarted}
-              className="px-8 py-4 bg-white text-blue-600 text-lg font-semibold rounded-xl hover:bg-gray-50 transition-colors shadow-lg flex items-center space-x-2"
+              className="px-8 py-4 bg-white text-blue-600 text-lg font-semibold rounded-xl hover:bg-gray-50 transition-colors shadow-lg flex items-center space-x-2 mb-4 sm:mb-0"
             >
               <span>Start Your Free Trial</span>
               <ArrowRight className="w-5 h-5" />
+            </button>
+            
+            <button 
+              onClick={() => window.location.hash = '#contact'}
+              className="px-8 py-4 bg-transparent border-2 border-white text-white text-lg font-semibold rounded-xl hover:bg-white/10 transition-colors shadow-lg flex items-center space-x-2"
+            >
+              <Mail className="w-5 h-5" />
+              <span>Contact Sales</span>
             </button>
             
             <div className="text-blue-100 text-sm">

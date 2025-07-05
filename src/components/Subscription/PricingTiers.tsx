@@ -216,10 +216,10 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
                 
                 {!isCurrentPlan && plan.id !== 'enterprise' && (
                   <button
-                    onClick={() => handlePlanSelect(plan.id, true)}
+                    onClick={() => plan.id === 'enterprise' ? window.location.hash = '#contact' : handlePlanSelect(plan.id, true)}
                     className="w-full py-2 px-6 rounded-xl font-medium text-sm transition-all duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
                   >
-                    Skip Trial - Buy Now
+                    {plan.id === 'enterprise' ? 'Contact Sales' : 'Skip Trial - Buy Now'}
                   </button>
                 )}
               </div>
@@ -235,7 +235,10 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
         <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
           We offer tailored enterprise solutions with custom pricing, dedicated support, and specialized features for large organizations.
         </p>
-        <button className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl">
+        <button 
+          onClick={() => window.location.hash = '#contact'}
+          className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+        >
           Contact Our Sales Team
         </button>
       </div>

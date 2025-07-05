@@ -6,6 +6,7 @@ import NewAnalysis from './components/Analysis/NewAnalysis';
 import AnalysisResults from './components/Analysis/AnalysisResults';
 import ProjectDetail from './components/Projects/ProjectDetail';
 import PricingTiers from './components/Subscription/PricingTiers';
+import ContactPage from './components/Contact/ContactPage';
 import CompetitorStrategy from './components/Reports/CompetitorStrategy';
 import LandingPage from './components/Landing/LandingPage';
 import AuthPage from './components/Auth/AuthPage';
@@ -140,13 +141,16 @@ function App() {
 
   const renderContent = () => {
     // Show auth page if no user is logged in and trying to access protected routes
-    if (!user && ['dashboard', 'new-analysis', 'analysis-results', 'project-detail', 'pricing', 'competitor-strategy', 'setup'].includes(activeSection)) {
+    if (!user && ['dashboard', 'new-analysis', 'analysis-results', 'project-detail', 'pricing', 'competitor-strategy'].includes(activeSection)) {
       return <AuthPage onLogin={handleLogin} />;
     }
 
     switch (activeSection) {
       case 'landing':
         return <LandingPage onGetStarted={handleGetStarted} />;
+      
+      case 'contact':
+        return <ContactPage />;
       
       case 'auth':
         return <AuthPage onLogin={handleLogin} />;
