@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Search, ArrowRight, Mail, Lock, User, Building, Globe } from 'lucide-react';
 import { FraudPrevention } from '../../utils/fraudPrevention';
-import { FraudPreventionCheck, User } from '../../types';
+import { FraudPreventionCheck, User as UserType } from '../../types';
 
 interface AuthPageProps {
-  onLogin: (user: User) => void;
+  onLogin: (user: UserType) => void;
 }
 
 export default function AuthPage({ onLogin }: AuthPageProps) {
@@ -19,6 +19,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
   const [fraudCheck, setFraudCheck] = useState<FraudPreventionCheck | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleEmailBlur = async () => {
     if (!formData.email || isLogin) return;
@@ -190,7 +191,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
                   Full Name *
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
                     required
