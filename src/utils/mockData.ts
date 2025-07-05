@@ -33,10 +33,24 @@ const initializeDemoUser = () => {
 // Initialize demo user when this module is imported
 // Run this in a try-catch to prevent any issues with localStorage
 try {
-  // Use setTimeout to ensure this runs after the DOM is loaded
-  setTimeout(() => {
-    initializeDemoUser();
-  }, 100);
+  initializeDemoUser();
+  
+  // Also initialize demo analyses if they don't exist
+  const initializeAnalyses = () => {
+    try {
+      // Check if analyses already exist in localStorage
+      const existingAnalyses = localStorage.getItem('analyses');
+      if (!existingAnalyses) {
+        // Store mockAnalyses in localStorage
+        localStorage.setItem('analyses', JSON.stringify(mockAnalyses));
+        console.log('Demo analyses initialized successfully');
+      }
+    } catch (error) {
+      console.error('Error initializing demo analyses:', error);
+    }
+  };
+  
+  initializeAnalyses();
 } catch (error) {
   console.error('Failed to initialize demo user:', error);
 }

@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { ArrowLeft, ExternalLink, Clock, Zap, AlertCircle, CheckCircle, Download, FileText } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { ArrowLeft, ExternalLink, Clock, Zap, AlertCircle, CheckCircle, Download, FileText, Trash2, X } from 'lucide-react';
 import { Analysis } from '../../types';
 import MetricsBreakdown from './MetricsBreakdown';
 import { mockAnalyses } from '../../utils/mockData';
@@ -12,6 +12,7 @@ interface AnalysisResultsProps {
 
 export default function AnalysisResults({ analysis, onBack }: AnalysisResultsProps) {
   const reportRef = useRef<HTMLDivElement>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-emerald-600';
@@ -124,6 +125,27 @@ export default function AnalysisResults({ analysis, onBack }: AnalysisResultsPro
     }
   };
 
+  const handleDelete = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    // Get stored analyses from localStorage
+    try {
+      const storedAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
+      // Filter out the current analysis
+      const updatedAnalyses = storedAnalyses.filter((a: Analysis) => a.id !== analysis.id);
+      // Save back to localStorage
+      localStorage.setItem('analyses', JSON.stringify(updatedAnalyses));
+      
+      // Navigate back to dashboard or new analysis
+      window.location.hash = 'dashboard';
+    } catch (error) {
+      console.error('Error deleting analysis:', error);
+      alert('Failed to delete analysis. Please try again.');
+    }
+  };
+
   // Get competitor analyses for comparison
   const competitorAnalyses = mockAnalyses.filter(a => a.id !== analysis.id);
 
@@ -167,10 +189,18 @@ export default function AnalysisResults({ analysis, onBack }: AnalysisResultsPro
             
             <button
               onClick={handleDownloadPDF}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg"
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
             >
               <Download className="w-4 h-4" />
               <span>Download PDF</span>
+            </button>
+            
+            <button
+              onClick={handleDelete}
+              className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-md"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Delete Analysis</span>
             </button>
           </div>
         </div>
@@ -362,6 +392,43 @@ export default function AnalysisResults({ analysis, onBack }: AnalysisResultsPro
           </div>
         </div>
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Delete Analysis</h3>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete this analysis? This action cannot be undone.
+            </p>
+            
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

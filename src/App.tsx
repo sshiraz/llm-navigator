@@ -25,6 +25,20 @@ function App() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
 
+  // Load current analysis from localStorage if available
+  useEffect(() => {
+    try {
+      const storedAnalysis = localStorage.getItem('currentAnalysis');
+      if (storedAnalysis && activeSection === 'analysis-results') {
+        setCurrentAnalysis(JSON.parse(storedAnalysis));
+        // Clear it after loading to prevent stale data
+        localStorage.removeItem('currentAnalysis');
+      }
+    } catch (error) {
+      console.error('Error loading current analysis from localStorage:', error);
+    }
+  }, [activeSection]);
+
   // Listen for hash changes to handle browser back/forward buttons
   useEffect(() => {
     const handleHashChange = () => {
@@ -171,6 +185,16 @@ function App() {
     };
     
     setCurrentAnalysis(newAnalysis);
+    
+    // Store analyses in localStorage
+    try {
+      const existingAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
+      existingAnalyses.unshift(newAnalysis); // Add to beginning of array
+      localStorage.setItem('analyses', JSON.stringify(existingAnalyses));
+    } catch (error) {
+      console.error('Error storing analysis in localStorage:', error);
+    }
+    
     window.location.hash = 'analysis-results';
   };
 

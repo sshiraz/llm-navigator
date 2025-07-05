@@ -1,12 +1,15 @@
-import React from 'react';
-import { ExternalLink, ArrowUpRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { ExternalLink, ArrowUpRight, Trash2, X } from 'lucide-react';
 import { Analysis } from '../../types';
 
 interface RecentAnalysesProps {
   analyses: Analysis[];
+  onDelete?: (analysisId: string) => void;
 }
 
-export default function RecentAnalyses({ analyses }: RecentAnalysesProps) {
+export default function RecentAnalyses({ analyses, onDelete }: RecentAnalysesProps) {
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-emerald-600 bg-emerald-50';
     if (score >= 60) return 'text-yellow-600 bg-yellow-50';
@@ -18,6 +21,17 @@ export default function RecentAnalyses({ analyses }: RecentAnalysesProps) {
     if (rank <= 3) return { color: 'bg-emerald-100 text-emerald-800', label: 'Top Result' };
     if (rank <= 5) return { color: 'bg-blue-100 text-blue-800', label: 'Visible' };
     return { color: 'bg-gray-100 text-gray-800', label: 'Buried' };
+  };
+
+  const handleDelete = (analysisId: string) => {
+    setDeleteConfirm(analysisId);
+  };
+
+  const confirmDelete = (analysisId: string) => {
+    if (onDelete) {
+      onDelete(analysisId);
+    }
+    setDeleteConfirm(null);
   };
 
   return (
@@ -46,7 +60,7 @@ export default function RecentAnalyses({ analyses }: RecentAnalysesProps) {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Date
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -100,11 +114,28 @@ export default function RecentAnalyses({ analyses }: RecentAnalysesProps) {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(analysis.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <button className="text-blue-600 hover:text-blue-800 flex items-center space-x-1 text-sm">
-                      <span>View Report</span>
-                      <ArrowUpRight className="w-3 h-3" />
-                    </button>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <div className="flex items-center justify-center space-x-3">
+                      <a 
+                        href={`#analysis-results`}
+                        onClick={() => {
+                          // Store the current analysis in localStorage to view it
+                          localStorage.setItem('currentAnalysis', JSON.stringify(analysis));
+                        }}
+                        className="text-blue-600 hover:text-blue-800 flex items-center space-x-1 text-sm"
+                      >
+                        <span>View</span>
+                        <ArrowUpRight className="w-3 h-3" />
+                      </a>
+                      
+                      <button 
+                        onClick={() => handleDelete(analysis.id)}
+                        className="text-red-600 hover:text-red-800 flex items-center space-x-1 text-sm"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -112,6 +143,43 @@ export default function RecentAnalyses({ analyses }: RecentAnalysesProps) {
           </tbody>
         </table>
       </div>
+      
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Delete Analysis</h3>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete this analysis? This action cannot be undone.
+            </p>
+            
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              
+              <button
+                onClick={() => confirmDelete(deleteConfirm)}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

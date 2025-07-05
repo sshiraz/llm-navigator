@@ -29,6 +29,14 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     e.preventDefault();
     setError(null);
     
+    // Store the website and keywords in localStorage for persistence
+    try {
+      localStorage.setItem('lastAnalysisWebsite', website);
+      localStorage.setItem('lastAnalysisKeywords', keywords);
+    } catch (error) {
+      console.error('Error storing analysis parameters:', error);
+    }
+    
     if (!website || website.trim().length === 0) {
       setError('Please enter a website URL');
       return;
@@ -53,6 +61,24 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     setIsAnalyzing(true);
     setCurrentAnalysis({ website: website.trim(), keywords: keywordList });
   };
+  
+  // Load last analysis parameters from localStorage
+  useEffect(() => {
+    try {
+      const savedWebsite = localStorage.getItem('lastAnalysisWebsite');
+      const savedKeywords = localStorage.getItem('lastAnalysisKeywords');
+      
+      if (savedWebsite) {
+        setWebsite(savedWebsite);
+      }
+      
+      if (savedKeywords) {
+        setKeywords(savedKeywords);
+      }
+    } catch (error) {
+      console.error('Error loading saved analysis parameters:', error);
+    }
+  }, []);
 
   const handleAnalysisComplete = (analysis: any) => {
     setIsAnalyzing(false);

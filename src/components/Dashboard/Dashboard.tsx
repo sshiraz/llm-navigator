@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, TrendingUp, Target, BarChart3 } from 'lucide-react';
 import ProjectCard from './ProjectCard';
 import ScoreCard from './ScoreCard';
 import RecentAnalyses from './RecentAnalyses';
-import { mockProjects, mockAnalyses } from '../../utils/mockData';
-import { Project } from '../../types';
+import { mockProjects } from '../../utils/mockData';
+import { Project, Analysis } from '../../types';
 
 interface DashboardProps {
   onProjectSelect: (project: Project) => void;
@@ -12,9 +12,40 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardProps) {
-  const totalAnalyses = mockAnalyses.length;
-  const avgScore = Math.round(mockAnalyses.reduce((acc, analysis) => acc + analysis.score, 0) / mockAnalyses.length);
-  const bestScore = Math.max(...mockAnalyses.map(a => a.score));
+  const [analyses, setAnalyses] = useState<Analysis[]>([]);
+  
+  useEffect(() => {
+    // Load analyses from localStorage
+    try {
+      const storedAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
+      setAnalyses(storedAnalyses);
+    } catch (error) {
+      console.error('Error loading analyses from localStorage:', error);
+      setAnalyses([]);
+    }
+  }, []);
+  
+  const totalAnalyses = analyses.length;
+  const avgScore = analyses.length > 0 
+    ? Math.round(analyses.reduce((acc, analysis) => acc + analysis.score, 0) / analyses.length) 
+    : 0;
+  const bestScore = analyses.length > 0 
+    ? Math.max(...analyses.map(a => a.score)) 
+    : 0;
+    
+  const handleDeleteAnalysis = (analysisId: string) => {
+    try {
+      // Filter out the deleted analysis
+      const updatedAnalyses = analyses.filter(a => a.id !== analysisId);
+      // Update state
+      setAnalyses(updatedAnalyses);
+      // Save to localStorage
+      localStorage.setItem('analyses', JSON.stringify(updatedAnalyses));
+    } catch (error) {
+      console.error('Error deleting analysis:', error);
+      alert('Failed to delete analysis. Please try again.');
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -89,7 +120,10 @@ export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardP
       </div>
 
       {/* Recent Analyses */}
-      <RecentAnalyses analyses={mockAnalyses} />
+      <RecentAnalyses 
+        analyses={analyses} 
+        onDelete={handleDeleteAnalysis} 
+      />
     </div>
   );
 }
