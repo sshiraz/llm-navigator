@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Search, ArrowRight, Mail, Lock, User, Building, Globe } from 'lucide-react';
+import { Search, ArrowRight, Mail, Lock, User as UserIcon, Building, Globe } from 'lucide-react';
 import { FraudPrevention } from '../../utils/fraudPrevention';
-import { FraudPreventionCheck, User as UserType } from '../../types';
+import { FraudPreventionCheck, User } from '../../types';
 
 interface AuthPageProps {
-  onLogin: (user: UserType) => void;
+  onLogin: (user: User) => void;
 }
 
 export default function AuthPage({ onLogin }: AuthPageProps) {
