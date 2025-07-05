@@ -47,11 +47,9 @@ export default function Header({ user }: HeaderProps) {
           </button>
           
           <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded-lg p-2 transition-colors">
-            <img
-              src={user.avatar}
-              alt={user.name}
-              className="w-8 h-8 rounded-full object-cover"
-            />
+            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
+              {user.name.charAt(0)}
+            </div>
             <div className="text-left">
               <p className="text-sm font-medium text-gray-900">{user.name}</p>
               <p className="text-xs text-gray-500">
