@@ -1,5 +1,33 @@
 import { Project, Analysis, User, KeywordSuggestion } from '../types';
 
+// Add a demo user to localStorage if it doesn't exist
+const initializeDemoUser = () => {
+  const users = JSON.parse(localStorage.getItem('users') || '[]');
+  
+  // Check if demo user already exists
+  const demoUserExists = users.some((user: any) => user.email === 'demo@example.com');
+  
+  if (!demoUserExists) {
+    // Add demo user
+    const demoUser = {
+      id: 'demo-user-123',
+      email: 'demo@example.com',
+      password: 'demo123', // In a real app, this would be hashed
+      name: 'Demo User',
+      avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
+      subscription: 'trial',
+      trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date().toISOString()
+    };
+    
+    users.push(demoUser);
+    localStorage.setItem('users', JSON.stringify(users));
+  }
+};
+
+// Initialize demo user when this module is imported
+initializeDemoUser();
+
 export const mockUser: User = {
   id: '1',
   email: 'user@example.com',

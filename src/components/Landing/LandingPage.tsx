@@ -6,6 +6,11 @@ interface LandingPageProps {
 }
 
 export default function LandingPage({ onGetStarted }: LandingPageProps) {
+  const handleSignIn = () => {
+    window.location.hash = '#auth';
+    window.location.reload();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
       {/* Navigation Header */}
@@ -35,7 +40,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           </button>
           
           <button 
-            onClick={onGetStarted}
+            onClick={handleSignIn}
             className="flex items-center space-x-2 px-4 py-2 bg-white/10 backdrop-blur-sm text-white rounded-lg hover:bg-white/20 transition-all border border-white/20"
           >
             <LogIn className="w-4 h-4" />
