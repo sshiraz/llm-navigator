@@ -1,12 +1,19 @@
 import React from 'react';
 import { Check, Star, Zap, Crown } from 'lucide-react';
+import TrialSignup from '../Auth/TrialSignup';
+import StripeRedirectCheckout from './StripeRedirectCheckout';
 
 interface PricingTiersProps {
   currentPlan: string;
   onUpgrade: (plan: string) => void;
 }
 
-const PricingTiers: React.FC<PricingTiersProps> = ({ currentPlan, onUpgrade }) => {
+export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersProps) {
+  const [selectedPlan, setSelectedPlan] = React.useState<string | null>(null);
+  const [showTrialSignup, setShowTrialSignup] = React.useState(false);
+  const [skipTrial, setSkipTrial] = React.useState(false);
+  const [showCheckout, setShowCheckout] = React.useState(false);
+
   const plans = [
     {
       id: 'starter',
@@ -66,10 +73,60 @@ const PricingTiers: React.FC<PricingTiersProps> = ({ currentPlan, onUpgrade }) =
     }
   ];
 
-  const handlePlanSelect = (planId: string) => {
+  const handlePlanSelect = (planId: string, skipTrialOption = false) => {
     if (planId === currentPlan) return;
-    onUpgrade(planId);
+    
+    setSelectedPlan(planId);
+    setSkipTrial(skipTrialOption);
+    
+    if (planId === 'enterprise') {
+      // For enterprise, show contact form or redirect to sales page
+      alert('Please contact our sales team for Enterprise plan details.');
+      return;
+    }
+    
+    // For other plans, show trial signup or checkout
+    if (skipTrialOption) {
+      setShowCheckout(true);
+    } else {
+      setShowTrialSignup(true);
+    }
   };
+
+  const handleTrialSuccess = () => {
+    setShowTrialSignup(false);
+    if (selectedPlan) {
+      onUpgrade(selectedPlan);
+    }
+  };
+
+  const handleCheckoutSuccess = () => {
+    setShowCheckout(false);
+    if (selectedPlan) {
+      onUpgrade(selectedPlan);
+    }
+  };
+
+  // If showing trial signup or checkout, render those components
+  if (showTrialSignup && selectedPlan) {
+    return (
+      <TrialSignup
+        selectedPlan={selectedPlan}
+        skipTrial={skipTrial}
+        onSuccess={handleTrialSuccess}
+        onCancel={() => setShowTrialSignup(false)}
+      />
+    );
+  }
+
+  if (showCheckout && selectedPlan) {
+    return (
+      <StripeRedirectCheckout
+        plan={selectedPlan}
+        onCancel={() => setShowCheckout(false)}
+      />
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -145,7 +202,7 @@ const PricingTiers: React.FC<PricingTiersProps> = ({ currentPlan, onUpgrade }) =
                 <button
                   onClick={() => handlePlanSelect(plan.id)}
                   disabled={isCurrentPlan}
-                  className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-300 ${
+                  className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-300 mb-2 ${
                     isCurrentPlan
                       ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
                       : isPopular
@@ -155,6 +212,15 @@ const PricingTiers: React.FC<PricingTiersProps> = ({ currentPlan, onUpgrade }) =
                 >
                   {isCurrentPlan ? 'Current Plan' : plan.buttonText}
                 </button>
+                
+                {!isCurrentPlan && plan.id !== 'enterprise' && (
+                  <button
+                    onClick={() => handlePlanSelect(plan.id, true)}
+                    className="w-full py-2 px-6 rounded-xl font-medium text-sm transition-all duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  >
+                    Skip Trial - Buy Now
+                  </button>
+                )}
               </div>
             </div>
           );
@@ -175,5 +241,3 @@ const PricingTiers: React.FC<PricingTiersProps> = ({ currentPlan, onUpgrade }) =
     </div>
   );
 };
-
-export default PricingTiers;

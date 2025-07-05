@@ -115,7 +115,15 @@ function App() {
 
   const handleUpgrade = (plan: string) => {
     console.log('Upgrading to plan:', plan);
-    // Handle upgrade logic here
+    // Update user subscription
+    if (user) {
+      const updatedUser = {
+        ...user,
+        subscription: plan
+      };
+      setUser(updatedUser);
+      setActiveSection('dashboard');
+    }
   };
 
   const handleGetStarted = () => {
