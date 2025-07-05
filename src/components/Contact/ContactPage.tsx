@@ -89,7 +89,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="text-lg font-medium text-gray-900">Email Us</h3>
-                    <p className="text-gray-600 mt-1">Our team will respond within 24 hours</p>
+                    <p className="text-gray-600 mt-1">Our team will respond within 3 business days</p>
                     <a href="mailto:info@convologix.com" className="text-blue-600 hover:text-blue-800 font-medium mt-1 block">
                       info@convologix.com
                     </a>
@@ -111,7 +111,7 @@ export default function ContactPage() {
                   <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-green-900 mb-2">Message Sent Successfully!</h3>
                   <p className="text-green-800 mb-6">
-                    Thank you for reaching out. Our team will get back to you within 24 hours.
+                    Thank you for reaching out. Our team will get back to you within 3 business days.
                   </p>
                   <button
                     onClick={() => setSubmitStatus('idle')}
