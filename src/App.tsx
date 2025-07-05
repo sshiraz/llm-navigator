@@ -11,6 +11,9 @@ import LandingPage from './components/Landing/LandingPage';
 import AuthPage from './components/Auth/AuthPage';
 import ConfigurationStatus from './components/Setup/ConfigurationStatus';
 import PaymentDebugger from './components/Debug/PaymentDebugger';
+import WebhookDebugger from './components/Debug/WebhookDebugger';
+import SubscriptionFixTool from './components/Debug/SubscriptionFixTool';
+import WebhookSecretUpdater from './components/Debug/WebhookSecretUpdater';
 import { mockProjects, mockAnalyses } from './utils/mockData';
 import { Project, Analysis, User } from './types';
 import { PaymentLogger } from './utils/paymentLogger';
@@ -171,6 +174,9 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <PaymentDebugger />
+      <WebhookDebugger />
+      <SubscriptionFixTool />
+      <WebhookSecretUpdater />
       <Sidebar 
         activeSection={activeSection} 
         onSectionChange={setActiveSection}
