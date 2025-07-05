@@ -79,8 +79,8 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         onLogin(userData);
       } else {
         // Check if email already exists
-        const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-        const existingUser = storedUsers.find((u: any) => u.email === formData.email);
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const existingUser = users.find((u: any) => u.email === formData.email);
         
         if (existingUser) {
           setError('An account with this email already exists');
@@ -106,13 +106,13 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         };
         
         // Store user in localStorage
-        const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
         const newUser = {
           ...user,
           password: formData.password // In a real app, this would be hashed
         };
-        storedUsers.push(newUser);
-        localStorage.setItem('users', JSON.stringify(storedUsers));
+        users.push(newUser);
+        localStorage.setItem('users', JSON.stringify(users));
         
         // Store current user in localStorage
         localStorage.setItem('currentUser', JSON.stringify(user));
