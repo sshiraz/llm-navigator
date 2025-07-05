@@ -12,9 +12,16 @@ export default function PaymentDebugger() {
 
   useEffect(() => {
     loadLogs();
+    // Auto-check webhook status when debugger opens
+    if (isOpen) {
+      setTimeout(() => {
+        testWebhookEndpoint();
+        checkEdgeFunctions();
+      }, 1000);
+    }
     const interval = setInterval(loadLogs, 2000); // Refresh every 2 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, [isOpen]);
 
   const loadLogs = () => {
     const allLogs = [...PaymentLogger.getLogsFromStorage(), ...PaymentLogger.getLogs()];
@@ -278,7 +285,7 @@ export default function PaymentDebugger() {
               {filteredLogs.map((log, index) => (
                 <div
                   key={index}
-                  className={`p-3 rounded-lg border-l-4 ${
+                  className={`p-4 rounded-lg border-l-4 shadow-sm ${
                     log.level === 'error' ? 'border-red-500 bg-red-50' :
                     log.level === 'warn' ? 'border-yellow-500 bg-yellow-50' :
                     'border-green-500 bg-green-50'
@@ -288,9 +295,9 @@ export default function PaymentDebugger() {
                     <div className="flex items-center space-x-2">
                       {getLogIcon(log.level)}
                       {getComponentIcon(log.component)}
-                      <span className="font-medium text-gray-900">{log.component}</span>
+                      <span className="font-semibold text-gray-900">{log.component}</span>
                       <span className="text-xs text-gray-500">
-                        {new Date(log.timestamp).toLocaleTimeString()}
+                        {new Date(log.timestamp).toLocaleString()}
                       </span>
                     </div>
                     <span className={`px-2 py-1 text-xs rounded ${
@@ -302,14 +309,14 @@ export default function PaymentDebugger() {
                     </span>
                   </div>
                   
-                  <p className="text-gray-700 mb-2">{log.message}</p>
+                  <p className="text-gray-800 mb-2 font-medium">{log.message}</p>
                   
                   {log.data && (
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800">
+                    <details className="mt-3" open>
+                      <summary className="cursor-pointer text-sm text-blue-600 hover:text-blue-800 font-medium">
                         View Data
                       </summary>
-                      <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-x-auto">
+                      <pre className="mt-2 p-3 bg-gray-900 text-green-400 rounded text-xs overflow-x-auto max-h-40 overflow-y-auto">
                         {log.data}
                       </pre>
                     </details>
