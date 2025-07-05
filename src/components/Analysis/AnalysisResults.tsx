@@ -154,9 +154,7 @@ export default function AnalysisResults({ analysis, onBack }: AnalysisResultsPro
       {/* Header */}
       <div className="mb-8">
         <button
-          onClick={() => {
-            window.location.hash = 'new-analysis';
-          }}
+          onClick={onBack}
           className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 mb-4 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />

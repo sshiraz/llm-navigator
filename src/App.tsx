@@ -42,11 +42,23 @@ function App() {
   // Listen for hash changes to handle browser back/forward buttons
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.slice(1);
+      let hash = window.location.hash.slice(1);
       if (hash) {
         setActiveSection(hash);
       } else {
         setActiveSection('landing');
+      }
+      
+      // If we're on the analysis-results page, try to load the analysis from localStorage
+      if (hash === 'analysis-results') {
+        try {
+          const storedAnalysis = localStorage.getItem('currentAnalysis');
+          if (storedAnalysis) {
+            setCurrentAnalysis(JSON.parse(storedAnalysis));
+          }
+        } catch (error) {
+          console.error('Error loading analysis from localStorage:', error);
+        }
       }
     };
 
@@ -57,6 +69,9 @@ function App() {
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
     };
+    
+    // Run once on initial load to handle direct URL access
+    handleHashChange();
   }, []);
 
   // Check URL parameters for checkout success
@@ -138,7 +153,8 @@ function App() {
   };
 
   const handleNewAnalysisClick = () => {
-    window.location.hash = 'new-analysis';
+    setActiveSection('new-analysis');
+    window.location.hash = '#new-analysis';
   };
 
   const handleNewAnalysis = (website: string, keywords: string[]) => {
