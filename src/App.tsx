@@ -25,6 +25,26 @@ function App() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
 
+  // Listen for hash changes to handle browser back/forward buttons
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1);
+      if (hash) {
+        setActiveSection(hash);
+      } else {
+        setActiveSection('landing');
+      }
+    };
+
+    // Add event listener for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+
+    // Clean up event listener
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
+
   // Check URL parameters for checkout success
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -93,18 +113,18 @@ function App() {
 
   const handleLogout = () => {
     setUser(null);
-    setActiveSection('landing');
+    window.location.hash = '';
     // Clear user data from localStorage
     localStorage.removeItem('currentUser');
   };
 
   const handleProjectSelect = (project: Project) => {
     setSelectedProject(project);
-    setActiveSection('project-detail');
+    window.location.hash = 'project-detail';
   };
 
   const handleNewAnalysisClick = () => {
-    setActiveSection('new-analysis');
+    window.location.hash = 'new-analysis';
   };
 
   const handleNewAnalysis = (website: string, keywords: string[]) => {
@@ -151,7 +171,7 @@ function App() {
     };
     
     setCurrentAnalysis(newAnalysis);
-    setActiveSection('analysis-results');
+    window.location.hash = 'analysis-results';
   };
 
   const handleUpgrade = (plan: string) => {
@@ -160,7 +180,7 @@ function App() {
   };
 
   const handleGetStarted = () => {
-    setActiveSection('auth');
+    window.location.hash = 'auth';
   };
 
   const renderContent = () => {
