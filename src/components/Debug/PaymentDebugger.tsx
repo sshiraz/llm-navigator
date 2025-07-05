@@ -73,6 +73,59 @@ export default function PaymentDebugger() {
     loadLogs();
   };
 
+  const checkEdgeFunctions = async () => {
+    PaymentLogger.log('info', 'Debug', 'Checking Edge Functions deployment...');
+    
+    const functions = [
+      'create-payment-intent',
+      'create-subscription', 
+      'stripe-webhook'
+    ];
+    
+    for (const func of functions) {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${func}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({ test: true })
+        });
+        
+        PaymentLogger.log(
+          response.status === 404 ? 'error' : 'info', 
+          'Debug', 
+          `Edge Function ${func}: ${response.status === 404 ? 'NOT DEPLOYED' : 'Available'}`,
+          { status: response.status, statusText: response.statusText }
+        );
+      } catch (error) {
+        PaymentLogger.log('error', 'Debug', `Edge Function ${func}: Error`, error);
+      }
+    }
+    
+    loadLogs();
+  };
+
+  const simulateWebhook = async () => {
+    PaymentLogger.log('info', 'Debug', 'Simulating successful payment webhook...');
+    
+    const mockPaymentIntent = {
+      id: 'pi_test_debug',
+      amount: 2900,
+      currency: 'usd',
+      status: 'succeeded',
+      metadata: {
+        userId: 'test-user-id',
+        plan: 'starter',
+        email: 'test@example.com'
+      }
+    };
+    
+    PaymentLogger.trackWebhook('payment_intent.succeeded', true, mockPaymentIntent);
+    loadLogs();
+  };
+
   const getLogIcon = (level: string) => {
     switch (level) {
       case 'error': return <AlertTriangle className="w-4 h-4 text-red-500" />;
@@ -187,6 +240,22 @@ export default function PaymentDebugger() {
               <Database className="w-3 h-3" />
               <span>Test Database</span>
             </button>
+            
+            <button
+              onClick={checkEdgeFunctions}
+              className="flex items-center space-x-1 px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700"
+            >
+              <Zap className="w-3 h-3" />
+              <span>Check Edge Functions</span>
+            </button>
+            
+            <button
+              onClick={simulateWebhook}
+              className="flex items-center space-x-1 px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+            >
+              <CheckCircle className="w-3 h-3" />
+              <span>Simulate Webhook</span>
+            </button>
 
             {webhookStatus && (
               <div className={`px-3 py-1 rounded text-sm ${
@@ -249,6 +318,35 @@ export default function PaymentDebugger() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Troubleshooting Guide */}
+        <div className="p-4 border-t border-gray-200 bg-yellow-50">
+          <h3 className="font-medium text-yellow-900 mb-2">🚨 Payment Not Upgrading Plan?</h3>
+          <div className="text-sm text-yellow-800 space-y-1">
+            <div><strong>1. Check Edge Functions:</strong> Click "Check Edge Functions" to see if they're deployed</div>
+            <div><strong>2. Test Webhook:</strong> Click "Test Webhook" to verify the endpoint responds</div>
+            <div><strong>3. Check Stripe Dashboard:</strong> Go to Stripe → Developers → Webhooks → Events to see if webhooks are being sent</div>
+            <div><strong>4. Manual Fix:</strong> If payment succeeded but plan didn't upgrade, manually update in Supabase dashboard</div>
+          </div>
+          
+          <div className="mt-3 p-3 bg-white border border-yellow-200 rounded">
+            <strong className="text-yellow-900">Quick Fix Commands:</strong>
+            <div className="font-mono text-xs text-yellow-800 mt-1">
+              <div>npx supabase functions deploy stripe-webhook</div>
+              <div>npx supabase secrets set STRIPE_SECRET_KEY=sk_test_your_key</div>
+              <div>npx supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_your_secret</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Environment Status */}
+        <div className="p-4 border-t border-gray-200 bg-blue-50">
+          <h3 className="font-medium text-blue-900 mb-2">Environment Status</h3>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div><strong>Supabase URL:</strong> {import.meta.env.VITE_SUPABASE_URL ? '✅ Set' : '❌ Missing'}</div>
+            <div><strong>Stripe Key:</strong> {import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? '✅ Set' : '❌ Missing'}</div>
+          </div>
         </div>
 
         {/* Quick Diagnostics */}

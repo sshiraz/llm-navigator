@@ -84,4 +84,14 @@ export class PaymentLogger {
   static trackDatabaseUpdate(table: string, operation: string, success: boolean, data?: any) {
     this.log(success ? 'info' : 'error', 'Database', `${operation} on ${table} - ${success ? 'Success' : 'Failed'}`, data);
   }
+
+  // Track Stripe events
+  static trackStripeEvent(event: string, data?: any) {
+    this.log('info', 'Stripe', `Event: ${event}`, data);
+  }
+
+  // Track Edge Function calls
+  static trackEdgeFunction(functionName: string, success: boolean, data?: any) {
+    this.log(success ? 'info' : 'error', 'EdgeFunction', `${functionName} - ${success ? 'Success' : 'Failed'}`, data);
+  }
 }
