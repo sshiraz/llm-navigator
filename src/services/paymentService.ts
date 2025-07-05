@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { STRIPE_PLANS } from '../lib/stripe';
+import { PaymentLogger } from '../utils/paymentLogger';
 
 export interface PaymentIntent {
   clientSecret: string;
@@ -32,11 +33,20 @@ export class PaymentService {
     plan: string,
     email: string
   ): Promise<{ success: boolean; data?: PaymentIntent; error?: string }> {
+    PaymentLogger.trackPaymentFlow('Creating payment intent', { userId, plan, email });
+    
     try {
       const planConfig = STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS];
       if (!planConfig) {
+        PaymentLogger.log('error', 'PaymentService', 'Invalid plan selected', { plan });
         return { success: false, error: 'Invalid plan selected' };
       }
+
+      PaymentLogger.trackPaymentFlow('Calling Supabase Edge Function', { 
+        function: 'create-payment-intent',
+        amount: planConfig.amount,
+        currency: planConfig.currency
+      });
 
       // Call Supabase Edge Function to create payment intent
       const { data, error } = await supabase.functions.invoke('create-payment-intent', {
@@ -53,12 +63,15 @@ export class PaymentService {
       });
 
       if (error) {
+        PaymentLogger.log('error', 'PaymentService', 'Payment intent creation failed', error);
         console.error('Payment intent creation failed:', error);
         return { success: false, error: error.message };
       }
 
+      PaymentLogger.trackPaymentFlow('Payment intent created successfully', data);
       return { success: true, data };
     } catch (error) {
+      PaymentLogger.log('error', 'PaymentService', 'Payment service error', error);
       console.error('Payment service error:', error);
       return { success: false, error: 'Failed to create payment intent' };
     }
@@ -170,8 +183,12 @@ export class PaymentService {
     plan: string,
     paymentIntentId: string
   ): Promise<{ success: boolean; error?: string }> {
+    PaymentLogger.trackPaymentFlow('Handling payment success', { userId, plan, paymentIntentId });
+    
     try {
       // Update user subscription in database
+      PaymentLogger.trackDatabaseUpdate('users', 'UPDATE subscription', false, { userId, plan });
+      
       const { error } = await supabase
         .from('users')
         .update({
@@ -182,11 +199,16 @@ export class PaymentService {
         .eq('id', userId);
 
       if (error) {
+        PaymentLogger.trackDatabaseUpdate('users', 'UPDATE subscription', false, error);
         console.error('Failed to update user subscription:', error);
         return { success: false, error: 'Failed to update subscription' };
       }
 
+      PaymentLogger.trackDatabaseUpdate('users', 'UPDATE subscription', true, { userId, plan });
+
       // Log the payment
+      PaymentLogger.trackDatabaseUpdate('payments', 'INSERT payment record', false, { userId, paymentIntentId });
+      
       await supabase.from('payments').insert({
         user_id: userId,
         stripe_payment_intent_id: paymentIntentId,
@@ -196,8 +218,12 @@ export class PaymentService {
         status: 'succeeded'
       });
 
+      PaymentLogger.trackDatabaseUpdate('payments', 'INSERT payment record', true, { userId, paymentIntentId });
+      PaymentLogger.trackPaymentFlow('Payment success handled completely', { userId, plan });
+      
       return { success: true };
     } catch (error) {
+      PaymentLogger.log('error', 'PaymentService', 'Payment success handling error', error);
       console.error('Payment success handling error:', error);
       return { success: false, error: 'Failed to process payment success' };
     }

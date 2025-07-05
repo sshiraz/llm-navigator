@@ -6,6 +6,7 @@ import {
 } from '@stripe/react-stripe-js';
 import { Shield, Lock, CreditCard, CheckCircle } from 'lucide-react';
 import { formatAmount, STRIPE_PLANS } from '../../lib/stripe';
+import { PaymentLogger } from '../../utils/paymentLogger';
 
 interface CheckoutFormProps {
   plan: string;
@@ -25,7 +26,10 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
+    PaymentLogger.trackPaymentFlow('Checkout form submitted', { plan });
+
     if (!stripe || !elements) {
+      PaymentLogger.log('error', 'CheckoutForm', 'Stripe not initialized');
       return;
     }
 
@@ -35,10 +39,13 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
     try {
       const { error: submitError } = await elements.submit();
       if (submitError) {
+        PaymentLogger.log('error', 'CheckoutForm', 'Form submission error', submitError);
         setError(submitError.message || 'Payment failed');
         setIsLoading(false);
         return;
       }
+
+      PaymentLogger.trackPaymentFlow('Confirming payment with Stripe', { plan });
 
       const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
         elements,
@@ -49,8 +56,16 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
       });
 
       if (confirmError) {
+        PaymentLogger.log('error', 'CheckoutForm', 'Payment confirmation error', confirmError);
         setError(confirmError.message || 'Payment failed');
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        PaymentLogger.trackPaymentFlow('Payment succeeded in Stripe', {
+          paymentIntentId: paymentIntent.id,
+          amount: paymentIntent.amount,
+          currency: paymentIntent.currency,
+          plan
+        });
+        
         // Payment successful
         onSuccess({
           paymentIntentId: paymentIntent.id,
@@ -60,6 +75,7 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
         });
       }
     } catch (err) {
+      PaymentLogger.log('error', 'CheckoutForm', 'Unexpected payment error', err);
       setError('An unexpected error occurred');
     } finally {
       setIsLoading(false);

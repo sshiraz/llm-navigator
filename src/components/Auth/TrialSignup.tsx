@@ -3,6 +3,7 @@ import { AlertTriangle, Shield, CreditCard, Mail, User, CheckCircle, XCircle, Gi
 import { FraudPrevention } from '../../utils/fraudPrevention';
 import { FraudPreventionCheck } from '../../types';
 import CheckoutForm from './CheckoutForm';
+import { PaymentLogger } from '../../utils/paymentLogger';
 
 interface TrialSignupProps {
   selectedPlan: string;
@@ -62,13 +63,27 @@ export default function TrialSignup({ selectedPlan, skipTrial = false, onSuccess
     }
     
     if (fraudCheck && !fraudCheck.isAllowed) {
+      PaymentLogger.log('warn', 'TrialSignup', 'Trial blocked by fraud prevention', fraudCheck);
       return; // Prevent submission if fraud check failed
     }
+    
+    PaymentLogger.trackPaymentFlow('Trial signup submitted', { 
+      ...formData, 
+      plan: selectedPlan, 
+      skipTrial,
+      requiresPayment 
+    });
     
     setIsProcessing(true);
     
     // Simulate trial account creation
     setTimeout(() => {
+      PaymentLogger.trackPaymentFlow('Trial account created', { 
+        ...formData, 
+        plan: selectedPlan, 
+        skipTrial,
+        requiresPayment 
+      });
       console.log('Creating trial account:', { 
         ...formData, 
         plan: selectedPlan, 
@@ -81,6 +96,7 @@ export default function TrialSignup({ selectedPlan, skipTrial = false, onSuccess
   };
 
   const handleCheckoutSuccess = (paymentData: any) => {
+    PaymentLogger.trackPaymentFlow('Checkout success callback received', paymentData);
     console.log('Payment successful:', paymentData);
     onSuccess();
   };

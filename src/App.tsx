@@ -10,8 +10,10 @@ import CompetitorStrategy from './components/Reports/CompetitorStrategy';
 import LandingPage from './components/Landing/LandingPage';
 import AuthPage from './components/Auth/AuthPage';
 import ConfigurationStatus from './components/Setup/ConfigurationStatus';
+import PaymentDebugger from './components/Debug/PaymentDebugger';
 import { mockProjects, mockAnalyses } from './utils/mockData';
 import { Project, Analysis, User } from './types';
+import { PaymentLogger } from './utils/paymentLogger';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -96,6 +98,7 @@ function App() {
   };
 
   const handleUpgrade = (plan: string) => {
+    PaymentLogger.trackPaymentFlow('Plan upgrade initiated', { plan, currentPlan: user?.subscription });
     console.log('Upgrading to plan:', plan);
     // Handle upgrade logic here
   };
@@ -167,6 +170,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      <PaymentDebugger />
       <Sidebar 
         activeSection={activeSection} 
         onSectionChange={setActiveSection}
