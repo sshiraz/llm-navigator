@@ -165,10 +165,6 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         )}
 
         {/* Demo Credentials */}
-        <div className="mb-4 bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
-          <p className="text-white text-sm mb-1">Demo Credentials:</p>
-          <p className="text-blue-200 text-xs">Email: demo@example.com • Password: demo123</p>
-        </div>
 
         {/* Auth Form */}
         <div className="bg-white rounded-2xl shadow-2xl p-8">
