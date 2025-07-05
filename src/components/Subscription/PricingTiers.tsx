@@ -1,466 +1,523 @@
-import React, { useState } from 'react';
-import { Check, Zap, Crown, Building2, Mail, Users, FileText, Gift, CreditCard, AlertCircle } from 'lucide-react';
-import TrialSignup from '../Auth/TrialSignup';
-import StripeStatus from '../Payment/StripeStatus';
-import { validateStripeConfig } from '../../lib/stripe';
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import Stripe from 'https://esm.sh/stripe@14.21.0'
 
-interface PricingTiersProps {
-  currentPlan: string;
-  onUpgrade: (plan: string) => void;
+// Improved CORS headers with stripe-signature
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature, x-webhook-signature',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersProps) {
-  const [showTrialSignup, setShowTrialSignup] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState('');
-  const [skipTrial, setSkipTrial] = useState(false);
-
-  const stripeConfig = validateStripeConfig();
-
-  const plans = [
-    {
-      id: 'free',
-      name: 'Free',
-      price: 0,
-      icon: Gift,
-      iconColor: 'text-gray-600',
-      bgColor: 'bg-gray-50',
-      borderColor: 'border-gray-200',
-      description: 'Perfect for trying out LLM Navigator',
-      features: [
-        'Unlimited demo analyses',
-        '1 project maximum',
-        'Basic AEO scoring',
-        'Standard PDF reports',
-        'Community support'
-      ],
-      limitations: [
-        'Simulated analysis only',
-        'No real-time crawling',
-        'Limited insights'
-      ]
-    },
-    {
-      id: 'starter',
-      name: 'Starter',
-      price: 29,
-      icon: Zap,
-      iconColor: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200',
-      description: 'Perfect for small businesses getting started',
-      features: [
-        '10 analyses per month',
-        '3 projects',
-        '5 competitors per project',
-        'Real website crawling',
-        'Advanced AEO scoring',
-        'Competitor comparison',
-        'Standard PDF reports',
-        'Email support (48h response)',
-        'Historical data (3 months)'
-      ],
-      trial: true
-    },
-    {
-      id: 'professional',
-      name: 'Professional',
-      price: 99,
-      icon: Crown,
-      iconColor: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
-      borderColor: 'border-indigo-200',
-      description: 'For agencies and serious marketers',
-      features: [
-        '50 analyses per month',
-        'Unlimited projects',
-        'Unlimited competitors',
-        'Real website crawling',
-        'Advanced AEO scoring',
-        'Competitor strategy reports',
-        'Product mention intelligence',
-        'Branded PDF reports',
-        'Priority email support (24h response)',
-        'Historical data (12 months)',
-        'Team collaboration (up to 5 users)'
-      ],
-      popular: true,
-      trial: true
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise',
-      price: 299,
-      icon: Building2,
-      iconColor: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-      borderColor: 'border-emerald-200',
-      description: 'For large organizations and teams',
-      features: [
-        'Unlimited analyses',
-        'Unlimited projects & competitors',
-        'Real website crawling',
-        'Advanced competitor strategy reports',
-        'White-label PDF reports',
-        'Team collaboration tools',
-        'Dedicated email support (4h response)',
-        'Phone support',
-        'Custom training sessions',
-        'Advanced analytics dashboard',
-        'Unlimited historical data',
-        'API access',
-        'Custom integrations'
-      ],
-      trial: true
-    }
-  ];
-
-  const handlePlanSelect = (planId: string, skipTrialOption = false) => {
-    if (planId === 'free') {
-      onUpgrade(planId);
-    } else {
-      if (!stripeConfig.isValid) {
-        alert('Payment processing is not configured. Please set up Stripe integration first.');
-        return;
-      }
-      setSelectedPlan(planId);
-      setSkipTrial(skipTrialOption);
-      setShowTrialSignup(true);
-    }
-  };
-
-  const handleTrialSuccess = () => {
-    setShowTrialSignup(false);
-    onUpgrade(selectedPlan);
-  };
-
-  if (showTrialSignup) {
-    return (
-      <TrialSignup
-        selectedPlan={selectedPlan}
-        skipTrial={skipTrial}
-        onSuccess={handleTrialSuccess}
-        onCancel={() => setShowTrialSignup(false)}
-      />
-    );
+serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
   }
 
-  return (
-    <div className="max-w-7xl mx-auto">
-      <div className="text-center mb-12">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">
-          Choose Your LLM Navigator Plan
-        </h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
-          Unlock the full potential of Answer Engine Optimization with plans designed for every need.
-        </p>
-        
-        {/* Stripe Status */}
-        <div className="max-w-2xl mx-auto mb-8">
-          <StripeStatus />
-        </div>
-        
-        {/* Trial Banner */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl p-6 max-w-4xl mx-auto mb-8">
-          <div className="flex items-center justify-center space-x-3 mb-3">
-            <Gift className="w-6 h-6" />
-            <h2 className="text-xl font-bold">14-Day Free Trial Available</h2>
-          </div>
-          <p className="text-blue-100 mb-2">
-            Try any paid plan free for 14 days. Advanced fraud protection ensures fair access.
-          </p>
-          <p className="text-blue-200 text-sm">
-            One trial per person/organization every 90 days • No credit card required*
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {plans.map((plan) => {
-          const Icon = plan.icon;
-          const isCurrent = currentPlan === plan.id;
-          const isPopular = plan.popular;
-          const hasTrial = plan.trial;
-
-          return (
-            <div 
-              key={plan.id}
-              className={`relative rounded-2xl border-2 p-6 ${plan.borderColor} ${plan.bgColor} ${
-                isPopular ? 'ring-2 ring-indigo-500 ring-offset-2 scale-105' : ''
-              } transition-all duration-200 hover:shadow-lg`}
-            >
-              {isPopular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-indigo-600 text-white px-4 py-1 rounded-full text-sm font-medium">
-                    Most Popular
-                  </span>
-                </div>
-              )}
-
-              {hasTrial && !isCurrent && (
-                <div className="absolute -top-3 right-4">
-                  <span className="bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-medium">
-                    14-Day Trial
-                  </span>
-                </div>
-              )}
-
-              <div className="text-center mb-6">
-                <div className={`w-12 h-12 ${plan.bgColor} rounded-xl flex items-center justify-center mx-auto mb-4 border-2 ${plan.borderColor}`}>
-                  <Icon className={`w-6 h-6 ${plan.iconColor}`} />
-                </div>
-                
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                <p className="text-gray-600 text-sm mb-4">{plan.description}</p>
-                
-                <div className="mb-4">
-                  <span className="text-3xl font-bold text-gray-900">${plan.price}</span>
-                  <span className="text-gray-600">/month</span>
-                </div>
-
-                {hasTrial && !isCurrent && (
-                  <div className="text-xs text-emerald-600 font-medium mb-2">
-                    Then ${plan.price}/month
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2 mb-6">
-                {plan.features.map((feature, index) => (
-                  <div key={index} className="flex items-start space-x-2">
-                    <Check className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700 text-sm">{feature}</span>
-                  </div>
-                ))}
-                
-                {plan.limitations && plan.limitations.map((limitation, index) => (
-                  <div key={index} className="flex items-start space-x-2">
-                    <div className="w-4 h-4 mt-0.5 flex-shrink-0">
-                      <div className="w-2 h-2 bg-gray-300 rounded-full mt-1 mx-auto"></div>
-                    </div>
-                    <span className="text-gray-500 text-sm">{limitation}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Primary CTA Button */}
-              <button
-                onClick={() => handlePlanSelect(plan.id, false)}
-                disabled={isCurrent || (!stripeConfig.isValid && plan.id !== 'free')}
-                className={`w-full py-3 px-4 rounded-lg font-medium transition-all text-sm mb-3 ${
-                  isCurrent
-                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    : !stripeConfig.isValid && plan.id !== 'free'
-                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    : isPopular
-                    ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg'
-                    : plan.id === 'free'
-                    ? 'bg-gray-600 text-white hover:bg-gray-700'
-                    : 'bg-white text-gray-900 border border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                {isCurrent 
-                  ? 'Current Plan' 
-                  : !stripeConfig.isValid && plan.id !== 'free'
-                  ? 'Setup Required'
-                  : plan.id === 'free' 
-                  ? 'Get Started Free'
-                  : hasTrial 
-                  ? 'Start Free Trial' 
-                  : 'Upgrade Now'
-                }
-              </button>
-
-              {/* Skip Trial Button for paid plans */}
-              {hasTrial && !isCurrent && stripeConfig.isValid && (
-                <button
-                  onClick={() => handlePlanSelect(plan.id, true)}
-                  className="w-full py-2 px-4 text-gray-600 hover:text-gray-800 border border-gray-300 hover:border-gray-400 rounded-lg font-medium transition-all text-sm flex items-center justify-center space-x-2"
-                >
-                  <CreditCard className="w-4 h-4" />
-                  <span>Skip Trial - Buy Now</span>
-                </button>
-              )}
-
-              {/* Configuration Warning */}
-              {!stripeConfig.isValid && plan.id !== 'free' && (
-                <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-                  <AlertCircle className="w-3 h-3 inline mr-1" />
-                  Stripe setup required
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Configuration Help */}
-      {!stripeConfig.isValid && (
-        <div className="mt-12 bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-4">
-            Complete Your Stripe Setup
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-medium text-blue-900 mb-2">Missing Configuration:</h4>
-              <ul className="space-y-1 text-sm text-blue-800">
-                {stripeConfig.issues.map((issue, index) => (
-                  <li key={index}>• {issue}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-medium text-blue-900 mb-2">Next Steps:</h4>
-              <ol className="space-y-1 text-sm text-blue-800">
-                <li>1. Create products in your Stripe dashboard</li>
-                <li>2. Copy the Price IDs to your .env file</li>
-                <li>3. Set up webhook endpoints</li>
-                <li>4. Test with Stripe test cards</li>
-              </ol>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Trial vs Direct Purchase Comparison */}
-      <div className="mt-12 bg-white rounded-xl border border-gray-200 p-8">
-        <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">Trial vs Direct Purchase</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="text-center p-6 bg-blue-50 rounded-xl border border-blue-200">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <Gift className="w-6 h-6 text-blue-600" />
-            </div>
-            <h4 className="text-lg font-semibold text-blue-900 mb-3">14-Day Free Trial</h4>
-            <ul className="text-sm text-blue-800 space-y-2 text-left">
-              <li>• Full access to all plan features</li>
-              <li>• No credit card required initially</li>
-              <li>• Advanced fraud protection</li>
-              <li>• One trial per person/organization</li>
-              <li>• 90-day cooldown between trials</li>
-              <li>• Automatic conversion after trial</li>
-            </ul>
-          </div>
-          
-          <div className="text-center p-6 bg-emerald-50 rounded-xl border border-emerald-200">
-            <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <CreditCard className="w-6 h-6 text-emerald-600" />
-            </div>
-            <h4 className="text-lg font-semibold text-emerald-900 mb-3">Direct Purchase</h4>
-            <ul className="text-sm text-emerald-800 space-y-2 text-left">
-              <li>• Immediate full access</li>
-              <li>• Credit card required upfront</li>
-              <li>• No trial restrictions</li>
-              <li>• Perfect for returning customers</li>
-              <li>• Bypass fraud protection checks</li>
-              <li>• Start billing immediately</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* Trial Details */}
-      <div className="mt-12 bg-white rounded-xl border border-gray-200 p-8">
-        <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">How the Free Trial Works</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-blue-600 font-bold">1</span>
-            </div>
-            <h4 className="font-semibold text-gray-900 mb-2">Sign Up</h4>
-            <p className="text-gray-600 text-sm">
-              Choose any paid plan and start your 14-day trial. Advanced fraud protection ensures fair access.
-            </p>
-          </div>
-          
-          <div className="text-center">
-            <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-indigo-600 font-bold">2</span>
-            </div>
-            <h4 className="font-semibold text-gray-900 mb-2">Full Access</h4>
-            <p className="text-gray-600 text-sm">
-              Use all features of your chosen plan for 14 days. Run analyses, compare competitors, generate reports.
-            </p>
-          </div>
-          
-          <div className="text-center">
-            <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-emerald-600 font-bold">3</span>
-            </div>
-            <h4 className="font-semibold text-gray-900 mb-2">Gentle Reminders</h4>
-            <p className="text-gray-600 text-sm">
-              We'll send friendly email reminders at day 7, 12, and 14 so you never lose track.
-            </p>
-          </div>
-          
-          <div className="text-center">
-            <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-yellow-600 font-bold">4</span>
-            </div>
-            <h4 className="font-semibold text-gray-900 mb-2">Choose Your Path</h4>
-            <p className="text-gray-600 text-sm">
-              Upgrade to continue with full features, downgrade to free, or pause your account.
-            </p>
-          </div>
-        </div>
-        
-        <div className="mt-6 p-4 bg-white border border-blue-200 rounded-lg">
-          <div className="flex items-start space-x-3">
-            <CreditCard className="w-5 h-5 text-blue-600 mt-0.5" />
-            <div>
-              <h5 className="font-medium text-blue-900 mb-1">Skip Trial Restrictions</h5>
-              <p className="text-blue-800 text-sm">
-                Use the "Skip Trial - Buy Now" button to bypass all trial restrictions and fraud protection checks. 
-                Perfect for returning customers or those who prefer immediate access with upfront payment.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Feature Highlights */}
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="text-center">
-          <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <Mail className="w-6 h-6 text-blue-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Expert Support</h3>
-          <p className="text-gray-600 text-sm">
-            Get help from our AEO experts with response times from 48h to 4h based on your plan
-          </p>
-        </div>
-        
-        <div className="text-center">
-          <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <Users className="w-6 h-6 text-indigo-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Competitor Intelligence</h3>
-          <p className="text-gray-600 text-sm">
-            Deep insights into competitor tactics and opportunities to outrank them in AI search
-          </p>
-        </div>
-        
-        <div className="text-center">
-          <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <FileText className="w-6 h-6 text-emerald-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Professional Reports</h3>
-          <p className="text-gray-600 text-sm">
-            Branded PDF reports you can share with clients, stakeholders, and your team
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-8 text-center">
-        <p className="text-gray-600 mb-4">
-          Questions about our pricing or trial? We're here to help.
-        </p>
-        <div className="flex items-center justify-center space-x-6 text-sm text-gray-500">
-          <span>✓ Cancel anytime during trial</span>
-          <span>✓ 99.9% uptime SLA</span>
-          <span>✓ SOC 2 compliant</span>
-        </div>
-      </div>
-    </div>
+  console.log('🔥 WEBHOOK RECEIVED - Starting processing...')
+  
+  // Log request details but sanitize sensitive information
+  const sanitizedHeaders = Object.fromEntries(
+    Array.from(req.headers.entries()).map(([key, value]) => {
+      // Mask sensitive values but show part of them for debugging
+      if (key.toLowerCase() === 'authorization' || key.toLowerCase() === 'stripe-signature') {
+        return [key, value.substring(0, 10) + '...'];
+      }
+      return [key, value];
+    })
   );
+  
+  console.log('📋 Request method:', req.method);
+  console.log('📋 Request headers:', sanitizedHeaders);
+  
+  try {
+    const signature = req.headers.get('stripe-signature')
+    const body = await req.text()
+    
+    console.log('📝 Request details:', {
+      hasSignature: !!signature,
+      bodyLength: body ? body.length : 0,
+      method: req.method,
+      signaturePreview: signature ? signature.substring(0, 10) + '...' : 'none'
+    })
+    
+    if (!signature) {
+      console.error('❌ No stripe signature found in headers')
+      return new Response(
+        JSON.stringify({ error: 'No stripe signature found' }), 
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Get environment variables
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
+    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    // If we're missing the Supabase URL, try to get it from the request URL
+    if (!supabaseUrl) {
+      const requestUrl = new URL(req.url);
+      const potentialSupabaseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
+      console.log('🔍 Attempting to derive Supabase URL from request:', potentialSupabaseUrl);
+    }
+
+    console.log('🔑 Environment check:', {
+      hasStripeKey: !!stripeSecretKey,
+      hasWebhookSecret: !!webhookSecret,
+      hasSupabaseUrl: !!supabaseUrl,
+      hasServiceKey: !!supabaseServiceKey,
+      stripeKeyPrefix: stripeSecretKey ? stripeSecretKey.substring(0, 7) + '...' : 'none',
+      webhookSecretPrefix: webhookSecret ? webhookSecret.substring(0, 7) + '...' : 'none'
+    })
+
+    if (!stripeSecretKey) {
+      console.error('❌ Missing STRIPE_SECRET_KEY environment variable')
+      return new Response(
+        JSON.stringify({ error: 'Missing Stripe secret key' }), 
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    if (!webhookSecret) {
+      console.error('❌ Missing STRIPE_WEBHOOK_SECRET environment variable')
+      return new Response(
+        JSON.stringify({ error: 'Missing webhook secret' }), 
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('❌ Missing Supabase environment variables')
+      return new Response(
+        JSON.stringify({ error: 'Missing Supabase configuration' }), 
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2023-10-16',
+    })
+
+    // Initialize Supabase with service role key
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false, 
+        persistSession: false,
+        detectSessionInUrl: false
+      }
+    })
+
+    let event: Stripe.Event
+
+    try {
+      console.log('🔐 Attempting to verify webhook signature...')
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+      console.log('✅ Webhook signature verified successfully!')
+      console.log('📋 Event details:', {
+        type: event.type,
+        id: event.id,
+        created: new Date(event.created * 1000).toISOString(),
+        livemode: event.livemode
+      })
+    } catch (err) {
+      console.error('❌ Webhook signature verification failed:', {
+        error: err.message,
+        signatureReceived: signature ? signature.substring(0, 10) + '...' : 'none',
+        webhookSecretUsed: webhookSecret ? webhookSecret.substring(0, 7) + '...' : 'none',
+        bodyLength: body.length
+      })
+      return new Response(
+        JSON.stringify({ 
+          error: 'Webhook signature verification failed',
+          details: err.message 
+        }), 
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Process the event
+    try {
+      console.log(`🎯 Processing event: ${event.type}`)
+      
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          console.log('💰 Processing payment_intent.succeeded')
+          const paymentIntent = event.data.object as Stripe.PaymentIntent
+          console.log('💳 Payment Intent details:', {
+            id: paymentIntent.id,
+            amount: paymentIntent.amount,
+            currency: paymentIntent.currency,
+            status: paymentIntent.status,
+            metadata: paymentIntent.metadata
+          })
+          await handlePaymentSuccess(paymentIntent, supabase)
+          break
+
+        case 'customer.subscription.created':
+        case 'customer.subscription.updated':
+          console.log(`📋 Processing ${event.type}`)
+          const subscription = event.data.object as Stripe.Subscription
+          await handleSubscriptionChange(subscription, supabase)
+          break
+
+        case 'customer.subscription.deleted':
+          console.log('🗑️ Processing subscription deletion')
+          const deletedSubscription = event.data.object as Stripe.Subscription
+          await handleSubscriptionCancellation(deletedSubscription, supabase)
+          break
+
+        case 'invoice.payment_failed':
+          console.log('❌ Processing payment failure')
+          const failedInvoice = event.data.object as Stripe.Invoice
+          await handlePaymentFailure(failedInvoice, supabase)
+          break
+
+        default:
+          console.log(`ℹ️ Unhandled event type: ${event.type}`)
+      }
+
+      console.log('✅ Webhook processed successfully')
+      return new Response(
+        JSON.stringify({ 
+          received: true, 
+          eventType: event.type,
+          eventId: event.id 
+        }), 
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    } catch (error) {
+      console.error('❌ Webhook handler error:', {
+        error: error.message,
+        stack: error.stack,
+        eventType: event?.type,
+        eventId: event?.id
+      })
+      return new Response(
+        JSON.stringify({ 
+          error: 'Webhook handler error',
+          details: error.message 
+        }), 
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+  } catch (error) {
+    console.error('❌ Webhook processing error:', {
+      error: error.message,
+      stack: error.stack
+    })
+    return new Response(
+      JSON.stringify({ 
+        error: 'Webhook processing error',
+        details: error.message 
+      }), 
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
+  }
+})
+
+async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabase: any) {
+  console.log('🎯 Starting handlePaymentSuccess')
+  
+  // Log payment intent details but sanitize sensitive information
+  const sanitizedPaymentIntent = {
+    id: paymentIntent.id,
+    amount: paymentIntent.amount,
+    currency: paymentIntent.currency,
+    status: paymentIntent.status,
+    metadata: paymentIntent.metadata,
+    created: paymentIntent.created,
+    customer: paymentIntent.customer
+  };
+  
+  console.log('💰 Payment Intent Details:', JSON.stringify(sanitizedPaymentIntent, null, 2))
+  
+  const userId = paymentIntent.metadata.userId
+  const plan = paymentIntent.metadata.plan
+  const email = paymentIntent.metadata.email
+  const amount = paymentIntent.amount
+
+  console.log('📊 Extracted metadata:', {
+    userId,
+    plan,
+    email,
+    amount,
+    amountInDollars: amount / 100
+  })
+
+  if (!userId || !plan) {
+    console.error('❌ Missing userId or plan in payment intent metadata')
+    console.error('Available metadata keys:', Object.keys(paymentIntent.metadata))
+    throw new Error('Missing required metadata: userId or plan')
+  }
+
+  // Determine plan based on amount if plan is not set correctly
+  let finalPlan = plan
+  if (amount === 2900) { // $29.00
+    finalPlan = 'starter'
+    console.log('💡 Amount is $29.00 - setting plan to starter')
+  } else if (amount === 9900) { // $99.00
+    finalPlan = 'professional'
+    console.log('💡 Amount is $99.00 - setting plan to professional')
+  } else if (amount === 29900) { // $299.00
+    finalPlan = 'enterprise'
+    console.log('💡 Amount is $299.00 - setting plan to enterprise')
+  }
+
+  console.log(`🎯 Final plan determined: ${finalPlan}`)
+
+  try {
+    // First, check if this payment has already been processed
+    console.log('🔍 Checking if payment has already been processed...')
+    const { data: existingPayment, error: paymentCheckError } = await supabase
+      .from('payments')
+      .select('id, status')
+      .eq('stripe_payment_intent_id', paymentIntent.id)
+      .maybeSingle()
+    
+    if (paymentCheckError) {
+      console.warn('⚠️ Error checking existing payment:', paymentCheckError)
+      // Continue processing as this is non-fatal
+    } else if (existingPayment) {
+      console.log('⚠️ Payment already processed:', existingPayment)
+      // Still continue to ensure user subscription is updated
+    }
+    
+    // Check if user exists
+    console.log('🔍 Looking up user in database...')
+    const { data: existingUser, error: fetchError } = await supabase
+      .from('users')
+      .select('id, email, subscription, payment_method_added')
+      .eq('id', userId)
+      .maybeSingle()
+    
+    if (fetchError) {
+      console.error('❌ Error fetching user:', fetchError)
+      // Continue anyway - we'll try to update based on userId
+    } else if (existingUser) {
+      console.log('👤 Found user:', {
+        id: existingUser.id,
+        email: existingUser.email,
+        currentSubscription: existingUser.subscription,
+        paymentMethodAdded: existingUser.payment_method_added
+      })
+    } else {
+      console.warn('⚠️ User not found in database:', userId)
+      // Continue anyway - the update will fail if user doesn't exist
+    }
+
+    // Update user subscription
+    console.log('💾 Updating user subscription in database...')
+    const { data: updatedUser, error: userError } = await supabase
+      .from('users')
+      .update({
+        subscription: finalPlan,
+        payment_method_added: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId)
+      .select()
+
+    if (userError && userError.code === 'PGRST116') {
+      console.error('❌ User not found during update:', userError)
+      throw new Error(`User with ID ${userId} not found`)
+    } else if (userError) {
+      console.error('❌ Error updating user subscription:', userError)
+      throw userError
+    }
+
+    console.log('✅ Successfully updated user:', updatedUser)
+
+    // Log payment
+    console.log('📝 Logging payment record...')
+    const { data: paymentRecord, error: paymentError } = await supabase
+      .from('payments')
+      .upsert(
+        {
+          user_id: userId,
+          stripe_payment_intent_id: paymentIntent.id,
+          plan: finalPlan,
+          amount: amount,
+          currency: paymentIntent.currency,
+          status: 'succeeded',
+          created_at: new Date().toISOString()
+        },
+        { 
+          onConflict: 'stripe_payment_intent_id',
+          ignoreDuplicates: false // Update if exists
+        }
+      )
+      .select()
+
+    if (paymentError) {
+      console.error('❌ Error logging payment:', paymentError)
+      // Don't throw here as the main subscription update succeeded
+    } else {
+      console.log('✅ Payment logged successfully:', paymentRecord)
+    }
+
+    console.log('🎉 Payment success handled completely!')
+  } catch (error) {
+    console.error('💥 Error in handlePaymentSuccess:', {
+      error: error.message,
+      stack: error.stack,
+      userId,
+      plan: finalPlan
+    })
+    throw error
+  }
+}
+
+async function handleSubscriptionChange(subscription: Stripe.Subscription, supabase: any) {
+  console.log('📋 Processing subscription change:', subscription.id)
+  console.log('📋 Subscription status:', subscription.status)
+  console.log('📋 Subscription metadata:', subscription.metadata)
+  
+  const userId = subscription.metadata.userId
+  const plan = subscription.metadata.plan
+
+  if (!userId) {
+    console.error('❌ Missing userId in subscription metadata')
+    throw new Error('Missing userId in subscription metadata')
+  }
+
+  try {
+    // Determine the plan based on subscription status
+    let subscriptionStatus = 'free'
+    if (subscription.status === 'active' || subscription.status === 'trialing') {
+      subscriptionStatus = plan || 'starter' // Default to starter if plan not specified
+    }
+    
+    console.log(`📋 Setting subscription status to: ${subscriptionStatus}`)
+    
+    const { error } = await supabase
+      .from('users')
+      .update({
+        subscription: subscriptionStatus,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId)
+
+    if (error) {
+      console.error('❌ Error updating subscription:', error)
+      throw error
+    }
+
+    console.log(`✅ Successfully updated user ${userId} subscription to ${subscriptionStatus}`)
+  } catch (error) {
+    console.error('💥 Error in handleSubscriptionChange:', error)
+    throw error
+  }
+}
+
+async function handleSubscriptionCancellation(subscription: Stripe.Subscription, supabase: any) {
+  console.log('🗑️ Processing subscription cancellation:', subscription.id)
+  
+  const userId = subscription.metadata.userId
+
+  if (!userId) {
+    console.error('❌ Missing userId in subscription metadata')
+    throw new Error('Missing userId in subscription metadata')
+  }
+
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({
+        subscription: 'free',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId)
+
+    if (error) {
+      console.error('❌ Error cancelling subscription:', error)
+      throw error
+    }
+
+    console.log(`✅ Successfully cancelled subscription for user ${userId}`)
+  } catch (error) {
+    console.error('💥 Error in handleSubscriptionCancellation:', error)
+    throw error
+  }
+}
+
+async function handlePaymentFailure(invoice: Stripe.Invoice, supabase: any) {
+  console.log('❌ Processing payment failure:', invoice.id)
+  console.log('❌ Invoice details:', {
+    id: invoice.id,
+    customer: invoice.customer,
+    status: invoice.status,
+    amount_due: invoice.amount_due,
+    currency: invoice.currency
+  })
+  
+  const customerId = invoice.customer as string
+  
+  try {
+    // Get customer details from Stripe to find the user
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+      apiVersion: '2023-10-16',
+    })
+    
+    const customer = await stripe.customers.retrieve(customerId)
+    
+    if (customer.deleted) {
+      console.log('❌ Customer has been deleted')
+      return
+    }
+    
+    // Find user by customer metadata
+    const userId = customer.metadata.userId
+    
+    if (!userId) {
+      console.error('❌ No userId in customer metadata')
+      return
+    }
+    
+    console.log(`❌ Payment failed for user ${userId}`)
+    
+    // Log the payment failure
+    await supabase.from('payments').insert({
+      user_id: userId,
+      stripe_payment_intent_id: invoice.payment_intent as string,
+      stripe_subscription_id: invoice.subscription as string,
+      amount: invoice.amount_due,
+      currency: invoice.currency,
+      status: 'failed',
+    })
+    
+    // Note: In a production app, you might want to:
+    // 1. Send a notification to the user
+    // 2. Downgrade their account after multiple failures
+    // 3. Add a warning banner in the UI
+  } catch (error) {
+    console.error('❌ Error handling payment failure:', error)
+  }
+  
+  console.log(`💸 Payment failed for customer ${customerId}`)
 }
