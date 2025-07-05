@@ -113,7 +113,7 @@ export default function StripeRedirectCheckout({ plan, onCancel }: StripeRedirec
             </div>
           </div>
         </div>
-      )}
+      )
     </div>
   );
 }
