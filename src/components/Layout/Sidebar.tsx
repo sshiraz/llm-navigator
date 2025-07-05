@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Plus, Target, Search, DollarSign, Users, LogOut } from 'lucide-react';
+import { Home, Plus, Target, Search, DollarSign, Users, LogOut, Mail } from 'lucide-react';
 
 interface SidebarProps {
   activeSection: string;
@@ -13,7 +13,8 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
     { id: 'new-analysis', label: 'New Analysis', icon: Plus },
     { id: 'projects', label: 'Projects', icon: Target },
     { id: 'competitor-strategy', label: 'Competitor Strategy', icon: Users },
-    { id: 'pricing', label: 'Pricing', icon: DollarSign }
+    { id: 'pricing', label: 'Pricing', icon: DollarSign },
+    { id: 'contact', label: 'Contact Us', icon: Mail }
   ];
 
   return (

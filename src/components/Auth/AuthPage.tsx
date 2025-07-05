@@ -37,6 +37,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
     
     // Generate a unique user ID for demo purposes
     const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -44,17 +45,49 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     // Simulate API call
     setTimeout(() => {
       if (isLogin) {
-        // Login logic
-        const user = {
-          id: userId,
-          email: formData.email,
-          name: formData.name || 'User',
-          avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-          subscription: 'free',
-          createdAt: new Date().toISOString()
+        // Check if user exists in localStorage
+        const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+        const user = storedUsers.find((u: any) => u.email === formData.email);
+        
+        if (!user) {
+          setError('No account found with this email address');
+          setIsLoading(false);
+          return;
+        }
+        
+        // Validate password (in a real app, this would be done securely on the server)
+        if (user.password !== formData.password) {
+          setError('Invalid password');
+          setIsLoading(false);
+          return;
+        }
+        
+        // Login successful
+        const userData = {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          avatar: user.avatar || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
+          subscription: user.subscription || 'free',
+          trialEndsAt: user.trialEndsAt,
+          createdAt: user.createdAt
         };
-        onLogin(user);
+        
+        // Store current user in localStorage
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+        
+        onLogin(userData);
       } else {
+        // Check if email already exists
+        const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+        const existingUser = storedUsers.find((u: any) => u.email === formData.email);
+        
+        if (existingUser) {
+          setError('An account with this email already exists');
+          setIsLoading(false);
+          return;
+        }
+        
         // Signup logic - check fraud prevention for trials
         if (fraudCheck && !fraudCheck.isAllowed) {
           alert(fraudCheck.reason);
@@ -71,6 +104,19 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
           createdAt: new Date().toISOString()
         };
+        
+        // Store user in localStorage
+        const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+        const newUser = {
+          ...user,
+          password: formData.password // In a real app, this would be hashed
+        };
+        storedUsers.push(newUser);
+        localStorage.setItem('users', JSON.stringify(storedUsers));
+        
+        // Store current user in localStorage
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        
         onLogin(user);
       }
       setIsLoading(false);
@@ -79,6 +125,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+      {/* Background Pattern */}
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"></div>
       <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%239C92AC%22%20fill-opacity%3D%220.1%22%3E%3Ccircle%20cx%3D%2230%22%20cy%3D%2230%22%20r%3D%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
@@ -96,6 +143,18 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
             </div>
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center space-x-2 text-red-800">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span>{error}</span>
+            </div>
+          </div>
+        )}
 
         {/* Auth Form */}
         <div className="bg-white rounded-2xl shadow-2xl p-8">
