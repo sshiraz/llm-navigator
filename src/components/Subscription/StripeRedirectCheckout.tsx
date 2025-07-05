@@ -113,7 +113,18 @@ export default function StripeRedirectCheckout({ plan, onCancel }: StripeRedirec
             </div>
           </div>
         </div>
-      )
+      ) : (
+        <div className="text-center py-8">
+          <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
+          <p className="text-gray-600 mb-4">Your checkout session is ready!</p>
+          <button
+            onClick={() => setShowCreditCardForm(true)}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Continue to Payment
+          </button>
+        </div>
+      )}
     </div>
   );
 }
