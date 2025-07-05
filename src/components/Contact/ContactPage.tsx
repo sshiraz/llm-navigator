@@ -51,7 +51,8 @@ export default function ContactPage() {
   };
 
   const goBack = () => {
-    window.history.back();
+    window.location.hash = '';
+    window.location.reload();
   };
 
   return (
@@ -61,10 +62,10 @@ export default function ContactPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <button 
             onClick={goBack}
-            className="flex items-center space-x-2 text-blue-100 hover:text-white mb-6 transition-colors"
+            className="inline-flex items-center space-x-2 text-blue-100 hover:text-white mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back</span>
+            <span>Back to Home</span>
           </button>
           
           <h1 className="text-4xl font-bold mb-4">Contact Us</h1>
@@ -274,7 +275,7 @@ export default function ContactPage() {
                       required
                     />
                     <label htmlFor="privacy" className="ml-2 block text-sm text-gray-700">
-                      I agree to the <a href="#privacy" onClick={(e) => {e.preventDefault(); window.location.hash = '#privacy'; window.location.reload();}} className="text-blue-600 hover:text-blue-700">Privacy Policy</a> and consent to being contacted.
+                      I agree to the <a href="#privacy" onClick={(e) => {e.preventDefault(); window.location.hash = '#privacy'; window.location.reload();}} className="text-blue-600 hover:text-blue-700">Privacy Policy</a> and <a href="#terms" onClick={(e) => {e.preventDefault(); window.location.hash = '#terms'; window.location.reload();}} className="text-blue-600 hover:text-blue-700">Terms of Service</a>, and consent to being contacted.
                     </label>
                   </div>
                   

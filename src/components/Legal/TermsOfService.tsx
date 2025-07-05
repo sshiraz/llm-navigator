@@ -3,7 +3,8 @@ import { ArrowLeft } from 'lucide-react';
 
 export default function TermsOfService() {
   const goBack = () => {
-    window.history.back();
+    window.location.hash = '';
+    window.location.reload();
   };
 
   return (
@@ -13,10 +14,10 @@ export default function TermsOfService() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <button 
             onClick={goBack}
-            className="flex items-center space-x-2 text-blue-100 hover:text-white mb-6 transition-colors"
+            className="inline-flex items-center space-x-2 text-blue-100 hover:text-white mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back</span>
+            <span>Back to Home</span>
           </button>
           
           <h1 className="text-4xl font-bold mb-4">Terms of Service</h1>

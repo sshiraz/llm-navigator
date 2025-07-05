@@ -142,27 +142,30 @@ function App() {
   };
 
   const renderContent = () => {
-    // Show auth page if no user is logged in and trying to access protected routes
-    if (!user && ['dashboard', 'new-analysis', 'analysis-results', 'project-detail', 'pricing', 'competitor-strategy', 'contact', 'privacy', 'terms'].includes(activeSection)) {
+    // Public pages that don't require login
+    if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms') {
+      switch (activeSection) {
+        case 'landing':
+          return <LandingPage onGetStarted={handleGetStarted} />;
+        case 'auth':
+          return <AuthPage onLogin={handleLogin} />;
+        case 'contact':
+          return <ContactPage />;
+        case 'privacy':
+          return <PrivacyPolicy />;
+        case 'terms':
+          return <TermsOfService />;
+        default:
+          return <LandingPage onGetStarted={handleGetStarted} />;
+      }
+    }
+    
+    // Protected routes that require login
+    if (!user && ['dashboard', 'new-analysis', 'analysis-results', 'project-detail', 'pricing', 'competitor-strategy'].includes(activeSection)) {
       return <AuthPage onLogin={handleLogin} />;
     }
 
     switch (activeSection) {
-      case 'landing':
-        return <LandingPage onGetStarted={handleGetStarted} />;
-      
-      case 'contact':
-        return <ContactPage />;
-
-      case 'privacy':
-        return <PrivacyPolicy />;
-        
-      case 'terms':
-        return <TermsOfService />;
-      
-      case 'auth':
-        return <AuthPage onLogin={handleLogin} />;
-        
       case 'dashboard':
         return <Dashboard onProjectSelect={handleProjectSelect} onNewAnalysis={handleNewAnalysisClick} />;
       
@@ -202,7 +205,7 @@ function App() {
   };
 
   // Show landing page or auth page without sidebar/header
-  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || !user) {
+  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms') {
     return (
       <>
         {renderContent()}

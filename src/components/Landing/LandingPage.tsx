@@ -368,7 +368,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <div className="absolute bottom-4 left-0 right-0 text-center">
             <div className="text-blue-200 text-sm space-x-6">
               <a 
-                href="#privacy" 
+                href="#privacy"
                 onClick={(e) => {
                   e.preventDefault();
                   window.location.hash = '#privacy';
@@ -379,7 +379,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 Privacy Policy
               </a>
               <a 
-                href="#terms" 
+                href="#terms"
                 onClick={(e) => {
                   e.preventDefault();
                   window.location.hash = '#terms';
@@ -390,7 +390,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 Terms of Service
               </a>
               <a 
-                href="#contact" 
+                href="#contact"
                 onClick={(e) => {
                   e.preventDefault();
                   window.location.hash = '#contact';
