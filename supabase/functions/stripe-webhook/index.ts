@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { v4 as uuidv4 } from "https://esm.sh/uuid@9.0.0";
 
-// Improved CORS headers with all possible stripe signature header variations
+// Improved CORS headers with all possible stripe signature header variations (works for both test and live mode)
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature, x-webhook-signature, x-stripe-signature, webhook-signature, x-test-request",
@@ -49,11 +49,21 @@ serve(async (req) => {
     const finalSignature = signature || altSignature || webhookSignature || xWebhookSignature;
     const body = await req.text();
     
+    // Check if we're in live mode
+    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+    const isLiveMode = stripeSecretKey?.startsWith('sk_live_');
+    
+    // Use the appropriate webhook secret based on mode
+    const testWebhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+    const liveWebhookSecret = Deno.env.get("STRIPE_LIVE_WEBHOOK_SECRET");
+    const webhookSecret = isLiveMode && liveWebhookSecret ? liveWebhookSecret : testWebhookSecret;
+    
     console.log("📝 Request details:", {
       hasSignature: !!finalSignature,
       bodyLength: body ? body.length : 0,
       method: req.method,
-      signaturePreview: finalSignature ? finalSignature.substring(0, 10) + "..." : "none"
+      signaturePreview: finalSignature ? finalSignature.substring(0, 10) + "..." : "none",
+      mode: isLiveMode ? "LIVE" : "TEST"
     });
     
     if (!finalSignature) {
@@ -78,10 +88,12 @@ serve(async (req) => {
     }
 
     // Get environment variables
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"); 
+    
+    // Check if we're in live mode
+    const isLiveMode = stripeSecretKey?.startsWith('sk_live_');
+    console.log(`🔑 Mode: ${isLiveMode ? '🔴 LIVE MODE' : '🟢 TEST MODE'}`);
 
     // For live mode, use the live webhook secret if available
     const liveWebhookSecret = Deno.env.get("STRIPE_LIVE_WEBHOOK_SECRET");
@@ -102,10 +114,11 @@ serve(async (req) => {
     console.log("🔑 Environment check:", {
       hasStripeKey: !!stripeSecretKey,
       hasWebhookSecret: !!finalWebhookSecret,
-      hasSupabaseUrl: !!derivedSupabaseUrl,
+      hasSupabaseUrl: !!derivedSupabaseUrl, 
       hasServiceKey: !!supabaseServiceKey,
       stripeKeyPrefix: stripeSecretKey ? stripeSecretKey.substring(0, 7) + "..." : "none",
-      webhookSecretPrefix: finalWebhookSecret ? finalWebhookSecret.substring(0, 7) + "..." : "none",
+      webhookSecretPrefix: webhookSecret ? webhookSecret.substring(0, 7) + "..." : "none",
+      mode: isLiveMode ? "LIVE" : "TEST"
       isLiveMode: isLiveMode
     });
 
@@ -248,6 +261,11 @@ serve(async (req) => {
     // Process the event
     try {
       console.log(`🎯 Processing event: ${event.type}`);
+      
+      // Log if we're in live mode
+      if (event.livemode) {
+        console.log("🔴 LIVE MODE EVENT - Processing real payment");
+      }
 
       // For test requests, return success early
       if ((event.type === "test_event" || req.headers.get("x-test-request") === "true") && !isLiveMode) {
