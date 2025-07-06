@@ -1,6 +1,7 @@
 import React from 'react';
 import { Check, Star, Zap, Crown } from 'lucide-react';
 import TrialSignup from '../Auth/TrialSignup';
+import { PaymentLogger } from '../../utils/paymentLogger';
 import CreditCardForm from '../Payment/CreditCardForm';
 
 interface PricingTiersProps {
@@ -14,6 +15,14 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
   const [skipTrial, setSkipTrial] = React.useState(false);
   const [showCheckout, setShowCheckout] = React.useState(false);
   const [planAmount, setPlanAmount] = React.useState(0);
+  // Check if we're in live mode
+  const isLiveMode = React.useMemo(() => {
+    const isLive = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
+    if (isLive) {
+      PaymentLogger.log('warn', 'PricingTiers', '🔴 LIVE MODE - Real payments will be processed');
+    }
+    return isLive;
+  }, []);
 
   const plans = [
     {
@@ -78,6 +87,11 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
   const handlePlanSelect = (planId: string, skipTrialOption = false) => {
     if (planId === currentPlan) return;
     
+    // Log the plan selection
+    PaymentLogger.log('info', 'PricingTiers', `Selected plan: ${planId}, skip trial: ${skipTrialOption}`, {
+      isLiveMode: isLiveMode
+    });
+    
     console.log(`Selected plan: ${planId}, skip trial: ${skipTrialOption}`);
     setSelectedPlan(planId);
     setSkipTrial(skipTrialOption);
@@ -138,6 +152,17 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-12">
+        {isLiveMode && (
+          <div className="bg-red-50 border-2 border-red-500 rounded-lg p-4 mb-8 mx-auto max-w-3xl">
+            <p className="text-red-800 font-medium text-lg">
+              🔴 LIVE MODE ACTIVE - Real credit cards will be charged
+            </p>
+            <p className="text-red-700 text-sm mt-1">
+              You are using production Stripe keys. Any payments made will process real credit cards and charge actual money.
+            </p>
+          </div>
+        )}
+      
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
           Choose Your AI Optimization Plan
         </h1>

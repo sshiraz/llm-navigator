@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle, Copy, RefreshCw, Webhook, Key, Lock, X } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
 import { supabase } from '../../lib/supabase';
@@ -9,11 +9,20 @@ export default function WebhookDebugger() {
   const [testResult, setTestResult] = useState<any>(null);
   const [webhookSecret, setWebhookSecret] = useState('');
   const [showSecret, setShowSecret] = useState(false);
+  const [isLiveMode, setIsLiveMode] = useState(false);
+  
+  // Check if we're in live mode
+  useEffect(() => {
+    const isLive = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
+    setIsLiveMode(isLive);
+    if (isLive) {
+      PaymentLogger.log('warn', 'WebhookDebugger', '🔴 LIVE MODE DETECTED - Using production Stripe keys');
+    }
+  }, []);
   
   const testWebhook = async () => {
     setIsLoading(true);
     PaymentLogger.log('info', 'WebhookDebugger', 'Testing webhook endpoint...');
-    const isLiveMode = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
     
     if (isLiveMode) {
       PaymentLogger.log('warn', 'WebhookDebugger', '🔴 LIVE MODE DETECTED - Using production Stripe keys');
@@ -102,7 +111,6 @@ export default function WebhookDebugger() {
     }
     
     setIsLoading(true);
-    const isLiveMode = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
     PaymentLogger.log('info', 'WebhookDebugger', `Updating webhook secret...${isLiveMode ? ' (LIVE MODE)' : ''}`);
     
     try {
@@ -134,14 +142,12 @@ export default function WebhookDebugger() {
   
   const copyDeployCommand = () => {
     const command = 'npx supabase functions deploy stripe-webhook';
-    const isLiveMode = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
     navigator.clipboard.writeText(command);
     PaymentLogger.log('info', 'WebhookDebugger', `Copied deploy command to clipboard${isLiveMode ? ' (LIVE MODE)' : ''}`);
   };
   
   const copySecretCommand = () => {
     const command = `npx supabase secrets set STRIPE_WEBHOOK_SECRET=${webhookSecret || 'whsec_your_webhook_secret'}`;
-    const isLiveMode = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
     navigator.clipboard.writeText(command);
     PaymentLogger.log('info', 'WebhookDebugger', `Copied secret command to clipboard${isLiveMode ? ' (LIVE MODE)' : ''}`);
   };
@@ -168,11 +174,11 @@ export default function WebhookDebugger() {
       <div className="bg-white rounded-xl w-full max-w-2xl overflow-hidden flex flex-col shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-indigo-50">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <Webhook className="w-6 h-6 text-indigo-600" />
             <h2 className="text-xl font-bold text-gray-900">
               Webhook Debugger
-              {import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_') && 
+              {isLiveMode && 
                 <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full">LIVE MODE</span>
               }
             </h2>
@@ -189,14 +195,17 @@ export default function WebhookDebugger() {
         <div className="p-6 space-y-6">
           {/* Test Webhook */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Test Webhook Endpoint</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              Test Webhook Endpoint
+              {isLiveMode && <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full">LIVE MODE</span>}
+            </h3>
             <button
-              title={import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_') ? 
+              title={isLiveMode ? 
                 'Testing in LIVE MODE - use with caution' : 'Test webhook endpoint'}
               onClick={testWebhook}
               disabled={isLoading}
               className={`w-full flex items-center justify-center space-x-2 px-4 py-3 ${
-                import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_') 
+                isLiveMode 
                   ? 'bg-red-600 hover:bg-red-700' 
                   : 'bg-indigo-600 hover:bg-indigo-700'
               } text-white rounded-lg disabled:bg-gray-400 transition-colors`}
@@ -210,7 +219,7 @@ export default function WebhookDebugger() {
                 <>
                   <Webhook className="w-5 h-5" /> 
                   <span>
-                    {import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_') 
+                    {isLiveMode 
                       ? 'Test LIVE Webhook Endpoint' 
                       : 'Test Webhook Endpoint'}
                   </span>
@@ -395,9 +404,9 @@ export default function WebhookDebugger() {
           <div className="flex justify-between items-center">
             <div className="text-sm">
               <span className="text-gray-500">Webhook URL:</span> 
-              <span className={`font-mono text-xs ${import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_') ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
+              <span className={`font-mono text-xs ${isLiveMode ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
                 {import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook
-                {import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_') && ' (LIVE)'}
+                {isLiveMode && ' (LIVE)'}
               </span>
             </div>
             <button

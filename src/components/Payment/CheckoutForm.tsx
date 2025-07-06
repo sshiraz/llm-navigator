@@ -6,7 +6,7 @@ import {
 } from '@stripe/react-stripe-js';
 import { Shield, Lock, CreditCard, CheckCircle } from 'lucide-react';
 import { formatAmount, STRIPE_PLANS } from '../../lib/stripe';
-import { PaymentLogger } from '../../utils/paymentLogger';
+import { PaymentLogger } from '../../utils/paymentLogger'; 
 
 interface CheckoutFormProps {
   plan: string;
@@ -19,6 +19,15 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
+
+  // Check if we're in live mode
+  const isLiveMode = React.useMemo(() => {
+    const isLive = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
+    if (isLive) {
+      PaymentLogger.log('warn', 'CheckoutForm', '🔴 LIVE MODE - Real payments will be processed');
+    }
+    return isLive;
+  }, []);
 
   const planConfig = STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS];
   const planPrice = planConfig ? formatAmount(planConfig.amount) : '$0';
@@ -85,8 +94,13 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
   return (
     <div className="max-w-md mx-auto bg-white rounded-xl border border-gray-200 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
+      <div className={`${isLiveMode ? 'bg-gradient-to-r from-red-600 to-red-700' : 'bg-gradient-to-r from-blue-600 to-indigo-600'} text-white p-6`}>
         <div className="text-center">
+          {isLiveMode && (
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2 mb-3">
+              <p className="text-white font-bold">🔴 LIVE MODE - REAL PAYMENT</p>
+            </div>
+          )}
           <CreditCard className="w-8 h-8 mx-auto mb-2" />
           <h2 className="text-xl font-bold mb-1">Complete Payment</h2>
           <p className="text-blue-100">
@@ -96,6 +110,14 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
       </div>
 
       <form onSubmit={handleSubmit} className="p-6">
+        {isLiveMode && (
+          <div className="mb-4 bg-red-50 border-2 border-red-300 rounded-lg p-3">
+            <p className="text-red-800 font-medium text-sm">
+              ⚠️ LIVE MODE: Your card will be charged ${planPrice}/month
+            </p>
+          </div>
+        )}
+      
         {/* Payment Element */}
         <div className="mb-6">
           <PaymentElement 
@@ -115,15 +137,20 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
         {/* Security Notice */}
         <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-start space-x-3">
-            <Shield className="w-5 h-5 text-green-600 mt-0.5" />
+            <Shield className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
             <div>
               <h4 className="text-sm font-medium text-green-900 mb-1">
                 Secure Payment
               </h4>
-              <p className="text-sm text-green-800">
+              <p className="text-sm text-green-800 mb-1">
                 Your payment is secured by Stripe's industry-leading encryption. 
                 We never store your card details.
               </p>
+              {isLiveMode && (
+                <p className="text-sm text-green-800 font-medium">
+                  Your payment is processed securely through Stripe's PCI-compliant payment system.
+                </p>
+              )}
             </div>
           </div>
         </div>

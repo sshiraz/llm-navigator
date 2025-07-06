@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CreditCard, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
 import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
+import { stripePromise, STRIPE_CONFIG } from '../../lib/stripe';
 import CheckoutForm from '../Payment/CheckoutForm';
 
 interface StripeRedirectCheckoutProps {
@@ -10,16 +10,20 @@ interface StripeRedirectCheckoutProps {
   onCancel: () => void;
 }
 
-// Initialize Stripe
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY 
-  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) 
-  : null;
-
 export default function StripeRedirectCheckout({ plan, onCancel }: StripeRedirectCheckoutProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
   const [planAmount, setPlanAmount] = useState(0);
+  
+  // Check if we're in live mode
+  const isLiveMode = React.useMemo(() => {
+    const isLive = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
+    if (isLive) {
+      PaymentLogger.log('warn', 'StripeRedirectCheckout', '🔴 LIVE MODE - Real payments will be processed');
+    }
+    return isLive;
+  }, []);
 
   useEffect(() => {
     createCheckoutSession();
@@ -91,6 +95,17 @@ export default function StripeRedirectCheckout({ plan, onCancel }: StripeRedirec
   return (
     <div className="max-w-md mx-auto bg-white rounded-xl border border-gray-200 p-8">
       <div className="text-center mb-6">
+        {isLiveMode && (
+          <div className="bg-red-50 border-2 border-red-500 rounded-lg p-4 mb-6">
+            <p className="text-red-800 font-medium">
+              🔴 LIVE MODE ACTIVE - Real credit cards will be charged
+            </p>
+            <p className="text-red-700 text-sm mt-1">
+              You are using production Stripe keys. Any payments made will process real credit cards.
+            </p>
+          </div>
+        )}
+      
         <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <CreditCard className="w-8 h-8 text-blue-600" />
         </div>

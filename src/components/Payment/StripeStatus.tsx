@@ -1,11 +1,19 @@
 import React from 'react';
 import { CheckCircle, AlertCircle, CreditCard, ExternalLink } from 'lucide-react';
 import { validateStripeConfig } from '../../lib/stripe';
-import { PaymentLogger } from '../../utils/paymentLogger';
+import { PaymentLogger } from '../../utils/paymentLogger'; 
 
 export default function StripeStatus() {
   const config = validateStripeConfig();
   const isLiveMode = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
+  
+  // Add a warning banner for live mode
+  React.useEffect(() => {
+    if (isLiveMode) {
+      console.warn('🔴 LIVE MODE ACTIVE - Using production Stripe keys. Real credit cards will be charged.');
+      PaymentLogger.log('warn', 'StripeStatus', '🔴 LIVE MODE ACTIVE - Using production Stripe keys');
+    }
+  }, [isLiveMode]);
   
   // Log Stripe configuration status
   React.useEffect(() => {
@@ -28,18 +36,28 @@ export default function StripeStatus() {
 
   if (config.isValid) {
     return (
-      <div className={`${isLiveMode ? 'bg-red-50 border border-red-200' : 'bg-emerald-50 border border-emerald-200'} rounded-lg p-4`}>
+      <div className={`${isLiveMode ? 'bg-red-50 border-2 border-red-500' : 'bg-emerald-50 border border-emerald-200'} rounded-lg p-4`}>
         <div className="flex items-start space-x-3">
           <CheckCircle className={`w-5 h-5 ${isLiveMode ? 'text-red-600' : 'text-emerald-600'} mt-0.5`} />
           <div>
             <h4 className={`text-sm font-medium ${isLiveMode ? 'text-red-900' : 'text-emerald-900'} mb-1`}>
-              {isLiveMode ? '🔴 LIVE MODE - Production Stripe Keys Active' : 'Stripe Integration Active (Test Mode)'}
+              {isLiveMode ? '🔴 LIVE MODE - REAL CREDIT CARDS WILL BE CHARGED' : 'Stripe Integration Active (Test Mode)'}
             </h4>
-            <div className="space-y-1 text-sm text-yellow-800 mb-3 max-h-32 overflow-y-auto">
+            <p className={`text-sm ${isLiveMode ? 'text-red-800 font-medium' : 'text-emerald-800'}`}>
               {isLiveMode 
-                ? 'Payment processing is configured with LIVE keys. Real credit cards will be charged.' 
+                ? 'WARNING: Payment processing is using PRODUCTION keys. All transactions are REAL and will CHARGE ACTUAL CREDIT CARDS.' 
                 : 'Payment processing is configured in TEST mode. Use test cards for payments.'}
             </p>
+            {isLiveMode && (
+              <div className="mt-2 p-2 bg-red-100 rounded text-sm text-red-800">
+                <strong>Security Notice:</strong> Ensure all security measures are in place including:
+                <ul className="list-disc pl-4 mt-1 space-y-1">
+                  <li>HTTPS is enabled</li>
+                  <li>Webhook signatures are verified</li>
+                  <li>PCI compliance requirements are met</li>
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </div>

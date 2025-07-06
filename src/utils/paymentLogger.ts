@@ -95,12 +95,18 @@ export class PaymentLogger {
   static trackPaymentFlow(step: string, data?: any) {
     this.log('info', 'PaymentFlow', `Step: ${step}`, data);
     
+    // Add extra warning if in live mode with more visibility
     // Add extra warning if in live mode
     if (this.isLiveMode()) {
-      this.log('warn', 'PaymentFlow', '🔴 LIVE MODE - Real payments are being processed', {
+      this.log('warn', 'PaymentFlow', '🔴 LIVE MODE ALERT - REAL PAYMENTS ARE BEING PROCESSED', {
         step,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        warning: 'Real credit cards will be charged'
       });
+      
+      // Log to console with high visibility
+      console.warn('%c 🔴 LIVE MODE - REAL PAYMENTS BEING PROCESSED ', 
+        'background: #f44336; color: white; font-size: 14px; font-weight: bold; padding: 4px;');
     }
   }
   

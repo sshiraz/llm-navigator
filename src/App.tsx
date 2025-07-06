@@ -16,6 +16,7 @@ import LandingPage from './components/Landing/LandingPage';
 import AuthPage from './components/Auth/AuthPage';
 import { mockProjects, mockAnalyses } from './utils/mockData';
 import { Project, Analysis, User } from './types';
+import PaymentDebugger from './components/Debug/PaymentDebugger';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -134,6 +135,9 @@ function App() {
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
   const isBasicConfigured = supabaseUrl && supabaseKey;
+  
+  // Check if we're in live mode
+  const isLiveMode = stripeKey?.startsWith('pk_live_');
 
   const handleLogin = (userData: User) => {
     setUser(userData);
@@ -326,13 +330,24 @@ function App() {
   if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
     return (
       <>
+        {isLiveMode && (
+          <div className="fixed top-0 left-0 right-0 bg-red-600 text-white text-center py-1 z-50">
+            <strong>🔴 LIVE MODE</strong> - Real credit cards will be charged
+          </div>
+        )}
         {renderContent()}
+        {isLiveMode && <PaymentDebugger />}
       </>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {isLiveMode && (
+        <div className="fixed top-0 left-0 right-0 bg-red-600 text-white text-center py-1 z-50">
+          <strong>🔴 LIVE MODE</strong> - Real credit cards will be charged
+        </div>
+      )}
       <Sidebar 
         activeSection={activeSection} 
         onSectionChange={setActiveSection}
@@ -342,10 +357,11 @@ function App() {
       <div className="flex-1 flex flex-col">
         {user && <Header user={user} />}
         
-        <main className="flex-1 p-8">
+        <main className={`flex-1 p-8 ${isLiveMode ? 'mt-6' : ''}`}>
           {renderContent()}
         </main>
       </div>
+      {isLiveMode && <PaymentDebugger />}
     </div>
   );
 }
