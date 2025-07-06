@@ -6,12 +6,13 @@ import { AnalysisEngine } from '../../utils/analysisEngine';
 interface AnalysisProgressProps {
   website: string;
   keywords: string[];
+  model: string;
   user: User;
   onComplete: (analysis: any) => void;
   onError?: (error: string) => void;
 }
 
-export default function AnalysisProgress({ website, keywords, user, onComplete, onError }: AnalysisProgressProps) {
+export default function AnalysisProgress({ website, keywords, model, user, onComplete, onError }: AnalysisProgressProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
@@ -37,6 +38,9 @@ export default function AnalysisProgress({ website, keywords, user, onComplete, 
     // Calculate estimated cost
     const totalCost = steps.reduce((sum, step) => sum + step.cost, 0);
     setEstimatedCost(totalCost);
+    
+    // Log selected model
+    console.log(`Analysis using model: ${model}`);
 
     let stepIndex = 0;
     let totalProgress = 0;
@@ -45,7 +49,7 @@ export default function AnalysisProgress({ website, keywords, user, onComplete, 
       if (stepIndex >= steps.length) {
         setIsComplete(true);
         // Trigger actual analysis
-        AnalysisEngine.analyzeWebsite(website, keywords, user)
+        AnalysisEngine.analyzeWebsite(website, keywords, user, model)
           .then((result) => {
             // Store the analysis in localStorage for persistence
             try {
@@ -123,6 +127,8 @@ export default function AnalysisProgress({ website, keywords, user, onComplete, 
         <div className="flex items-center justify-center space-x-3 mb-4">
           {isRealAnalysis ? (
             <Zap className="w-8 h-8 text-blue-600" />
+          ) : user.isAdmin ? (
+            <Zap className="w-8 h-8 text-purple-600" />
           ) : (
             <Sparkles className="w-8 h-8 text-purple-600" />
           )}
@@ -130,7 +136,11 @@ export default function AnalysisProgress({ website, keywords, user, onComplete, 
             {isRealAnalysis ? 'Deep Analysis in Progress' : 'Quick Analysis in Progress'}
           </h2>
         </div>
-        
+
+        <p className="text-gray-600 mb-2">
+          Using <strong>{model.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</strong> for analysis
+        </p>
+
         <p className="text-gray-600 mb-2">
           Analyzing <strong>{website}</strong> for keywords: <strong>{keywords.join(', ')}</strong>
         </p>
@@ -140,7 +150,7 @@ export default function AnalysisProgress({ website, keywords, user, onComplete, 
             <div className="flex items-center justify-center space-x-2 text-blue-800">
               <Zap className="w-4 h-4" />
               <span className="text-sm font-medium">
-                Premium Analysis: Using real AI-powered content analysis
+                {user.isAdmin ? 'Admin Analysis' : 'Premium Analysis'}: Using {model.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} for content analysis
               </span>
               <DollarSign className="w-4 h-4" />
               <span className="text-sm">
@@ -153,7 +163,7 @@ export default function AnalysisProgress({ website, keywords, user, onComplete, 
             <div className="flex items-center justify-center space-x-2 text-purple-800">
               <Sparkles className="w-4 h-4" />
               <span className="text-sm font-medium">
-                {user.subscription === 'trial' ? 'Trial Analysis' : 'Demo Analysis'}: Simulated results for demonstration
+                {user.subscription === 'trial' ? 'Trial Analysis' : 'Demo Analysis'}: Simulated {model.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} results
               </span>
             </div>
           </div>
@@ -329,9 +339,25 @@ export default function AnalysisProgress({ website, keywords, user, onComplete, 
             <h4 className="text-sm font-medium text-green-900 mb-2">Cost Breakdown:</h4>
             <div className="grid grid-cols-2 gap-2 text-xs text-green-800">
               <div>• Website crawling: $0.03</div>
-              <div>• Semantic analysis: $0.02</div>
-              <div>• AI insights: $0.15</div>
-              <div>• Technical analysis: $0.001</div>
+              {model.includes('claude') ? (
+                <>
+                  <div>• Claude analysis: ${model.includes('opus') ? '0.075' : model.includes('sonnet') ? '0.015' : '0.00125'}</div>
+                  <div>• Semantic embeddings: $0.02</div>
+                  <div>• Technical analysis: $0.001</div>
+                </>
+              ) : model.includes('perplexity') ? (
+                <>
+                  <div>• Perplexity analysis: ${model.includes('online') ? '0.01' : '0.005'}</div>
+                  <div>• Semantic embeddings: $0.02</div>
+                  <div>• Technical analysis: $0.001</div>
+                </>
+              ) : (
+                <>
+                  <div>• Semantic analysis: $0.02</div>
+                  <div>• GPT-4 insights: $0.15</div>
+                  <div>• Technical analysis: $0.001</div>
+                </>
+              )}
               <div className="col-span-2 font-medium border-t border-green-200 pt-1 mt-1">
                 Total estimated cost: ${estimatedCost.toFixed(3)}
               </div>

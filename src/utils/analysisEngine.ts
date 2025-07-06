@@ -109,7 +109,8 @@ export class AnalysisEngine {
   static async analyzeWebsite(
     website: string, 
     keywords: string[],
-    user: User
+    user: User,
+    modelKey: string = 'gpt-4'
   ): Promise<Analysis> {
     console.log('AnalysisEngine.analyzeWebsite called with:', { website, keywords, user });
     
@@ -134,20 +135,11 @@ export class AnalysisEngine {
     // Determine if we should use real analysis
     const useRealAnalysis = this.shouldUseRealAnalysis(user);
     const analysisType = useRealAnalysis ? 'real' : 'simulated';
-    
-    // Determine which model to use based on user's subscription
-    let modelKey = this.DEFAULT_MODEL;
-    if (useRealAnalysis) {
-      if (user.subscription === 'enterprise' || user.isAdmin === true) {
-        // Enterprise users get the best model
-        modelKey = 'claude-3-opus';
-      } else if (user.subscription === 'professional') {
-        // Professional users get a good balance
-        modelKey = 'claude-3-sonnet';
-      } else {
-        // Starter users get the default model
-        modelKey = 'gpt-4';
-      }
+
+    // Validate the model key exists, otherwise use default
+    if (!this.MODELS[modelKey]) {
+      console.warn(`Model ${modelKey} not found, using default model ${this.DEFAULT_MODEL}`);
+      modelKey = this.DEFAULT_MODEL;
     }
     
     const selectedModel = this.MODELS[modelKey];

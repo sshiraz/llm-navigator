@@ -225,6 +225,14 @@ export default function AnalysisResults({ analysis, onBack }: AnalysisResultsPro
                 <div className="text-lg font-semibold text-gray-900">Category</div>
                 <div className="text-xl font-medium text-indigo-600">{analysis.category}</div>
               </div>
+              {analysis.model && (
+              <div className="text-center">
+                <div className="text-lg font-semibold text-gray-900">AI Model</div>
+                <div className="text-xl font-medium text-purple-600">
+                  {analysis.model?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'GPT-4'}
+                </div>
+              </div>
+              )}
             </div>
           </div>
         </div>
