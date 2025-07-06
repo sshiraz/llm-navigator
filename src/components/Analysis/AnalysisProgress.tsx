@@ -18,7 +18,8 @@ export default function AnalysisProgress({ website, keywords, user, onComplete, 
   const [estimatedCost, setEstimatedCost] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  const isRealAnalysis = AnalysisEngine.shouldUseRealAnalysis(user);
+  // Check if user is admin or has a paid plan for real analysis
+  const isRealAnalysis = AnalysisEngine.shouldUseRealAnalysis(user) || user.isAdmin === true;
 
   const steps = isRealAnalysis ? [
     { id: 1, name: 'Crawling Website', description: 'Extracting content and structure', duration: 3000, cost: 0.03 },
@@ -312,8 +313,12 @@ export default function AnalysisProgress({ website, keywords, user, onComplete, 
         {!isRealAnalysis && (
           <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-800">
-              <strong>Upgrade to get real analysis:</strong> Live website crawling, AI-powered insights, 
-              and actionable recommendations based on actual content analysis.
+              {user.isAdmin ? (
+                <strong>Admin Mode:</strong>
+              ) : (
+                <strong>Demo Mode:</strong>
+              )} Experience unlimited analyses to test our platform. 
+              {!user.isAdmin && 'Upgrade to any paid plan for advanced features like real-time crawling, competitor intelligence, and team collaboration.'}
             </p>
           </div>
         )}

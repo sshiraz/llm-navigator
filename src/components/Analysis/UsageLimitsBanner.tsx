@@ -10,9 +10,24 @@ interface UsageLimitsBannerProps {
 export default function UsageLimitsBanner({ usageLimits, onUpgrade }: UsageLimitsBannerProps) {
   const usagePercentage = (usageLimits.currentUsage.analyses / usageLimits.monthlyAnalyses) * 100;
   const costPercentage = (usageLimits.currentUsage.cost / usageLimits.monthlyBudget) * 100;
+
+  // Check if user is admin from localStorage
+  const [isAdmin, setIsAdmin] = React.useState(false);
   
-  // For demo accounts (free/trial), show unlimited status
-  const isUnlimited = usageLimits.plan === 'free' || usageLimits.plan === 'trial';
+  React.useEffect(() => {
+    try {
+      const userStr = localStorage.getItem('currentUser');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setIsAdmin(user.isAdmin === true);
+      }
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+    }
+  }, []);
+  
+  // For demo accounts (free/trial) or admin users, show unlimited status
+  const isUnlimited = usageLimits.plan === 'free' || usageLimits.plan === 'trial' || isAdmin;
   const isNearLimit = !isUnlimited && (usagePercentage > 80 || costPercentage > 80);
   const isAtLimit = !isUnlimited && (usagePercentage >= 100 || costPercentage >= 100);
   
@@ -51,7 +66,7 @@ export default function UsageLimitsBanner({ usageLimits, onUpgrade }: UsageLimit
             
             <div className="flex-1">
               <h3 className={`text-lg font-semibold ${getTextColor()} mb-2`}>
-                🎉 Unlimited Demo Access
+                {isAdmin ? '🔑 Admin Unlimited Access' : '🎉 Unlimited Demo Access'}
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
