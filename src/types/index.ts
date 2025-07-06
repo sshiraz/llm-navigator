@@ -37,6 +37,7 @@ export interface Analysis {
   website: string;
   keywords: string[];
   score: number;
+  model?: string;
   metrics: {
     contentClarity: number;
     semanticRichness: number;
@@ -50,6 +51,7 @@ export interface Analysis {
   recommendations: Recommendation[];
   createdAt: string;
   isSimulated?: boolean; // Flag to indicate simulated vs real analysis
+  modelVariantId?: string; // Reference to the model variant used
   costInfo?: {
     totalCost: number;
     breakdown: {
@@ -117,9 +119,11 @@ export interface ApiUsage {
   tokens: {
     input: number;
     output: number;
+    model?: number;
     embeddings: number;
   };
-  provider: 'openai' | 'anthropic' | 'perplexity' | 'local';
+  provider: 'openai' | 'anthropic' | 'perplexity' | 'local'; 
+  modelVariantId?: string; // Reference to the model variant used
   success: boolean;
   errorCode?: string;
 }

@@ -7,13 +7,22 @@ LLM Navigator now supports multiple AI models from different providers to give y
 ## OpenAI Models
 
 ### GPT-4
-- **Best for**: Comprehensive analysis with strong pattern recognition
+- **Best for**: Standard analysis with good pattern recognition
 - **Strengths**: 
-  - Excellent at understanding technical SEO elements
-  - Strong semantic analysis capabilities
-  - Detailed, actionable recommendations
+  - Good at understanding technical SEO elements
+  - Solid semantic analysis capabilities
+  - Helpful recommendations
 - **Cost**: $0.03/1K input tokens, $0.06/1K output tokens
 - **Available on**: Starter, Professional, Enterprise plans
+
+### GPT-4 Professional
+- **Best for**: Advanced analysis with enhanced pattern recognition
+- **Strengths**: 
+  - Excellent at understanding technical SEO elements
+  - Advanced semantic analysis capabilities
+  - Detailed, actionable recommendations with priority insights
+- **Cost**: $0.04/1K input tokens, $0.08/1K output tokens
+- **Available on**: Professional, Enterprise plans
 
 ## Anthropic Models
 
@@ -87,7 +96,8 @@ LLM Navigator now supports multiple AI models from different providers to give y
 
 | Model | Starter | Professional | Enterprise |
 |-------|---------|--------------|------------|
-| GPT-4 | ✅ | ✅ | ✅ |
+| GPT-4 | ✅ | ✅ | ✅ | 
+| GPT-4 Professional | ❌ | ✅ | ✅ |
 | Claude 3 Opus | ❌ | ❌ | ✅ |
 | Claude 3 Sonnet | ❌ | ✅ | ✅ |
 | Claude 3 Haiku | ✅ | ✅ | ✅ |
@@ -101,6 +111,7 @@ For a typical analysis (approximately 4,000 input tokens and 1,000 output tokens
 | Model | Approximate Cost |
 |-------|------------------|
 | GPT-4 | $0.18 |
+| GPT-4 Professional | $0.24 |
 | Claude 3 Opus | $0.14 |
 | Claude 3 Sonnet | $0.03 |
 | Claude 3 Haiku | $0.002 |

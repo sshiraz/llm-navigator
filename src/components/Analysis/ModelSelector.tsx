@@ -15,6 +15,7 @@ export default function ModelSelector({ selectedModel, onModelChange, subscripti
       // Admins get access to all models
       return [
         { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI', tier: 'starter' },
+        { id: 'gpt-4-professional', name: 'GPT-4 Professional', provider: 'OpenAI', tier: 'professional' },
         { id: 'claude-3-haiku', name: 'Claude 3 Haiku', provider: 'Anthropic', tier: 'starter' },
         { id: 'claude-3-sonnet', name: 'Claude 3 Sonnet', provider: 'Anthropic', tier: 'professional' },
         { id: 'claude-3-opus', name: 'Claude 3 Opus', provider: 'Anthropic', tier: 'enterprise' },
@@ -27,6 +28,7 @@ export default function ModelSelector({ selectedModel, onModelChange, subscripti
       case 'enterprise':
         return [
           { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI', tier: 'starter' },
+          { id: 'gpt-4-professional', name: 'GPT-4 Professional', provider: 'OpenAI', tier: 'professional' },
           { id: 'claude-3-haiku', name: 'Claude 3 Haiku', provider: 'Anthropic', tier: 'starter' },
           { id: 'claude-3-sonnet', name: 'Claude 3 Sonnet', provider: 'Anthropic', tier: 'professional' },
           { id: 'claude-3-opus', name: 'Claude 3 Opus', provider: 'Anthropic', tier: 'enterprise' },
@@ -36,6 +38,7 @@ export default function ModelSelector({ selectedModel, onModelChange, subscripti
       case 'professional':
         return [
           { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI', tier: 'starter' },
+          { id: 'gpt-4-professional', name: 'GPT-4 Professional', provider: 'OpenAI', tier: 'professional' },
           { id: 'claude-3-haiku', name: 'Claude 3 Haiku', provider: 'Anthropic', tier: 'starter' },
           { id: 'claude-3-sonnet', name: 'Claude 3 Sonnet', provider: 'Anthropic', tier: 'professional' },
           { id: 'perplexity-online', name: 'Perplexity Online', provider: 'Perplexity', tier: 'professional' },
@@ -63,8 +66,14 @@ export default function ModelSelector({ selectedModel, onModelChange, subscripti
       case 'gpt-4':
         return {
           description: 'OpenAI\'s powerful model with strong reasoning and pattern recognition.',
-          strengths: ['Excellent at understanding context', 'Strong technical analysis', 'Detailed recommendations'],
+          strengths: ['Good at understanding context', 'Solid technical analysis', 'Helpful recommendations'],
           cost: '$0.03/1K input tokens, $0.06/1K output tokens'
+        };
+      case 'gpt-4-professional':
+        return {
+          description: 'Enhanced version of GPT-4 with optimized parameters for professional use.',
+          strengths: ['Excellent at understanding context', 'Advanced technical analysis', 'Detailed, actionable recommendations'],
+          cost: '$0.04/1K input tokens, $0.08/1K output tokens'
         };
       case 'claude-3-opus':
         return {

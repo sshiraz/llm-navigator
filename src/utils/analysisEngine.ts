@@ -34,6 +34,18 @@ export class AnalysisEngine {
         semanticAnalysis: true
       }
     },
+    'gpt-4-professional': {
+      provider: 'openai',
+      name: 'GPT-4 Professional',
+      inputCost: 0.04,
+      outputCost: 0.08,
+      embeddingCost: 0.0001,
+      capabilities: {
+        webCrawling: true,
+        structuredOutput: true,
+        semanticAnalysis: true
+      }
+    },
     'claude-3-opus': {
       provider: 'anthropic',
       name: 'Claude 3 Opus',
@@ -97,7 +109,7 @@ export class AnalysisEngine {
   };
   
   // Default model to use
-  private static readonly DEFAULT_MODEL = 'gpt-4';
+  private static readonly DEFAULT_MODEL = 'gpt-4-professional';
 
   // Check if user should get real analysis
   static shouldUseRealAnalysis(user: User): boolean {
