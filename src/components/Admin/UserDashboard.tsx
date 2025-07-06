@@ -270,8 +270,8 @@ export default function UserDashboard() {
           </button>
           
           <div>
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600 mt-1">Monitor user accounts and subscription status</p>
+            <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+            <p className="text-gray-600 mt-1">Monitor user accounts and subscription status</p>
           </div>
         </div>
         
@@ -490,7 +490,6 @@ export default function UserDashboard() {
                                 <span className="text-sm text-gray-900">Expired</span>
                               </div>
                             )}
-                              {daysRemaining > 0 ? `${daysRemaining} days left` : 'Expired today'}
                           </div>
                         ) : user.subscription === 'free' ? (
                           <span className="text-sm text-gray-500">N/A</span>
