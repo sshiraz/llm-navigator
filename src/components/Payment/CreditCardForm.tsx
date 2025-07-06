@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { CreditCard, Calendar, Lock, User, CheckCircle } from 'lucide-react';
+import { CreditCard, Calendar, Lock, User, CheckCircle, AlertCircle } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
+import { loadStripe } from '@stripe/stripe-js';
+import { CardElement, Elements, useStripe, useElements } from '@stripe/react-stripe-js';
 
 interface CreditCardFormProps {
   plan: string;
@@ -9,7 +11,12 @@ interface CreditCardFormProps {
   onCancel: () => void;
 }
 
-export default function CreditCardForm({ plan, amount, onSuccess, onCancel }: CreditCardFormProps) {
+// Initialize Stripe
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+
+function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCardFormProps) {
+  const stripe = useStripe();
+  const elements = useElements();
   const [cardNumber, setCardNumber] = useState('');
   const [cardName, setCardName] = useState('');
   const [expiry, setExpiry] = useState('');
@@ -17,6 +24,7 @@ export default function CreditCardForm({ plan, amount, onSuccess, onCancel }: Cr
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSuccess, setIsSuccess] = useState(false);
+  const [cardError, setCardError] = useState('');
 
   const formatCardNumber = (value: string) => {
     // Remove all non-digits
@@ -37,96 +45,105 @@ export default function CreditCardForm({ plan, amount, onSuccess, onCancel }: Cr
     return digits;
   };
 
-  const validateForm = () => {
+  const validateForm = async () => {
     const newErrors: Record<string, string> = {};
-
-    // Validate card number (should be 16 digits)
-    const cardDigits = cardNumber.replace(/\D/g, '');
-    if (!cardDigits) {
-      newErrors.cardNumber = 'Card number is required';
-    } else if (cardDigits.length !== 16) {
-      newErrors.cardNumber = 'Card number must be 16 digits';
-    }
 
     // Validate name
     if (!cardName.trim()) {
       newErrors.cardName = 'Name is required';
     }
 
-    // Validate expiry (should be MM/YY format)
-    const expiryDigits = expiry.replace(/\D/g, '');
-    if (!expiryDigits) {
-      newErrors.expiry = 'Expiry date is required';
-    } else if (expiryDigits.length !== 4) {
-      newErrors.expiry = 'Expiry date must be in MM/YY format';
-    } else {
-      const month = parseInt(expiryDigits.substring(0, 2), 10);
-      if (month < 1 || month > 12) {
-        newErrors.expiry = 'Invalid month';
-      }
-    }
-
-    // Validate CVC (should be 3 or 4 digits)
-    if (!cvc) {
-      newErrors.cvc = 'CVC is required';
-    } else if (cvc.length < 3 || cvc.length > 4) {
-      newErrors.cvc = 'CVC must be 3 or 4 digits';
+    // Check if Stripe is loaded
+    if (!stripe || !elements) {
+      newErrors.stripe = 'Payment system is not ready. Please try again.';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (!await validateForm()) {
       return;
     }
 
     setIsProcessing(true);
-    PaymentLogger.trackPaymentFlow('Processing credit card payment', { plan });
+    setCardError('');
+    PaymentLogger.trackPaymentFlow('Processing credit card payment', { plan, amount });
 
-    // Simulate payment processing
-    setTimeout(() => {
-      // For demo purposes, check if using test card number
-      const isTestCard = cardNumber.replace(/\D/g, '') === '4242424242424242';
-      
-      if (isTestCard) {
-        setIsSuccess(true);
-        
-        // Generate a unique payment ID
-        const paymentId = `pi_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-        
-        // Log successful payment
-        PaymentLogger.trackPaymentFlow('Payment successful', { 
+    try {
+      if (!stripe || !elements) {
+        throw new Error('Stripe not initialized');
+      }
+
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        throw new Error('Card element not found');
+      }
+
+      // Create payment method
+      const { error, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+        billing_details: {
+          name: cardName,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      // For demo purposes, simulate a successful payment
+      PaymentLogger.trackPaymentFlow('Payment method created', { 
+        paymentMethodId: paymentMethod.id,
+        last4: paymentMethod.card?.last4,
+        brand: paymentMethod.card?.brand
+      });
+
+      // Show success state
+      setIsSuccess(true);
+
+      // Generate a unique payment ID for demo
+      const paymentId = `pi_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+      // Wait a moment to show success state before calling onSuccess
+      setTimeout(() => {
+        onSuccess({
           paymentId,
+          paymentMethodId: paymentMethod.id,
           plan,
           amount,
-          last4: '4242'
+          last4: paymentMethod.card?.last4 || '4242',
+          brand: paymentMethod.card?.brand || 'visa'
         });
-        
-        // Wait a moment to show success state before calling onSuccess
-        setTimeout(() => {
-          onSuccess({
-            paymentId,
-            plan,
-            amount,
-            last4: '4242'
-          });
-        }, 1500);
-      } else {
-        setErrors({
-          cardNumber: 'Payment failed. Please use test card 4242 4242 4242 4242'
-        });
-        setIsProcessing(false);
-        
-        PaymentLogger.trackPaymentFlow('Payment failed', { 
-          error: 'Invalid test card',
-          cardNumberLength: cardNumber.length
-        });
+      }, 1500);
+    } catch (err) {
+      const errorMessage = err.message || 'Payment failed. Please try again.';
+      setCardError(errorMessage);
+      PaymentLogger.trackPaymentFlow('Payment failed', { error: errorMessage });
+      setIsProcessing(false);
+    }
+  };
+
+  const CARD_ELEMENT_OPTIONS = {
+    style: {
+      base: {
+        color: '#32325d',
+        fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+        fontSmoothing: 'antialiased',
+        fontSize: '16px',
+        '::placeholder': {
+          color: '#aab7c4'
+        }
+      },
+      invalid: {
+        color: '#fa755a',
+        iconColor: '#fa755a'
       }
-    }, 2000);
+    }
   };
 
   if (isSuccess) {
@@ -169,31 +186,6 @@ export default function CreditCardForm({ plan, amount, onSuccess, onCancel }: Cr
         {/* Card Number */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Card Number
-          </label>
-          <div className="relative">
-            <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={cardNumber}
-              onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-              placeholder="4242 4242 4242 4242"
-              className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.cardNumber ? 'border-red-300' : 'border-gray-300'
-              }`}
-            />
-          </div>
-          {errors.cardNumber && (
-            <p className="mt-1 text-sm text-red-600">{errors.cardNumber}</p>
-          )}
-          <p className="mt-1 text-xs text-gray-500">
-            Use test card: 4242 4242 4242 4242
-          </p>
-        </div>
-
-        {/* Card Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
             Name on Card
           </label>
           <div className="relative">
@@ -213,51 +205,20 @@ export default function CreditCardForm({ plan, amount, onSuccess, onCancel }: Cr
           )}
         </div>
 
-        {/* Expiry and CVC */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Expiry Date
-            </label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={expiry}
-                onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-                placeholder="MM/YY"
-                className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.expiry ? 'border-red-300' : 'border-gray-300'
-                }`}
-                maxLength={5}
-              />
-            </div>
-            {errors.expiry && (
-              <p className="mt-1 text-sm text-red-600">{errors.expiry}</p>
-            )}
+        {/* Card Details */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Card Details
+          </label>
+          <div className="border border-gray-300 rounded-lg p-4 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+            <CardElement options={CARD_ELEMENT_OPTIONS} />
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              CVC
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={cvc}
-                onChange={(e) => setCvc(e.target.value.replace(/\D/g, ''))}
-                placeholder="123"
-                className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.cvc ? 'border-red-300' : 'border-gray-300'
-                }`}
-                maxLength={4}
-              />
-            </div>
-            {errors.cvc && (
-              <p className="mt-1 text-sm text-red-600">{errors.cvc}</p>
-            )}
-          </div>
+          {cardError && (
+            <p className="mt-1 text-sm text-red-600">{cardError}</p>
+          )}
+          <p className="mt-1 text-xs text-gray-500">
+            Use test card: 4242 4242 4242 4242 with any future expiry date and any CVC
+          </p>
         </div>
 
         {/* Security Notice */}
@@ -313,5 +274,13 @@ export default function CreditCardForm({ plan, amount, onSuccess, onCancel }: Cr
         </div>
       </form>
     </div>
+  );
+}
+
+export default function CreditCardForm(props: CreditCardFormProps) {
+  return (
+    <Elements stripe={stripePromise}>
+      <CreditCardFormContent {...props} />
+    </Elements>
   );
 }
