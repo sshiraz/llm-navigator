@@ -1,5 +1,6 @@
 // Payment Processing Logger and Debugger
 export class PaymentLogger {
+  private static readonly MAX_LOGS = 1000; // Limit number of logs to prevent memory issues
   private static logs: Array<{
     timestamp: string;
     level: 'info' | 'warn' | 'error';
@@ -8,19 +9,33 @@ export class PaymentLogger {
     data?: any;
   }> = [];
 
+  // Check if we're in live mode
+  private static isLiveMode() {
+    return import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
+  }
+
   static log(level: 'info' | 'warn' | 'error', component: string, message: string, data?: any) {
+    // Add live mode indicator to message if in live mode
+    const liveMessage = this.isLiveMode() ? `[LIVE] ${message}` : message;
+    
     const logEntry = {
       timestamp: new Date().toISOString(),
       level,
       component,
-      message,
+      message: liveMessage,
       data: data ? JSON.stringify(data, null, 2) : undefined
     };
     
-    this.logs.push(logEntry);
+    // Add to beginning of array for most recent first
+    this.logs.unshift(logEntry);
+    
+    // Trim logs if they exceed the maximum
+    if (this.logs.length > this.MAX_LOGS) {
+      this.logs = this.logs.slice(0, this.MAX_LOGS);
+    }
     
     // Also log to console with appropriate level
-    const consoleMessage = `[${component}] ${message}`;
+    const consoleMessage = `[${component}] ${liveMessage}`;
     switch (level) {
       case 'info':
         console.log(consoleMessage, data);
@@ -34,7 +49,12 @@ export class PaymentLogger {
     }
     
     // Store in localStorage for persistence
-    localStorage.setItem('payment_logs', JSON.stringify(this.logs));
+    try {
+      localStorage.setItem('payment_logs', JSON.stringify(this.logs));
+    } catch (e) {
+      // If localStorage fails (e.g., quota exceeded), log to console but don't crash
+      console.warn('Failed to store payment logs in localStorage', e);
+    }
   }
 
   static getLogs() {
@@ -43,8 +63,9 @@ export class PaymentLogger {
 
   static getLogsFromStorage() {
     try {
-      const stored = localStorage.getItem('payment_logs');
-      return stored ? JSON.parse(stored) : [];
+      const stored = localStorage.getItem('payment_logs') || '[]';
+      const parsedLogs = JSON.parse(stored);
+      return Array.isArray(parsedLogs) ? parsedLogs : [];
     } catch {
       return [];
     }
@@ -73,6 +94,14 @@ export class PaymentLogger {
   // Track payment flow steps
   static trackPaymentFlow(step: string, data?: any) {
     this.log('info', 'PaymentFlow', `Step: ${step}`, data);
+    
+    // Add extra warning if in live mode
+    if (this.isLiveMode()) {
+      this.log('warn', 'PaymentFlow', '🔴 LIVE MODE - Real payments are being processed', {
+        step,
+        timestamp: new Date().toISOString()
+      });
+    }
   }
   
   // Generate a comprehensive payment debug report
@@ -86,7 +115,8 @@ export class PaymentLogger {
       environment: {
         supabaseUrl: import.meta.env.VITE_SUPABASE_URL ? 'Set' : 'Missing',
         supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Set' : 'Missing',
-        stripeKey: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? 'Set' : 'Missing',
+        stripeKey: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? 
+          (this.isLiveMode() ? 'LIVE MODE' : 'TEST MODE') : 'Missing',
         starterPriceId: import.meta.env.VITE_STRIPE_STARTER_PRICE_ID ? 'Set' : 'Missing',
         professionalPriceId: import.meta.env.VITE_STRIPE_PROFESSIONAL_PRICE_ID ? 'Set' : 'Missing',
         enterprisePriceId: import.meta.env.VITE_STRIPE_ENTERPRISE_PRICE_ID ? 'Set' : 'Missing'
@@ -145,7 +175,13 @@ export class PaymentLogger {
 
   // Track webhook events
   static trackWebhook(event: string, success: boolean, data?: any) {
-    this.log(success ? 'info' : 'error', 'Webhook', `Event: ${event} - ${success ? 'Success' : 'Failed'}`, data);
+    const liveIndicator = this.isLiveMode() ? '🔴 LIVE MODE - ' : '';
+    this.log(
+      success ? 'info' : 'error', 
+      'Webhook', 
+      `${liveIndicator}Event: ${event} - ${success ? 'Success' : 'Failed'}`, 
+      data
+    );
   }
 
   // Track database updates
@@ -155,7 +191,8 @@ export class PaymentLogger {
 
   // Track Stripe events
   static trackStripeEvent(event: string, data?: any) {
-    this.log('info', 'Stripe', `Event: ${event}`, data);
+    const liveIndicator = this.isLiveMode() ? '🔴 LIVE MODE - ' : '';
+    this.log('info', 'Stripe', `${liveIndicator}Event: ${event}`, data);
   }
 
   // Track Edge Function calls

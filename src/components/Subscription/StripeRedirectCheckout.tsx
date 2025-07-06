@@ -11,7 +11,9 @@ interface StripeRedirectCheckoutProps {
 }
 
 // Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY 
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) 
+  : null;
 
 export default function StripeRedirectCheckout({ plan, onCancel }: StripeRedirectCheckoutProps) {
   const [isLoading, setIsLoading] = useState(true);
@@ -75,7 +77,7 @@ export default function StripeRedirectCheckout({ plan, onCancel }: StripeRedirec
   // If showing credit card form, render it
   if (showCheckoutForm) {
     return (
-      <Elements stripe={stripePromise}>
+      <Elements stripe={stripePromise} options={STRIPE_CONFIG}>
         <CheckoutForm
           selectedPlan={plan}
           amount={planAmount}
@@ -127,9 +129,10 @@ export default function StripeRedirectCheckout({ plan, onCancel }: StripeRedirec
           <p className="text-gray-600 mb-4">Your checkout session is ready!</p>
           <button
             onClick={() => setShowCheckoutForm(true)}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
           >
-            Continue to Payment
+            <CreditCard className="w-5 h-5" />
+            <span>Continue to Payment</span>
           </button>
         </div>
       )}

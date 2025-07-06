@@ -3,6 +3,7 @@ import { CreditCard, Calendar, Lock, User, CheckCircle, AlertCircle } from 'luci
 import { PaymentLogger } from '../../utils/paymentLogger';
 import { loadStripe } from '@stripe/stripe-js';
 import { CardElement, Elements, useStripe, useElements } from '@stripe/react-stripe-js';
+import { STRIPE_CONFIG } from '../../lib/stripe';
 
 interface CreditCardFormProps {
   plan: string;
@@ -12,7 +13,9 @@ interface CreditCardFormProps {
 }
 
 // Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY 
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) 
+  : null;
 
 function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCardFormProps) {
   const stripe = useStripe();
@@ -131,17 +134,17 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
   const CARD_ELEMENT_OPTIONS = {
     style: {
       base: {
-        color: '#32325d',
+        color: '#1f2937',
         fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
         fontSmoothing: 'antialiased',
         fontSize: '16px',
         '::placeholder': {
-          color: '#aab7c4'
+          color: '#9ca3af'
         }
       },
       invalid: {
-        color: '#fa755a',
-        iconColor: '#fa755a'
+        color: '#ef4444',
+        iconColor: '#ef4444'
       }
     }
   };
@@ -155,6 +158,9 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
         <p className="text-gray-600 mb-6">
           Your payment has been processed successfully. Your subscription has been updated to the {plan} plan.
+        </p>
+        <p className="text-sm text-gray-500 mb-4">
+          You'll receive a confirmation email shortly with your receipt and subscription details.
         </p>
         <div className="flex justify-center">
           <button
@@ -179,6 +185,9 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
         </h2>
         <p className="text-gray-600">
           {plan.charAt(0).toUpperCase() + plan.slice(1)} Plan - ${(amount / 100).toFixed(2)}/month
+        </p>
+        <p className="text-xs text-gray-500 mt-1">
+          Secure payment processing by Stripe
         </p>
       </div>
 
@@ -226,11 +235,9 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
           <div className="flex items-start space-x-3">
             <Lock className="w-5 h-5 text-green-600 mt-0.5" />
             <div>
-              <h4 className="text-sm font-medium text-green-900 mb-1">
-                Secure Test Environment
-              </h4>
+              <h4 className="text-sm font-medium text-green-900 mb-1">Secure Payment</h4>
               <p className="text-sm text-green-800">
-                This is a test environment. Use card number 4242 4242 4242 4242 with any future expiry date and any 3-digit CVC.
+                Your payment information is processed securely by Stripe. We never store your card details.
               </p>
             </div>
           </div>
@@ -279,7 +286,7 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
 
 export default function CreditCardForm(props: CreditCardFormProps) {
   return (
-    <Elements stripe={stripePromise}>
+    <Elements stripe={stripePromise} options={STRIPE_CONFIG}>
       <CreditCardFormContent {...props} />
     </Elements>
   );

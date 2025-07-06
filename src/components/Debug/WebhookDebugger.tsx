@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, CheckCircle, Copy, RefreshCw, Webhook, Key, Lock, X } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
+import { supabase } from '../../lib/supabase';
 
 export default function WebhookDebugger() {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,6 +13,11 @@ export default function WebhookDebugger() {
   const testWebhook = async () => {
     setIsLoading(true);
     PaymentLogger.log('info', 'WebhookDebugger', 'Testing webhook endpoint...');
+    const isLiveMode = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
+    
+    if (isLiveMode) {
+      PaymentLogger.log('warn', 'WebhookDebugger', '🔴 LIVE MODE DETECTED - Using production Stripe keys');
+    }
     
     try {
       // First, test with a simple request to check if the endpoint is accessible
@@ -22,7 +28,7 @@ export default function WebhookDebugger() {
       
       const response = await fetch(webhookUrl, {
         method: 'POST',
-        headers: {
+        headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           'stripe-signature': 'test_signature', // Add a dummy signature
@@ -66,7 +72,7 @@ export default function WebhookDebugger() {
       
       if (response.status === 400) {
         if (text.includes('signature verification failed') || text.includes('test request')) {
-          PaymentLogger.log('info', 'WebhookDebugger', 'Webhook signature verification failed - this is expected for test requests', {
+          PaymentLogger.log('info', 'WebhookDebugger', `Webhook signature verification failed - this is expected for test requests${isLiveMode ? ' (LIVE MODE)' : ''}`, {
             status: response.status,
             text: text.substring(0, 100) // Limit text length for logging
           });
@@ -76,9 +82,9 @@ export default function WebhookDebugger() {
       } else if (response.status === 401 || response.status === 403) {
         PaymentLogger.log('error', 'WebhookDebugger', 'Webhook authentication failed - check service role key', result);
       } else if (response.status === 404) {
-        PaymentLogger.log('error', 'WebhookDebugger', 'Webhook endpoint not found - check function deployment', result);
+        PaymentLogger.log('error', 'WebhookDebugger', `Webhook endpoint not found - check function deployment${isLiveMode ? ' (LIVE MODE)' : ''}`, result);
       } else {
-        PaymentLogger.log(response.ok ? 'info' : 'error', 'WebhookDebugger', `Webhook test result: ${response.status} ${response.statusText}`, result);
+        PaymentLogger.log(response.ok ? 'info' : 'error', 'WebhookDebugger', `Webhook test result: ${response.status} ${response.statusText}${isLiveMode ? ' (LIVE MODE)' : ''}`, result);
       }
     } catch (error) {
       const errorResult = { error: error.message };
@@ -91,21 +97,30 @@ export default function WebhookDebugger() {
   
   const updateWebhookSecret = async () => {
     if (!webhookSecret || !webhookSecret.startsWith('whsec_')) {
-      alert('Please enter a valid webhook secret (starts with whsec_)');
+      alert('Please enter a valid webhook secret (starts with whsec_). For live mode, this should be your live webhook secret.');
       return;
     }
     
     setIsLoading(true);
-    PaymentLogger.log('info', 'WebhookDebugger', 'Updating webhook secret...');
+    const isLiveMode = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
+    PaymentLogger.log('info', 'WebhookDebugger', `Updating webhook secret...${isLiveMode ? ' (LIVE MODE)' : ''}`);
     
     try {
-      // In a real implementation, this would call an API to update the secret
-      // For now, we'll just simulate it
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Try to update the secret in Supabase
+      const { error } = await supabase.functions.invoke('update-webhook-secret', {
+        body: { 
+          secret: webhookSecret,
+          isLiveMode
+        }
+      });
+      
+      if (error) {
+        throw new Error(`Failed to update webhook secret: ${error.message}`);
+      }
       
       // Show success message
-      alert('Webhook secret updated successfully! Please redeploy your webhook function for the changes to take effect.');
-      PaymentLogger.log('info', 'WebhookDebugger', 'Webhook secret updated successfully');
+      alert(`Webhook secret updated successfully! ${isLiveMode ? '(LIVE MODE)' : ''} Please redeploy your webhook function for the changes to take effect.`);
+      PaymentLogger.log('info', 'WebhookDebugger', `Webhook secret updated successfully${isLiveMode ? ' (LIVE MODE)' : ''}`);
       
       // Clear the input
       setWebhookSecret('');
@@ -119,14 +134,16 @@ export default function WebhookDebugger() {
   
   const copyDeployCommand = () => {
     const command = 'npx supabase functions deploy stripe-webhook';
+    const isLiveMode = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
     navigator.clipboard.writeText(command);
-    PaymentLogger.log('info', 'WebhookDebugger', 'Copied deploy command to clipboard');
+    PaymentLogger.log('info', 'WebhookDebugger', `Copied deploy command to clipboard${isLiveMode ? ' (LIVE MODE)' : ''}`);
   };
   
   const copySecretCommand = () => {
     const command = `npx supabase secrets set STRIPE_WEBHOOK_SECRET=${webhookSecret || 'whsec_your_webhook_secret'}`;
+    const isLiveMode = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
     navigator.clipboard.writeText(command);
-    PaymentLogger.log('info', 'WebhookDebugger', 'Copied secret command to clipboard');
+    PaymentLogger.log('info', 'WebhookDebugger', `Copied secret command to clipboard${isLiveMode ? ' (LIVE MODE)' : ''}`);
   };
   
   if (!isOpen) {
@@ -151,9 +168,14 @@ export default function WebhookDebugger() {
       <div className="bg-white rounded-xl w-full max-w-2xl overflow-hidden flex flex-col shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-indigo-50">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             <Webhook className="w-6 h-6 text-indigo-600" />
-            <h2 className="text-xl font-bold text-gray-900">Webhook Debugger</h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              Webhook Debugger
+              {import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_') && 
+                <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full">LIVE MODE</span>
+              }
+            </h2>
           </div>
           <button
             onClick={() => setIsOpen(false)}
@@ -169,9 +191,15 @@ export default function WebhookDebugger() {
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Test Webhook Endpoint</h3>
             <button
+              title={import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_') ? 
+                'Testing in LIVE MODE - use with caution' : 'Test webhook endpoint'}
               onClick={testWebhook}
               disabled={isLoading}
-              className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 transition-colors"
+              className={`w-full flex items-center justify-center space-x-2 px-4 py-3 ${
+                import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_') 
+                  ? 'bg-red-600 hover:bg-red-700' 
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+              } text-white rounded-lg disabled:bg-gray-400 transition-colors`}
             >
               {isLoading ? (
                 <>
@@ -180,8 +208,12 @@ export default function WebhookDebugger() {
                 </>
               ) : (
                 <>
-                  <Webhook className="w-5 h-5" />
-                  <span>Test Webhook Endpoint</span>
+                  <Webhook className="w-5 h-5" /> 
+                  <span>
+                    {import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_') 
+                      ? 'Test LIVE Webhook Endpoint' 
+                      : 'Test Webhook Endpoint'}
+                  </span>
                 </>
               )}
             </button>
@@ -249,6 +281,20 @@ export default function WebhookDebugger() {
           <div className="pt-4 border-t border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Update Webhook Secret</h3>
             
+            {import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_') && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <div className="flex items-start space-x-2">
+                  <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-red-900 mb-1">LIVE MODE DETECTED</h4>
+                    <p className="text-sm text-red-800">
+                      You are updating webhook secrets in LIVE mode. Make sure to use your production webhook secret from the Stripe Dashboard.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -273,6 +319,11 @@ export default function WebhookDebugger() {
                 <p className="mt-1 text-sm text-gray-500">
                   Get this from Stripe Dashboard → Developers → Webhooks → [Your webhook] → Signing secret
                 </p>
+                {import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_') && (
+                  <p className="mt-1 text-sm text-red-600 font-medium">
+                    Make sure to use your LIVE webhook secret!
+                  </p>
+                )}
               </div>
               
               <div className="flex space-x-3">
@@ -342,8 +393,12 @@ export default function WebhookDebugger() {
         {/* Footer */}
         <div className="p-4 border-t border-gray-200 bg-gray-50">
           <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-500">
-              Webhook URL: <span className="font-mono text-xs">{import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook</span>
+            <div className="text-sm">
+              <span className="text-gray-500">Webhook URL:</span> 
+              <span className={`font-mono text-xs ${import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_') ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
+                {import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook
+                {import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_') && ' (LIVE)'}
+              </span>
             </div>
             <button
               onClick={() => setIsOpen(false)}

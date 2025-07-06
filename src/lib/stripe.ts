@@ -6,17 +6,13 @@ if (!stripePublishableKey) {
   console.warn('Stripe publishable key not found. Payment features will be disabled.');
 }
 
-if (!stripePublishableKey) {
-  console.warn('Stripe publishable key not found. Payment features will be disabled.');
-}
-
 // Initialize Stripe
 export const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
 // Stripe configuration
 export const STRIPE_CONFIG = {
   appearance: {
-    theme: 'flat' as const,
+    theme: 'stripe' as const,
     variables: {
       colorPrimary: '#2563eb',
       colorBackground: '#ffffff',
@@ -63,6 +59,7 @@ export const formatAmount = (amount: number, currency = 'usd') => {
 // Validate Stripe configuration
 export const validateStripeConfig = () => {
   const issues = [];
+  const isLiveMode = stripePublishableKey?.startsWith('pk_live_');
   
   if (!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
     issues.push('Missing VITE_STRIPE_PUBLISHABLE_KEY');
@@ -78,6 +75,10 @@ export const validateStripeConfig = () => {
   
   if (!import.meta.env.VITE_STRIPE_ENTERPRISE_PRICE_ID && import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
     issues.push('Missing VITE_STRIPE_ENTERPRISE_PRICE_ID');
+  }
+  
+  if (isLiveMode) {
+    console.log('🔴 LIVE MODE DETECTED - Using production Stripe keys');
   }
   
   return {

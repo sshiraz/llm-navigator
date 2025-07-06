@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Bug, Download, Trash2, RefreshCw, AlertTriangle, CheckCircle, Clock, Database, Webhook, CreditCard, Zap, X } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
 import { supabase } from '../../lib/supabase';
+import StripeStatus from '../Payment/StripeStatus';
 
 export default function PaymentDebugger() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -9,6 +10,7 @@ export default function PaymentDebugger() {
   const [filter, setFilter] = useState<'all' | 'info' | 'warn' | 'error'>('all');
   const [webhookStatus, setWebhookStatus] = useState<any>(null);
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
+  const isLiveMode = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
 
   useEffect(() => {
     loadLogs();
@@ -230,10 +232,15 @@ ${JSON.stringify(exportData, null, 2)}`;
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl w-full h-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-red-50 flex-shrink-0">
+        <div className={`flex items-center justify-between p-6 border-b border-gray-200 ${isLiveMode ? 'bg-red-100' : 'bg-red-50'} flex-shrink-0`}>
           <div className="flex items-center space-x-3">
             <Bug className="w-6 h-6 text-red-600" />
-            <h2 className="text-xl font-bold text-gray-900">Payment Debugger</h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              Payment Debugger
+              {isLiveMode && (
+                <span className="ml-2 px-2 py-0.5 bg-red-200 text-red-800 text-xs rounded-full">LIVE MODE</span>
+              )}
+            </h2>
             <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
               {logs.length} logs
             </span>
@@ -247,7 +254,13 @@ ${JSON.stringify(exportData, null, 2)}`;
         </div>
 
         {/* Controls */}
-        <div className="p-4 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+        <div className={`p-4 border-b border-gray-200 ${isLiveMode ? 'bg-red-50' : 'bg-gray-50'} flex-shrink-0`}>
+          {isLiveMode && (
+            <div className="mb-4 bg-red-100 border border-red-300 rounded-lg p-3 text-red-800 font-medium">
+              ⚠️ LIVE MODE ACTIVE - Real payments are being processed with production Stripe keys
+            </div>
+          )}
+          
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
               <select
@@ -296,11 +309,16 @@ ${JSON.stringify(exportData, null, 2)}`;
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={testWebhookEndpoint}
-              disabled={isTestingWebhook}
-              className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 disabled:bg-gray-400 transition-colors"
+              disabled={isTestingWebhook || isLiveMode}
+              className={`flex items-center space-x-2 px-4 py-2 ${
+                isLiveMode ? 'bg-red-600 hover:bg-red-700' : 'bg-purple-600 hover:bg-purple-700'
+              } text-white rounded-lg text-sm disabled:bg-gray-400 transition-colors`}
+              title={isLiveMode ? 'Testing webhooks in live mode is disabled' : 'Test webhook endpoint'}
             >
               <Webhook className="w-4 h-4" />
-              <span>{isTestingWebhook ? 'Testing...' : 'Test Webhook'}</span>
+              <span>
+                {isTestingWebhook ? 'Testing...' : isLiveMode ? 'Test Disabled (LIVE)' : 'Test Webhook'}
+              </span>
             </button>
             
             <button
@@ -320,11 +338,13 @@ ${JSON.stringify(exportData, null, 2)}`;
             </button>
             
             <button
-              onClick={simulateWebhook}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors"
+              onClick={simulateWebhook} 
+              disabled={isLiveMode}
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+              title={isLiveMode ? 'Simulating webhooks in live mode is disabled' : 'Simulate webhook event'}
             >
               <CheckCircle className="w-4 h-4" />
-              <span>Simulate Webhook</span>
+              <span>{isLiveMode ? 'Simulate Disabled (LIVE)' : 'Simulate Webhook'}</span>
             </button>
 
             {webhookStatus && (
@@ -338,7 +358,7 @@ ${JSON.stringify(exportData, null, 2)}`;
         </div>
 
         {/* Logs - MUCH LARGER NOW */}
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50" style={{ minHeight: '500px' }}>
+        <div className={`flex-1 overflow-y-auto p-6 ${isLiveMode ? 'bg-red-50/30' : 'bg-gray-50'}`} style={{ minHeight: '500px' }}>
           {filteredLogs.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               <Bug className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -351,9 +371,9 @@ ${JSON.stringify(exportData, null, 2)}`;
                 <div
                   key={index}
                   className={`p-6 rounded-xl border-l-4 shadow-sm bg-white ${
-                    log.level === 'error' ? 'border-red-500' :
-                    log.level === 'warn' ? 'border-yellow-500' :
-                    'border-green-500'
+                    log.level === 'error' ? 'border-red-500' : 
+                    log.level === 'warn' ? 'border-yellow-500' : 
+                    'border-green-500' 
                   }`}
                 >
                   <div className="flex items-start justify-between mb-3">
@@ -364,6 +384,11 @@ ${JSON.stringify(exportData, null, 2)}`;
                       <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
                         {new Date(log.timestamp).toLocaleString()}
                       </span>
+                      {log.message.includes('LIVE') && (
+                        <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full">
+                          LIVE MODE
+                        </span>
+                      )}
                     </div>
                     <span className={`px-3 py-1 text-xs font-bold rounded-full ${
                       log.level === 'error' ? 'bg-red-100 text-red-800' :
@@ -395,7 +420,7 @@ ${JSON.stringify(exportData, null, 2)}`;
         </div>
 
         {/* Troubleshooting Guide - Fixed at bottom */}
-        <div className="p-6 border-t border-gray-200 bg-yellow-50 flex-shrink-0">
+        <div className={`p-6 border-t border-gray-200 ${isLiveMode ? 'bg-red-50' : 'bg-yellow-50'} flex-shrink-0`}>
           <h3 className="font-bold text-yellow-900 mb-3 text-lg">🚨 Payment Not Upgrading Plan?</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -409,9 +434,9 @@ ${JSON.stringify(exportData, null, 2)}`;
             </div>
             
             <div>
-              <h4 className="font-semibold text-yellow-900 mb-2">Quick Fix Commands:</h4>
-              <div className="bg-yellow-100 border border-yellow-200 rounded-lg p-3">
-                <div className="font-mono text-xs text-yellow-800 space-y-1">
+              <h4 className={`font-semibold ${isLiveMode ? 'text-red-900' : 'text-yellow-900'} mb-2`}>Quick Fix Commands:</h4>
+              <div className={`${isLiveMode ? 'bg-red-100 border border-red-200' : 'bg-yellow-100 border border-yellow-200'} rounded-lg p-3`}>
+                <div className={`font-mono text-xs ${isLiveMode ? 'text-red-800' : 'text-yellow-800'} space-y-1`}>
                   <div>npx supabase functions deploy stripe-webhook</div>
                   <div>npx supabase secrets set STRIPE_SECRET_KEY=sk_test_your_key</div>
                   <div>npx supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_your_secret</div>
@@ -422,14 +447,31 @@ ${JSON.stringify(exportData, null, 2)}`;
         </div>
 
         {/* Environment Status - Fixed at bottom */}
-        <div className="p-4 border-t border-gray-200 bg-blue-50 flex-shrink-0">
+        <div className={`p-4 border-t border-gray-200 ${isLiveMode ? 'bg-red-50' : 'bg-blue-50'} flex-shrink-0`}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             <div>
               <h4 className="font-semibold text-blue-900 mb-2">Environment Status:</h4>
               <div className="space-y-1">
                 <div><strong>Supabase URL:</strong> {import.meta.env.VITE_SUPABASE_URL ? '✅ Set' : '❌ Missing'}</div>
                 <div><strong>Supabase Key:</strong> {import.meta.env.VITE_SUPABASE_ANON_KEY ? '✅ Set' : '❌ Missing'}</div>
-                <div><strong>Stripe Key:</strong> {import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? '✅ Set' : '❌ Missing'}</div>
+                <div>
+                  <strong>Stripe Key:</strong> {
+                    import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY 
+                      ? isLiveMode 
+                        ? '🔴 LIVE MODE' 
+                        : '✅ Test Mode' 
+                      : '❌ Missing'
+                  }
+                </div>
+                <div>
+                  <strong>Stripe Prices:</strong> {
+                    import.meta.env.VITE_STRIPE_STARTER_PRICE_ID &&
+                    import.meta.env.VITE_STRIPE_PROFESSIONAL_PRICE_ID &&
+                    import.meta.env.VITE_STRIPE_ENTERPRISE_PRICE_ID
+                      ? '✅ Set'
+                      : '❌ Missing'
+                  }
+                </div>
               </div>
             </div>
             
@@ -445,6 +487,7 @@ ${JSON.stringify(exportData, null, 2)}`;
             <div>
               <h4 className="font-semibold text-blue-900 mb-2">Components:</h4>
               <div className="space-y-1">
+                <StripeStatus />
                 {Array.from(new Set(logs.map(l => l.component))).slice(0, 4).map(component => (
                   <div key={component}>
                     <strong>{component}:</strong> {logs.filter(l => l.component === component).length} logs
