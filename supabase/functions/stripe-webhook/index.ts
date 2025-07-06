@@ -119,7 +119,6 @@ serve(async (req) => {
       stripeKeyPrefix: stripeSecretKey ? stripeSecretKey.substring(0, 7) + "..." : "none",
       webhookSecretPrefix: webhookSecret ? webhookSecret.substring(0, 7) + "..." : "none",
       mode: isLiveMode ? "LIVE" : "TEST"
-      isLiveMode: isLiveMode
     });
 
     if (!stripeSecretKey) {
