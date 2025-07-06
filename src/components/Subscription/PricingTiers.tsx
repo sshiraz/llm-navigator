@@ -20,7 +20,7 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
       name: 'Starter',
       price: '$29',
       period: '/month',
-      description: 'Perfect for small businesses getting started with AI optimization',
+      description: 'Perfect for small businesses getting started with AI search optimization',
       icon: Star,
       features: [
         '10 AI analyses per month',
@@ -37,13 +37,13 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
       name: 'Professional',
       price: '$99',
       period: '/month',
-      description: 'Advanced features for growing businesses serious about AI visibility',
+      description: 'Advanced features for businesses serious about AI search visibility',
       icon: Zap,
       features: [
         '50 AI analyses per month',
         'Advanced competitor strategy',
         'Priority optimization recommendations',
-        'Live chat support',
+        'Email support',
         'Advanced reporting & analytics',
         'Custom keyword tracking',
         'API access'
@@ -62,11 +62,10 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
         'Unlimited AI analyses',
         'White-label reporting',
         'Custom integrations',
-        'Dedicated account manager',
-        'Priority phone support',
+        'Email support',
         'Advanced API access',
-        'Custom training sessions',
-        'SLA guarantee'
+        'Unlimited projects',
+        'Unlimited users'
       ],
       popular: false,
       buttonText: 'Contact Sales'
