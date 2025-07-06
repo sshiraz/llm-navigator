@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
-import CreditCardForm from '../Payment/CreditCardForm';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import CheckoutForm from '../Payment/CheckoutForm';
 
 interface StripeRedirectCheckoutProps {
   plan: string;
   onCancel: () => void;
 }
 
+// Initialize Stripe
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+
 export default function StripeRedirectCheckout({ plan, onCancel }: StripeRedirectCheckoutProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showCreditCardForm, setShowCreditCardForm] = useState(false);
+  const [showCheckoutForm, setShowCheckoutForm] = useState(false);
   const [planAmount, setPlanAmount] = useState(0);
 
   useEffect(() => {
@@ -32,11 +37,12 @@ export default function StripeRedirectCheckout({ plan, onCancel }: StripeRedirec
       // Log the checkout session creation
       PaymentLogger.trackPaymentFlow('Checkout session created', { 
         plan,
-        amount
+        amount,
+        timestamp: new Date().toISOString()
       });
       
       // Show the credit card form
-      setShowCreditCardForm(true);
+      setShowCheckoutForm(true);
     } catch (error) {
       PaymentLogger.log('error', 'StripeRedirectCheckout', 'Failed to create checkout session', error);
       setError(error.message || 'Failed to create checkout session');
@@ -67,14 +73,16 @@ export default function StripeRedirectCheckout({ plan, onCancel }: StripeRedirec
   };
 
   // If showing credit card form, render it
-  if (showCreditCardForm) {
+  if (showCheckoutForm) {
     return (
-      <CreditCardForm
-        plan={plan}
-        amount={planAmount}
-        onSuccess={handlePaymentSuccess}
-        onCancel={onCancel}
-      />
+      <Elements stripe={stripePromise}>
+        <CheckoutForm
+          selectedPlan={plan}
+          amount={planAmount}
+          onSuccess={handlePaymentSuccess}
+          onCancel={onCancel}
+        />
+      </Elements>
     );
   }
 
@@ -118,7 +126,7 @@ export default function StripeRedirectCheckout({ plan, onCancel }: StripeRedirec
           <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
           <p className="text-gray-600 mb-4">Your checkout session is ready!</p>
           <button
-            onClick={() => setShowCreditCardForm(true)}
+            onClick={() => setShowCheckoutForm(true)}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Continue to Payment
