@@ -8,13 +8,32 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activeSection, onSectionChange, onLogout }: SidebarProps) {
+  // Get current user from localStorage to check if admin
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem('currentUser');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        setIsAdmin(user.isAdmin === true);
+      }
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+    }
+  }, []);
+  
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'new-analysis', label: 'New Analysis', icon: Plus },
     { id: 'projects', label: 'Projects', icon: Target },
     { id: 'competitor-strategy', label: 'Competitor Strategy', icon: Users },
     { id: 'pricing', label: 'Pricing', icon: DollarSign },
-    { id: 'contact', label: 'Contact Us', icon: Mail },
+    { id: 'contact', label: 'Contact Us', icon: Mail }
+  ];
+  
+  // Add admin menu items if user is admin
+  const adminMenuItems = [
     { id: 'admin-users', label: 'User Management', icon: UserCog }
   ];
 
@@ -56,6 +75,37 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
             </button>
           );
         })}
+        
+        {/* Admin Menu Items */}
+        {isAdmin && (
+          <>
+            <div className="mt-6 mb-2 px-4">
+              <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Admin
+              </div>
+            </div>
+            
+            {adminMenuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeSection === item.id;
+              
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onSectionChange(item.id)}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
+                </button>
+              );
+            })}
+          </>
+        )}
       </nav>
 
       {/* Logout Button */}

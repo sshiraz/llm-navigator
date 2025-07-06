@@ -39,6 +39,27 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+
+    // Special handling for admin account
+    if (isLogin && formData.email === 'info@convologix.com' && formData.password === '4C0nv0@LLMNav') {
+      // Create admin user with unlimited access
+      const adminUser = {
+        id: 'admin-user',
+        email: 'info@convologix.com',
+        name: 'Admin User',
+        avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
+        subscription: 'enterprise',
+        isAdmin: true,
+        createdAt: new Date().toISOString()
+      };
+      
+      // Store admin user in localStorage
+      localStorage.setItem('currentUser', JSON.stringify(adminUser));
+      
+      onLogin(adminUser);
+      setIsLoading(false);
+      return;
+    }
     
     // Simulate API call
     setTimeout(() => {
@@ -70,7 +91,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         
           // Store current user in localStorage
           localStorage.setItem('currentUser', JSON.stringify(userData));
-        
+          
           onLogin(userData as User);
         } catch (error) {
           console.error('Error parsing users from localStorage:', error);
