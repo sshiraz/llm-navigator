@@ -25,11 +25,11 @@ export default function Header({ user }: HeaderProps) {
               <Gift className="w-4 h-4 text-blue-600" />
               {trialStatus.daysRemaining > 0 ? (
                 <span className="text-sm font-medium text-blue-900">
-                  {trialStatus.daysRemaining} {trialStatus.daysRemaining === 1 ? 'day' : 'days'} left in trial
+                  {trialStatus.daysRemaining === 1 ? '1 day' : `${trialStatus.daysRemaining} days`} left in trial
                 </span>
               ) : (
                 <span className="text-sm font-medium text-blue-900">
-                  Trial expires today
+                  Trial ends today
                 </span>
               )}
             </div>

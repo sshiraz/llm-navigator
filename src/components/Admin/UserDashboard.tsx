@@ -428,9 +428,18 @@ export default function UserDashboard() {
                   const now = new Date();
                   const trialEnd = user.trialEndsAt ? new Date(user.trialEndsAt) : null;
                   const trialActive = trialEnd && trialEnd > now;
-                  const daysRemaining = trialEnd 
-                    ? Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-                    : 0;
+                  
+                  // Calculate days remaining more accurately
+                  let daysRemaining = 0;
+                  if (trialEnd) {
+                    // Set both dates to midnight for accurate day calculation
+                    const nowDate = new Date(now.setHours(0, 0, 0, 0));
+                    const endDate = new Date(trialEnd.setHours(0, 0, 0, 0));
+                    
+                    // Calculate difference in days
+                    const diffTime = endDate.getTime() - nowDate.getTime();
+                    daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  }
                   
                   return (
                     <tr key={user.id} className="hover:bg-gray-50">
@@ -481,7 +490,8 @@ export default function UserDashboard() {
                               <div className="flex items-center">
                                 <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
                                 <span className="text-sm text-gray-900">
-                                  {daysRemaining} days left
+                                  {daysRemaining === 0 ? 'Expires today' : 
+                                   `${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'} left`}
                                 </span>
                               </div>
                             ) : (

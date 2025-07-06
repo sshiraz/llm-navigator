@@ -269,12 +269,17 @@ const initializeDemoUser = () => {
       const demoUser = {
         id: 'demo-user-123',
         email: 'demo@example.com',
-        password: 'demo123', // In a real app, this would be hashed
+        password: 'demo123',
         name: 'Demo User',
         avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
         subscription: 'trial',
-        // Set trial to expire in 14 days from now at 23:59:59
-        trialEndsAt: new Date(new Date().setHours(23, 59, 59, 999) + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        // Set trial to expire in exactly 14 days from now at 23:59:59
+        trialEndsAt: (() => {
+          const date = new Date();
+          date.setDate(date.getDate() + 14);
+          date.setHours(23, 59, 59, 999);
+          return date.toISOString();
+        })(),
         createdAt: new Date().toISOString()
       };
       
@@ -339,6 +344,13 @@ export const getTrialStatus = (user: User) => {
   const now = new Date();
   const trialEnd = new Date(user.trialEndsAt);
   
+  // Set both dates to midnight for accurate day calculation
+  const nowDate = new Date(now.setHours(0, 0, 0, 0));
+  const endDate = new Date(trialEnd.setHours(0, 0, 0, 0));
+  
+  // Calculate difference in days
+  const diffTime = endDate.getTime() - nowDate.getTime();
+  const daysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
   // Calculate days remaining
   const diffTime = trialEnd.getTime() - now.getTime();
   const daysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
