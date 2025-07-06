@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { CreditCard, Calendar, Lock, User, CheckCircle, AlertCircle } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
-import { loadStripe } from '@stripe/stripe-js';
-import { CardElement, Elements, useStripe, useElements } from '@stripe/react-stripe-js';
-import { STRIPE_CONFIG } from '../../lib/stripe';
+import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
+import { STRIPE_CONFIG, stripePromise } from '../../lib/stripe';
 
 interface CreditCardFormProps {
   plan: string;
@@ -11,11 +11,6 @@ interface CreditCardFormProps {
   onSuccess: (paymentData: any) => void;
   onCancel: () => void;
 }
-
-// Initialize Stripe
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY 
-  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) 
-  : null;
 
 function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCardFormProps) {
   const stripe = useStripe();
@@ -105,6 +100,76 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
         last4: paymentMethod.card?.last4,
         brand: paymentMethod.card?.brand
       });
+      
+      // For live mode, we should create a real payment intent on the server
+      if (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_')) {
+        try {
+          // Create a payment intent on the server
+          const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+            },
+            body: JSON.stringify({
+              amount,
+              currency: 'usd',
+              metadata: {
+                userId: 'current-user', // In a real app, get this from auth
+                plan,
+                email: cardName // Using name as email for demo
+              }
+            })
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to create payment intent');
+          }
+          
+          const { clientSecret } = await response.json();
+          
+          // Confirm the payment with the client secret
+          const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
+            clientSecret,
+            {
+              payment_method: {
+                card: cardElement,
+                billing_details: {
+                  name: cardName,
+                }
+              }
+            }
+          );
+          
+          if (confirmError) {
+            throw confirmError;
+          }
+          
+          if (paymentIntent.status === 'succeeded') {
+            // Show success state
+            setIsSuccess(true);
+            
+            // Wait a moment to show success state before calling onSuccess
+            setTimeout(() => {
+              onSuccess({
+                paymentId: paymentIntent.id,
+                paymentMethodId: paymentMethod.id,
+                plan,
+                amount,
+                last4: paymentMethod.card?.last4 || '4242',
+                brand: paymentMethod.card?.brand || 'visa'
+              });
+            }, 1500);
+            return;
+          }
+        } catch (err) {
+          const errorMessage = err.message || 'Payment failed. Please try again.';
+          setCardError(errorMessage);
+          PaymentLogger.trackPaymentFlow('Live payment failed', { error: errorMessage });
+          setIsProcessing(false);
+          return;
+        }
+      }
 
       // Show success state
       setIsSuccess(true);

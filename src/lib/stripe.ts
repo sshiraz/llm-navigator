@@ -2,6 +2,11 @@ import { loadStripe } from '@stripe/stripe-js';
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
+// Log a warning if using live keys
+if (stripePublishableKey?.startsWith('pk_live_')) {
+  console.warn('⚠️ LIVE MODE ACTIVE - Using production Stripe keys. Real credit cards will be charged.');
+}
+
 if (!stripePublishableKey) {
   console.warn('Stripe publishable key not found. Payment features will be disabled.');
 }

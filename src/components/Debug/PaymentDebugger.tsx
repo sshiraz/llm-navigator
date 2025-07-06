@@ -12,6 +12,9 @@ export default function PaymentDebugger() {
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
   const isLiveMode = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
 
+  // Disable certain features in live mode
+  const disableInLiveMode = isLiveMode;
+
   useEffect(() => {
     loadLogs();
     // Auto-check webhook status when debugger opens
@@ -310,7 +313,7 @@ ${JSON.stringify(exportData, null, 2)}`;
             <button
               onClick={testWebhookEndpoint}
               disabled={isTestingWebhook || isLiveMode}
-              className={`flex items-center space-x-2 px-4 py-2 ${
+              className={`flex items-center space-x-2 px-4 py-2 cursor-pointer ${
                 isLiveMode ? 'bg-red-600 hover:bg-red-700' : 'bg-purple-600 hover:bg-purple-700'
               } text-white rounded-lg text-sm disabled:bg-gray-400 transition-colors`}
               title={isLiveMode ? 'Testing webhooks in live mode is disabled' : 'Test webhook endpoint'}
@@ -339,8 +342,8 @@ ${JSON.stringify(exportData, null, 2)}`;
             
             <button
               onClick={simulateWebhook} 
-              disabled={isLiveMode}
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+              disabled={disableInLiveMode}
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
               title={isLiveMode ? 'Simulating webhooks in live mode is disabled' : 'Simulate webhook event'}
             >
               <CheckCircle className="w-4 h-4" />
