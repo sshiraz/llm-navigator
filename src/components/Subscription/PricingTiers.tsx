@@ -46,7 +46,7 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
         'Email support',
         'Advanced reporting & analytics',
         'Custom keyword tracking',
-        'API access with standard limits'
+        'Detailed performance metrics'
       ],
       popular: true,
       buttonText: 'Upgrade to Pro'
@@ -64,7 +64,7 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
         'White-label reporting',
         'Email support',
         'Priority email support',
-        'Advanced API access with higher rate limits',
+        'Premium performance metrics',
         'Unlimited projects',
         'Unlimited users',
         'Custom PDF branding',

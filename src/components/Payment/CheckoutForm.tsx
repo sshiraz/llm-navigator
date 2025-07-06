@@ -184,7 +184,7 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-4 h-4 text-emerald-500" />
-                  <span>Advanced API access with higher limits</span>
+                  <span>Premium performance metrics</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-4 h-4 text-emerald-500" />
