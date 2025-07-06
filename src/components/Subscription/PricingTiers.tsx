@@ -60,8 +60,8 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
       icon: Crown,
       features: [
         'Unlimited AI analyses',
+        'Advanced competitor strategy',
         'White-label reporting',
-        'Custom integrations',
         'Email support',
         'Advanced API access',
         'Unlimited projects',
