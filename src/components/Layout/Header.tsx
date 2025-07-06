@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, Settings, User, Clock, Gift } from 'lucide-react';
+import { User, Clock, Gift } from 'lucide-react';
 import { User as UserType } from '../../types';
 import { getTrialStatus } from '../../utils/mockData';
 
@@ -44,15 +44,10 @@ export default function Header({ user }: HeaderProps) {
             </div>
           )}
 
-          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-            <Bell className="w-5 h-5" />
-          </button>
-          
-          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-            <Settings className="w-5 h-5" />
-          </button>
-          
-          <div className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded-lg p-2 transition-colors">
+          <div 
+            className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded-lg p-2 transition-colors"
+            onClick={() => window.location.hash = '#account'}
+          >
             <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold">
               {user.name.charAt(0)}
             </div>
