@@ -6,6 +6,7 @@ export interface User {
   subscription: 'free' | 'trial' | 'starter' | 'professional' | 'enterprise';
   trialEndsAt?: string;
   createdAt: string;
+  isAdmin?: boolean;
   deviceFingerprint?: string;
   ipAddress?: string;
   paymentMethodAdded?: boolean;

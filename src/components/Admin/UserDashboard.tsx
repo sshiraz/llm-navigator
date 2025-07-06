@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Filter, Download, RefreshCw, CreditCard, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Users, Search, Filter, Download, RefreshCw, CreditCard, Clock, CheckCircle, XCircle, ArrowLeft, Shield, Edit, Save, X } from 'lucide-react';
 
 export default function UserDashboard() {
   const [users, setUsers] = useState<any[]>([]);
@@ -12,7 +12,45 @@ export default function UserDashboard() {
     direction: 'desc'
   });
 
+  // State for editing user
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    subscription: '',
+    paymentMethodAdded: false
+  });
+
+  // Check if current user is admin
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
   useEffect(() => {
+    // Check if user is admin
+    try {
+      const userStr = localStorage.getItem('currentUser');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        if (user.isAdmin !== true) {
+          setIsRedirecting(true);
+          // Redirect non-admin users
+          setTimeout(() => {
+            window.location.hash = '#dashboard';
+          }, 2000);
+        } else {
+          setIsAdmin(true);
+        }
+      } else {
+        setIsRedirecting(true);
+        // Redirect if not logged in
+        setTimeout(() => {
+          window.location.hash = '#auth';
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+    }
+
     loadUsers();
   }, []);
 
@@ -123,6 +161,64 @@ export default function UserDashboard() {
     document.body.removeChild(link);
   };
 
+  const handleEditUser = (user: any) => {
+    setEditingUser(user);
+    setEditForm({
+      name: user.name || '',
+      email: user.email || '',
+      subscription: user.subscription || 'free',
+      paymentMethodAdded: user.paymentMethodAdded || false
+    });
+  };
+
+  const handleSaveUser = () => {
+    if (!editingUser) return;
+
+    try {
+      // Update user in localStorage
+      const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+      const updatedUsers = storedUsers.map((user: any) => {
+        if (user.id === editingUser.id) {
+          return {
+            ...user,
+            name: editForm.name,
+            email: editForm.email,
+            subscription: editForm.subscription,
+            paymentMethodAdded: editForm.paymentMethodAdded
+          };
+        }
+        return user;
+      });
+      
+      localStorage.setItem('users', JSON.stringify(updatedUsers));
+      
+      // If this is the current user, update that too
+      const currentUserStr = localStorage.getItem('currentUser');
+      if (currentUserStr) {
+        const currentUser = JSON.parse(currentUserStr);
+        if (currentUser.id === editingUser.id) {
+          const updatedCurrentUser = {
+            ...currentUser,
+            name: editForm.name,
+            email: editForm.email,
+            subscription: editForm.subscription,
+            paymentMethodAdded: editForm.paymentMethodAdded
+          };
+          localStorage.setItem('currentUser', JSON.stringify(updatedCurrentUser));
+        }
+      }
+      
+      // Refresh user list
+      loadUsers();
+      
+      // Close edit form
+      setEditingUser(null);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      alert('Failed to update user. Please try again.');
+    }
+  };
+
   const getSubscriptionBadge = (subscription: string) => {
     switch (subscription) {
       case 'starter':
@@ -138,13 +234,45 @@ export default function UserDashboard() {
     }
   };
 
+  // If not admin, show access denied
+  if (isRedirecting) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-8 max-w-md text-center">
+          <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
+          <p className="text-gray-600 mb-6">
+            You don't have permission to access this page. Redirecting you to the dashboard...
+          </p>
+          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-full bg-red-500 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return null;
+  }
+
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => window.location.hash = '#dashboard'}
+            className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Dashboard</span>
+          </button>
+          
+          <div>
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600 mt-1">Monitor user accounts and subscription status</p>
+          </div>
         </div>
         
         <div className="flex items-center space-x-3">
@@ -289,6 +417,9 @@ export default function UserDashboard() {
                       <span className="ml-1">{sortBy.direction === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -369,6 +500,14 @@ export default function UserDashboard() {
                           </div>
                         )}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <button
+                          onClick={() => handleEditUser(user)}
+                          className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                        >
+                          Edit
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -410,6 +549,96 @@ export default function UserDashboard() {
           </div>
         </div>
       </div>
+      
+      {/* Edit User Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Edit User</h3>
+              <button
+                onClick={() => setEditingUser(null)}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Subscription
+                </label>
+                <select
+                  value={editForm.subscription}
+                  onChange={(e) => setEditForm({...editForm, subscription: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="free">Free</option>
+                  <option value="trial">Trial</option>
+                  <option value="starter">Starter</option>
+                  <option value="professional">Professional</option>
+                  <option value="enterprise">Enterprise</option>
+                </select>
+              </div>
+              
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="paymentMethodAdded"
+                  checked={editForm.paymentMethodAdded}
+                  onChange={(e) => setEditForm({...editForm, paymentMethodAdded: e.target.checked})}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="paymentMethodAdded" className="ml-2 block text-sm text-gray-900">
+                  Payment Method Added
+                </label>
+              </div>
+            </div>
+            
+            <div className="mt-6 flex space-x-3">
+              <button
+                onClick={() => setEditingUser(null)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              
+              <button
+                onClick={handleSaveUser}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+              >
+                <Save className="w-4 h-4" />
+                <span>Save Changes</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

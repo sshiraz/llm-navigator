@@ -230,6 +230,23 @@ function App() {
   const renderContent = () => {
     // Public pages that don't require login
     if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users') {
+      // Special handling for admin-users - only allow access if user is admin
+      if (activeSection === 'admin-users') {
+        // Check if user is admin
+        if (!user || !user.isAdmin) {
+          // Redirect to dashboard if not admin
+          setTimeout(() => {
+            window.location.hash = '#dashboard';
+          }, 100);
+          return <div className="flex items-center justify-center h-screen">
+            <div className="text-center">
+              <h2 className="text-xl font-semibold text-red-600 mb-2">Access Denied</h2>
+              <p className="text-gray-600">You don't have permission to access this page.</p>
+            </div>
+          </div>;
+        }
+      }
+      
       switch (activeSection) {
         case 'landing':
           return <LandingPage onGetStarted={handleGetStarted} />;
