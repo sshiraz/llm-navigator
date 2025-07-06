@@ -71,7 +71,7 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
         'Access to all AI models including Claude 3 Opus'
       ],
       popular: false,
-      buttonText: 'Contact Sales'
+      buttonText: 'Start Free Trial'
     }
   ];
 
@@ -81,12 +81,6 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
     console.log(`Selected plan: ${planId}, skip trial: ${skipTrialOption}`);
     setSelectedPlan(planId);
     setSkipTrial(skipTrialOption);
-    
-    if (planId === 'enterprise') {
-      // For enterprise, show contact form or redirect to sales page
-      alert('Please contact our sales team for Enterprise plan details.');
-      return;
-    }
     
     // For other plans, show trial signup or checkout
     if (skipTrialOption) {
@@ -217,19 +211,21 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
                 </button>
                 
                 {!isCurrentPlan && plan.id !== 'enterprise' && (
-                  <button
-                    onClick={() => {
-                      if (plan.id === 'enterprise') {
-                        window.location.hash = '#contact';
-                        window.location.reload();
-                      } else {
-                        handlePlanSelect(plan.id, true);
-                      }
-                    }}
-                    className="w-full py-2 px-6 rounded-xl font-medium text-sm transition-all duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  >
-                    {plan.id === 'enterprise' ? 'Contact Sales' : 'Skip Trial - Buy Now'}
-                  </button>
+                <button
+                  onClick={() => handlePlanSelect(plan.id, true)}
+                  className="w-full py-2 px-6 rounded-xl font-medium text-sm transition-all duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                >
+                  Skip Trial - Buy Now
+                </button>
+                )}
+                
+                {!isCurrentPlan && plan.id === 'enterprise' && (
+                <button
+                  onClick={() => handlePlanSelect(plan.id, true)}
+                  className="w-full py-2 px-6 rounded-xl font-medium text-sm transition-all duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                >
+                  Skip Trial - Buy Now
+                </button>
                 )}
               </div>
             </div>
@@ -239,10 +235,10 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
 
       <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-8 text-center">
         <h3 className="text-2xl font-bold text-gray-900 mb-4">
-          Need a Custom Solution?
+          Need Additional Support?
         </h3>
         <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-          We offer tailored enterprise solutions with custom pricing, dedicated support, and specialized features for large organizations.
+          Our team is available to help with custom implementations, training, and specialized support needs.
         </p>
         <button 
           onClick={() => {
