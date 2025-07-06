@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Globe, Target, Sparkles, ArrowRight, Lightbulb, Zap, AlertCircle } from 'lucide-react';
 import AnalysisProgress from './AnalysisProgress';
 import UsageLimitsBanner from './UsageLimitsBanner';
+import ModelSelector from './ModelSelector';
 import { User } from '../../types';
 import { AnalysisEngine } from '../../utils/analysisEngine';
 import { useUsageMonitoring } from '../../utils/costTracker';
@@ -14,6 +15,7 @@ interface NewAnalysisProps {
 export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
   const [website, setWebsite] = useState('');
   const [keywords, setKeywords] = useState('');
+  const [selectedModel, setSelectedModel] = useState('gpt-4');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentAnalysis, setCurrentAnalysis] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +36,7 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     try {
       localStorage.setItem('lastAnalysisWebsite', website);
       localStorage.setItem('lastAnalysisKeywords', keywords);
+      localStorage.setItem('lastSelectedModel', selectedModel);
     } catch (error) {
       console.error('Error storing analysis parameters:', error);
     }
@@ -42,6 +45,7 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     try {
       localStorage.setItem('lastAnalysisWebsite', website);
       localStorage.setItem('lastAnalysisKeywords', keywords);
+      localStorage.setItem('lastSelectedModel', selectedModel);
     } catch (error) {
       console.error('Error storing analysis parameters:', error);
     }
@@ -68,7 +72,7 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     const keywordList = keywords.split(',').map(k => k.trim()).filter(k => k.length > 0);
     
     setIsAnalyzing(true);
-    setCurrentAnalysis({ website: website.trim(), keywords: keywordList });
+    setCurrentAnalysis({ website: website.trim(), keywords: keywordList, model: selectedModel });
     console.log('Starting analysis for:', website.trim(), keywordList);
   };
   
@@ -84,6 +88,11 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
       
       if (savedKeywords) {
         setKeywords(savedKeywords);
+      }
+      
+      const savedModel = localStorage.getItem('lastSelectedModel');
+      if (savedModel) {
+        setSelectedModel(savedModel);
       }
     } catch (error) {
       console.error('Error loading saved analysis parameters:', error);
@@ -141,6 +150,7 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
       <AnalysisProgress
         website={currentAnalysis.website}
         keywords={currentAnalysis.keywords}
+        model={currentAnalysis.model}
         user={user!}
         onComplete={handleAnalysisComplete}
         onError={handleAnalysisError}
@@ -265,6 +275,18 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
         </div>
       )}
 
+      {/* Model Selector */}
+      {user && (
+        <div className="mb-8">
+          <ModelSelector 
+            selectedModel={selectedModel}
+            onModelChange={setSelectedModel}
+            subscription={user.subscription}
+            isAdmin={user.isAdmin}
+          />
+        </div>
+      )}
+
       {/* Error Message */}
       {error && (
         <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
@@ -385,8 +407,8 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
                 : isRealAnalysis 
                 ? 'Start Premium Analysis' 
                 : user?.subscription === 'trial' 
-                ? 'Start Trial Analysis' 
-                : 'Start Demo Analysis'
+                ? `Start Trial Analysis with ${selectedModel.includes('claude') ? 'Claude' : selectedModel.includes('perplexity') ? 'Perplexity' : 'GPT-4'}` 
+                : `Start Demo Analysis with ${selectedModel.includes('claude') ? 'Claude' : selectedModel.includes('perplexity') ? 'Perplexity' : 'GPT-4'}`
               }
             </span>
             {canAnalyze && <ArrowRight className="w-5 h-5" />}
