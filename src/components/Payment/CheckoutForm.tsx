@@ -180,15 +180,19 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-4 h-4 text-emerald-500" />
-                  <span>White-label reports</span>
+                  <span>White-label reports & custom branding</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-4 h-4 text-emerald-500" />
-                  <span>API access</span>
+                  <span>Advanced API access with higher limits</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-4 h-4 text-emerald-500" />
-                  <span>Dedicated support</span>
+                  <span>Priority email support</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-500" />
+                  <span>Access to all AI models</span>
                 </div>
               </>
             )}

@@ -25,7 +25,7 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
       features: [
         '10 AI analyses per month',
         'Basic competitor insights',
-        'Core optimization recommendations',
+        'Standard optimization recommendations',
         'Email support',
         'Standard reporting'
       ],
@@ -42,11 +42,11 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
       features: [
         '50 AI analyses per month',
         'Advanced competitor strategy',
-        'Priority optimization recommendations',
+        'Advanced optimization recommendations',
         'Email support',
         'Advanced reporting & analytics',
         'Custom keyword tracking',
-        'API access'
+        'API access with standard limits'
       ],
       popular: true,
       buttonText: 'Upgrade to Pro'
@@ -63,9 +63,14 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
         'Advanced competitor strategy',
         'White-label reporting',
         'Email support',
-        'Advanced API access',
+        'Priority email support',
+        'Advanced API access with higher rate limits',
         'Unlimited projects',
-        'Unlimited users'
+        'Unlimited users',
+        'Custom PDF branding',
+        'Advanced export options',
+        'Historical data retention',
+        'Access to all AI models including Claude 3 Opus'
       ],
       popular: false,
       buttonText: 'Contact Sales'
