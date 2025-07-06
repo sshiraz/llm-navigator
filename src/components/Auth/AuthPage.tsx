@@ -127,7 +127,12 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
             avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
             subscription: 'trial',
             // Set trial to end 14 days from now at 23:59:59
-            trialEndsAt: new Date(new Date().setHours(23, 59, 59, 999) + 14 * 24 * 60 * 60 * 1000).toISOString(),
+            trialEndsAt: (() => {
+              const date = new Date();
+              date.setDate(date.getDate() + 14); // Add exactly 14 days
+              date.setHours(23, 59, 59, 999); // Set to end of day
+              return date.toISOString();
+            })(),
             createdAt: new Date().toISOString()
           };
           

@@ -276,7 +276,7 @@ const initializeDemoUser = () => {
         // Set trial to expire in exactly 14 days from now at 23:59:59
         trialEndsAt: (() => {
           const date = new Date();
-          date.setDate(date.getDate() + 14);
+          date.setDate(date.getDate() + 14); // Add exactly 14 days
           date.setHours(23, 59, 59, 999);
           return date.toISOString();
         })(),
