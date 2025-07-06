@@ -42,6 +42,20 @@ export class CostTracker {
     gpt35_output: 0.002,
     embeddings: 0.0001,
     
+    // Anthropic API costs (per 1K tokens)
+    claude3_opus_input: 0.015,
+    claude3_opus_output: 0.075,
+    claude3_sonnet_input: 0.003,
+    claude3_sonnet_output: 0.015,
+    claude3_haiku_input: 0.00025,
+    claude3_haiku_output: 0.00125,
+    
+    // Perplexity API costs (per 1K tokens)
+    perplexity_online_input: 0.002,
+    perplexity_online_output: 0.01,
+    perplexity_offline_input: 0.001,
+    perplexity_offline_output: 0.005,
+    
     // Third-party service costs
     crawling_per_page: 0.001,
     proxy_per_request: 0.0005,

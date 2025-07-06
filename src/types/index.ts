@@ -119,7 +119,7 @@ export interface ApiUsage {
     output: number;
     embeddings: number;
   };
-  provider: 'openai' | 'anthropic' | 'local';
+  provider: 'openai' | 'anthropic' | 'perplexity' | 'local';
   success: boolean;
   errorCode?: string;
 }

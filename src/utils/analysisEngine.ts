@@ -2,9 +2,102 @@
 import { Analysis, User } from '../types';
 import { CostTracker } from './costTracker';
 
+// Model configuration
+interface ModelConfig {
+  provider: 'openai' | 'anthropic' | 'perplexity' | 'local';
+  name: string;
+  inputCost: number;
+  outputCost: number;
+  embeddingCost: number;
+  capabilities: {
+    webCrawling: boolean;
+    structuredOutput: boolean;
+    semanticAnalysis: boolean;
+  };
+}
+
 export class AnalysisEngine {
   private static readonly SIMULATION_DELAY = 2000; // 2 seconds for realistic feel
   private static readonly REAL_ANALYSIS_DELAY = 15000; // 15 seconds for real analysis
+  
+  // Available models configuration
+  private static readonly MODELS: Record<string, ModelConfig> = {
+    'gpt-4': {
+      provider: 'openai',
+      name: 'GPT-4',
+      inputCost: 0.03,
+      outputCost: 0.06,
+      embeddingCost: 0.0001,
+      capabilities: {
+        webCrawling: true,
+        structuredOutput: true,
+        semanticAnalysis: true
+      }
+    },
+    'claude-3-opus': {
+      provider: 'anthropic',
+      name: 'Claude 3 Opus',
+      inputCost: 0.015,
+      outputCost: 0.075,
+      embeddingCost: 0.0001, // Using OpenAI embeddings with Claude
+      capabilities: {
+        webCrawling: true,
+        structuredOutput: true,
+        semanticAnalysis: true
+      }
+    },
+    'claude-3-sonnet': {
+      provider: 'anthropic',
+      name: 'Claude 3 Sonnet',
+      inputCost: 0.003,
+      outputCost: 0.015,
+      embeddingCost: 0.0001, // Using OpenAI embeddings with Claude
+      capabilities: {
+        webCrawling: true,
+        structuredOutput: true,
+        semanticAnalysis: true
+      }
+    },
+    'claude-3-haiku': {
+      provider: 'anthropic',
+      name: 'Claude 3 Haiku',
+      inputCost: 0.00025,
+      outputCost: 0.00125,
+      embeddingCost: 0.0001, // Using OpenAI embeddings with Claude
+      capabilities: {
+        webCrawling: true,
+        structuredOutput: true,
+        semanticAnalysis: true
+      }
+    },
+    'perplexity-online': {
+      provider: 'perplexity',
+      name: 'Perplexity Online',
+      inputCost: 0.002,
+      outputCost: 0.01,
+      embeddingCost: 0.0001, // Using OpenAI embeddings with Perplexity
+      capabilities: {
+        webCrawling: true,
+        structuredOutput: false,
+        semanticAnalysis: true
+      }
+    },
+    'perplexity-offline': {
+      provider: 'perplexity',
+      name: 'Perplexity Offline',
+      inputCost: 0.001,
+      outputCost: 0.005,
+      embeddingCost: 0.0001, // Using OpenAI embeddings with Perplexity
+      capabilities: {
+        webCrawling: false,
+        structuredOutput: false,
+        semanticAnalysis: true
+      }
+    }
+  };
+  
+  // Default model to use
+  private static readonly DEFAULT_MODEL = 'gpt-4';
 
   // Check if user should get real analysis
   static shouldUseRealAnalysis(user: User): boolean {
@@ -23,11 +116,11 @@ export class AnalysisEngine {
     // Check usage limits first
     const usageCheck = await CostTracker.checkUsageLimits(user.id, user.subscription);
     if (!usageCheck.allowed) {
-      // Allow admin users to bypass usage limits
+      // Allow admin users to bypass rate limits
       if (user.isAdmin === true) {
-        console.log('Admin user bypassing usage limits');
+        console.log('Admin user bypassing rate limits');
       } else {
-      throw new Error(usageCheck.reason || 'Usage limit exceeded');
+        throw new Error(rateCheck.resetTime ? `Rate limit exceeded. Try again at ${new Date(rateCheck.resetTime).toLocaleTimeString()}` : 'Rate limit exceeded');
       }
     }
 
@@ -38,15 +131,41 @@ export class AnalysisEngine {
       throw new Error(`Rate limit exceeded. Try again at ${resetTime}`);
     }
 
-    const analysisType = this.shouldUseRealAnalysis(user) ? 'real' : 'simulated';
+    // Determine if we should use real analysis
+    const useRealAnalysis = this.shouldUseRealAnalysis(user);
+    const analysisType = useRealAnalysis ? 'real' : 'simulated';
+    
+    // Determine which model to use based on user's subscription
+    let modelKey = this.DEFAULT_MODEL;
+    if (useRealAnalysis) {
+      if (user.subscription === 'enterprise' || user.isAdmin === true) {
+        // Enterprise users get the best model
+        modelKey = 'claude-3-opus';
+      } else if (user.subscription === 'professional') {
+        // Professional users get a good balance
+        modelKey = 'claude-3-sonnet';
+      } else {
+        // Starter users get the default model
+        modelKey = 'gpt-4';
+      }
+    }
+    
+    const selectedModel = this.MODELS[modelKey];
+    console.log(`Selected model for analysis: ${selectedModel.name} (${selectedModel.provider})`);
     
     // Track usage before analysis
     console.log('Tracking analysis usage for:', { userId: user.id, analysisType, website });
-    const usage = await CostTracker.trackAnalysisUsage(user.id, analysisType, website, keywords);
+    const usage = await CostTracker.trackAnalysisUsage(
+      user.id, 
+      analysisType, 
+      website, 
+      keywords,
+      selectedModel.provider
+    );
     
     try {
       if (analysisType === 'real') {
-        return await this.performRealAnalysis(website, keywords, user, usage);
+        return await this.performRealAnalysis(website, keywords, user, usage, selectedModel);
       } else {
         return await this.performSimulatedAnalysis(website, keywords, user, usage);
       }
@@ -119,24 +238,25 @@ export class AnalysisEngine {
     website: string, 
     keywords: string[], 
     user: User,
-    usage: any
+    usage: any,
+    model: ModelConfig
   ): Promise<Analysis> {
-    console.log('Performing real analysis for:', website);
+    console.log(`Performing real analysis for ${website} using ${model.name} (${model.provider})`);
     // Show longer loading time for real analysis
     await new Promise(resolve => setTimeout(resolve, this.REAL_ANALYSIS_DELAY));
 
     try {
       // Step 1: Crawl website content
-      const content = await this.crawlWebsite(website);
+      const content = await this.crawlWebsite(website, model);
       
       // Step 2: Analyze technical SEO
       const technicalMetrics = await this.analyzeTechnicalSEO(content);
       
       // Step 3: Perform semantic analysis (uses AI APIs)
-      const semanticMetrics = await this.analyzeSemanticContent(content, keywords);
+      const semanticMetrics = await this.analyzeSemanticContent(content, keywords, model);
       
       // Step 4: Generate AI insights (controlled API usage)
-      const insights = await this.generateRealInsights(technicalMetrics, semanticMetrics);
+      const insights = await this.generateRealInsights(technicalMetrics, semanticMetrics, model);
       
       // Step 5: Calculate final scores
       const metrics = this.combineMetrics(technicalMetrics, semanticMetrics);
@@ -153,7 +273,7 @@ export class AnalysisEngine {
         insights,
         predictedRank: this.calculatePredictedRank(overallScore),
         category: this.getCategoryFromScore(overallScore),
-        recommendations: await this.generateRealRecommendations(metrics, content),
+        recommendations: await this.generateRealRecommendations(metrics, content, model),
         createdAt: new Date().toISOString(),
         isSimulated: false,
         costInfo: {
@@ -171,9 +291,11 @@ export class AnalysisEngine {
   }
 
   // Real analysis methods (would use actual APIs in production)
-  private static async crawlWebsite(website: string): Promise<any> {
+  private static async crawlWebsite(website: string, model: ModelConfig): Promise<any> {
     // In production: Use Puppeteer, Playwright, or crawling service
     // Cost: ~$0.03 per analysis
+    
+    console.log(`Crawling website ${website} with ${model.name}`);
     
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -209,7 +331,7 @@ export class AnalysisEngine {
     };
   }
 
-  private static async analyzeSemanticContent(content: any, keywords: string[]): Promise<any> {
+  private static async analyzeSemanticContent(content: any, keywords: string[], model: ModelConfig): Promise<any> {
     // In production: Use OpenAI Embeddings API or similar
     // Cost: ~$0.02 per analysis
     
@@ -217,6 +339,8 @@ export class AnalysisEngine {
     
     // Simulate API costs and token usage
     const tokenCount = content.content.length * 0.75; // Rough estimate
+
+    console.log(`Analyzing semantic content with ${model.name}, estimated tokens: ${tokenCount}`);
     
     // For demo: Return calculated semantic scores
     return {
@@ -225,12 +349,12 @@ export class AnalysisEngine {
       topicCoverage: 0.4 + Math.random() * 0.5, // 0.4-0.9
       readabilityScore: 60 + Math.random() * 30, // 60-90
       tokensUsed: Math.round(tokenCount),
-      apiCost: (tokenCount / 1000) * 0.0001 // Embeddings cost
+      apiCost: (tokenCount / 1000) * model.embeddingCost // Embeddings cost
     };
   }
 
-  private static async generateRealInsights(technical: any, semantic: any): Promise<string> {
-    // In production: Single GPT-4 API call for insights
+  private static async generateRealInsights(technical: any, semantic: any, model: ModelConfig): Promise<string> {
+    // In production: Single API call for insights to the selected model
     // Cost: ~$0.15 per analysis
     
     await new Promise(resolve => setTimeout(resolve, 4000));
@@ -238,7 +362,8 @@ export class AnalysisEngine {
     // Simulate token usage for insights generation
     const inputTokens = 1500; // System prompt + content summary
     const outputTokens = 800; // Generated insights
-    const cost = (inputTokens / 1000) * 0.03 + (outputTokens / 1000) * 0.06;
+    const cost = (inputTokens / 1000) * model.inputCost + (outputTokens / 1000) * model.outputCost;
+    console.log(`Generating insights with ${model.name}, cost: $${cost.toFixed(3)}`);
     
     // For demo: Return realistic insights based on actual metrics
     const insights = [
@@ -248,6 +373,9 @@ export class AnalysisEngine {
       `Semantic analysis indicates ${semantic.topicCoverage > 0.7 ? 'comprehensive' : 'limited'} topic coverage.`,
       `Mobile optimization is ${technical.mobileOptimized ? 'properly' : 'not'} implemented.`
     ];
+
+    // Add model-specific insight
+    insights.push(`Analysis performed using ${model.name} for optimal ${model.provider === 'anthropic' ? 'reasoning' : model.provider === 'perplexity' ? 'up-to-date information' : 'pattern recognition'}.`);
     
     return insights.join(' ');
   }
@@ -281,7 +409,7 @@ export class AnalysisEngine {
     return templates.join(' ');
   }
 
-  private static async generateRealRecommendations(metrics: any, content: any): Promise<any[]> {
+  private static async generateRealRecommendations(metrics: any, content: any, model: ModelConfig): Promise<any[]> {
     // Generate recommendations based on actual analysis
     const recommendations = [];
     
@@ -318,6 +446,29 @@ export class AnalysisEngine {
         difficulty: 'medium',
         estimatedTime: '1-2 weeks',
         expectedImpact: 8
+      });
+    }
+    
+    // Add model-specific recommendation
+    if (model.provider === 'anthropic') {
+      recommendations.push({
+        id: `${model.provider}-${Date.now()}`,
+        title: 'Optimize for Claude AI Understanding',
+        description: 'Structure content with clear hierarchical relationships and explicit context to improve Claude\'s semantic understanding.',
+        priority: 'medium',
+        difficulty: 'medium',
+        estimatedTime: '2-3 weeks',
+        expectedImpact: 10
+      });
+    } else if (model.provider === 'perplexity') {
+      recommendations.push({
+        id: `${model.provider}-${Date.now()}`,
+        title: 'Enhance Real-time Relevance',
+        description: 'Update content frequently and include timestamps to improve visibility in Perplexity\'s recency-focused results.',
+        priority: 'medium',
+        difficulty: 'easy',
+        estimatedTime: '1-2 weeks',
+        expectedImpact: 9
       });
     }
     
