@@ -45,7 +45,6 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
         'Advanced optimization recommendations',
         'Email support',
         'Advanced reporting & analytics',
-        'Custom keyword tracking',
         'Detailed performance metrics',
         'Limited historical data retention (3 months)'
       ],
