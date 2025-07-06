@@ -1,7 +1,7 @@
 import React from 'react';
 import { Check, Star, Zap, Crown } from 'lucide-react';
 import TrialSignup from '../Auth/TrialSignup';
-import StripeRedirectCheckout from './StripeRedirectCheckout';
+import CreditCardForm from '../Payment/CreditCardForm';
 
 interface PricingTiersProps {
   currentPlan: string;
@@ -12,7 +12,8 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
   const [selectedPlan, setSelectedPlan] = React.useState<string | null>(null);
   const [showTrialSignup, setShowTrialSignup] = React.useState(false);
   const [skipTrial, setSkipTrial] = React.useState(false);
-  const [showStripeCheckout, setShowStripeCheckout] = React.useState(false);
+  const [showCheckout, setShowCheckout] = React.useState(false);
+  const [planAmount, setPlanAmount] = React.useState(0);
 
   const plans = [
     {
@@ -83,7 +84,15 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
     
     // For other plans, show trial signup or checkout
     if (skipTrialOption) {
-      setShowStripeCheckout(true);
+      // Set the plan amount based on the selected plan
+      if (planId === 'starter') {
+        setPlanAmount(2900);
+      } else if (planId === 'professional') {
+        setPlanAmount(9900);
+      } else if (planId === 'enterprise') {
+        setPlanAmount(29900);
+      }
+      setShowCheckout(true);
     } else {
       setShowTrialSignup(true);
     }
@@ -96,8 +105,8 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
     }
   };
 
-  const handleStripeCheckoutSuccess = () => {
-    setShowStripeCheckout(false);
+  const handleCheckoutSuccess = () => {
+    setShowCheckout(false);
     if (selectedPlan) {
       onUpgrade(selectedPlan);
     }
@@ -115,11 +124,13 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
     );
   }
 
-  if (showStripeCheckout && selectedPlan) {
+  if (showCheckout && selectedPlan) {
     return (
-      <StripeRedirectCheckout
+      <CreditCardForm
         plan={selectedPlan}
-        onCancel={() => setShowStripeCheckout(false)}
+        amount={planAmount}
+        onSuccess={handleCheckoutSuccess}
+        onCancel={() => setShowCheckout(false)}
       />
     );
   }
