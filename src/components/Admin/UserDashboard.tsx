@@ -477,7 +477,7 @@ export default function UserDashboard() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {user.subscription === 'trial' ? (
                           <div className="flex items-center">
-                            {trialActive ? (
+                            {trialActive && daysRemaining > 0 ? (
                               <div className="flex items-center">
                                 <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
                                 <span className="text-sm text-gray-900">
@@ -487,7 +487,9 @@ export default function UserDashboard() {
                             ) : (
                               <div className="flex items-center">
                                 <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
-                                <span className="text-sm text-gray-900">Expired</span>
+                                <span className="text-sm text-gray-900">
+                                  {trialEnd ? 'Expired' : 'No end date'}
+                                </span>
                               </div>
                             )}
                           </div>

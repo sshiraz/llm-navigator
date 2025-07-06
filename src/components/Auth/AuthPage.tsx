@@ -123,10 +123,11 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           const user = {
             id: userId,
             email: formData.email,
-            name: formData.name,
+            name: formData.name || 'New User',
             avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
             subscription: 'trial',
-            trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
+            // Set trial to end 14 days from now at 23:59:59
+            trialEndsAt: new Date(new Date().setHours(23, 59, 59, 999) + 14 * 24 * 60 * 60 * 1000).toISOString(),
             createdAt: new Date().toISOString()
           };
           
