@@ -348,9 +348,6 @@ export const getTrialStatus = (user: User) => {
   const nowDate = new Date(now.setHours(0, 0, 0, 0));
   const endDate = new Date(trialEnd.setHours(0, 0, 0, 0));
   
-  // Calculate difference in days
-  const diffTime = endDate.getTime() - nowDate.getTime();
-  const daysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
 
   return {
     isActive: daysRemaining > 0,
