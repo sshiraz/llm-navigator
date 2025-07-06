@@ -258,10 +258,11 @@ export const mockKeywordSuggestions: KeywordSuggestion[] = [
 // Add a demo user to localStorage if it doesn't exist
 const initializeDemoUser = () => {
   try {
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    let users = JSON.parse(localStorage.getItem('users') || '[]');
     
     // Check if demo user already exists
     const demoUserExists = users.some((user: any) => user.email === 'demo@example.com');
+    const adminUserExists = users.some((user: any) => user.email === 'info@convologix.com');
     
     if (!demoUserExists) {
       // Add demo user
@@ -279,6 +280,24 @@ const initializeDemoUser = () => {
       users.push(demoUser);
       localStorage.setItem('users', JSON.stringify(users));
       console.log('Demo user initialized successfully');
+    }
+    
+    if (!adminUserExists) {
+      // Add admin user
+      const adminUser = {
+        id: 'admin-user-456',
+        email: 'info@convologix.com',
+        password: '4C0nv0@LLMNav', // In a real app, this would be hashed
+        name: 'Admin User',
+        avatar: 'https://images.pexels.com/photos/2379005/pexels-photo-2379005.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
+        subscription: 'enterprise',
+        isAdmin: true,
+        createdAt: new Date().toISOString()
+      };
+      
+      users.push(adminUser);
+      localStorage.setItem('users', JSON.stringify(users));
+      console.log('Admin user initialized successfully');
     }
   } catch (error) {
     console.error('Error initializing demo user:', error);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Home, Plus, Target, Search, DollarSign, Users, LogOut, Mail, UserCog } from 'lucide-react';
 
 interface SidebarProps {
@@ -68,7 +68,6 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
                   ? 'bg-blue-600 text-white shadow-lg'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
-              onClick={() => onSectionChange(item.id)}
             >
               <Icon className="w-5 h-5" />
               <span className="font-medium">{item.label}</span>
