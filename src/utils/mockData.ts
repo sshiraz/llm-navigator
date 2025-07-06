@@ -273,6 +273,7 @@ const initializeDemoUser = () => {
         name: 'Demo User',
         avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
         subscription: 'trial',
+        // Set trial to expire in 14 days from now
         trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
         createdAt: new Date().toISOString()
       };
@@ -337,11 +338,12 @@ export const getTrialStatus = (user: User) => {
 
   const now = new Date();
   const trialEnd = new Date(user.trialEndsAt);
-  const daysRemaining = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  // Calculate days remaining, ensuring it's never negative
+  const daysRemaining = Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 
   return {
     isActive: daysRemaining > 0,
-    daysRemaining: Math.max(0, daysRemaining),
+    daysRemaining,
     plan: 'Professional', // Assuming trial is for Professional plan
     features: [
       '50 analyses per month',

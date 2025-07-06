@@ -24,7 +24,7 @@ export default function Header({ user }: HeaderProps) {
             <div className="flex items-center space-x-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
               <Gift className="w-4 h-4 text-blue-600" />
               <span className="text-sm font-medium text-blue-900">
-                {trialStatus.daysRemaining} days left in trial
+                {trialStatus.daysRemaining > 0 ? `${trialStatus.daysRemaining} days left in trial` : 'Trial expires today'}
               </span>
             </div>
           )}
