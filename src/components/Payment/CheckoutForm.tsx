@@ -192,6 +192,10 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-4 h-4 text-emerald-500" />
+                  <span>Unlimited historical data retention</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-500" />
                   <span>Access to all AI models</span>
                 </div>
               </>

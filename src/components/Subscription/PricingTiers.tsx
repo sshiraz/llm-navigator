@@ -46,7 +46,8 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
         'Email support',
         'Advanced reporting & analytics',
         'Custom keyword tracking',
-        'Detailed performance metrics'
+        'Detailed performance metrics',
+        'Limited historical data retention (3 months)'
       ],
       popular: true,
       buttonText: 'Upgrade to Pro'
@@ -66,8 +67,7 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
         'Premium performance metrics',
         'Unlimited projects',
         'Unlimited users',
-        'Advanced PDF export options',
-        'Historical data retention',
+        'Unlimited historical data retention',
         'Access to all AI models including Claude 3 Opus'
       ],
       popular: false,
