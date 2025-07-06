@@ -286,8 +286,8 @@ const initializeDemoUser = () => {
       // Add admin user
       const adminUser = {
         id: 'admin-user-456',
-        email: 'info@convologix.com',
-        password: '4C0nv0@LLMNav', // In a real app, this would be hashed
+        email: 'info@convologix.com', 
+        password: '4C0nv0@LLMNav', // In a real app, this would be properly hashed
         name: 'Admin User',
         avatar: 'https://images.pexels.com/photos/2379005/pexels-photo-2379005.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
         subscription: 'enterprise',

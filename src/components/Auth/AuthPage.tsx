@@ -188,13 +188,13 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         {/* Demo Credentials */}
         <div className="mb-4 bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center space-y-2">
           <div>
-            <p className="text-white text-sm mb-1">Demo Credentials:</p>
+            <p className="text-white text-sm">Demo Credentials:</p>
             <p className="text-blue-200 text-xs">Email: demo@example.com • Password: demo123</p>
           </div>
-          <div>
-            <p className="text-white text-sm mb-1">Admin Credentials:</p>
-            <p className="text-blue-200 text-xs">Email: info@convologix.com • Password: 4C0nv0@LLMNav</p>
-          </div>
+        </div>
+
+        {/* Auth Form */}
+        <div className="bg-white rounded-2xl shadow-2xl p-8">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               {isLogin ? 'Welcome Back' : 'Start Your Free Trial'}
