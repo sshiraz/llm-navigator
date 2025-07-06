@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { UserCheck, AlertTriangle, CheckCircle, RefreshCw, X, Search, CreditCard } from 'lucide-react';
-import { ManualSubscriptionFix } from '../../utils/manualSubscriptionFix';
 import { PaymentLogger } from '../../utils/paymentLogger';
+import { checkSubscriptionStatus, getLatestPayment, fixSubscription } from '../../utils/paymentUtils';
+import { isLiveMode } from '../../utils/liveMode';
+import LiveModeIndicator from '../UI/LiveModeIndicator';
 
 export default function SubscriptionFixTool() {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,12 +25,12 @@ export default function SubscriptionFixTool() {
     setLatestPayment(null);
     
     try {
-      const status = await ManualSubscriptionFix.checkSubscriptionStatus(userId);
+      const checkResult = await checkSubscriptionStatus(userId);
       setCheckResult(status);
       
       // If there's a payment, get the details
       if (status.hasPayment) {
-        const payment = await ManualSubscriptionFix.getLatestPayment(userId);
+        const payment = await getLatestPayment(userId);
         setLatestPayment(payment);
         
         // Set the plan based on the payment
@@ -56,12 +58,12 @@ export default function SubscriptionFixTool() {
     setResult(null);
     
     try {
-      const result = await ManualSubscriptionFix.fixSubscription(userId, plan);
+      const result = await fixSubscription(userId, plan);
       setResult(result);
       
       if (result.success) {
         // Refresh the check result
-        const status = await ManualSubscriptionFix.checkSubscriptionStatus(userId);
+        const status = await checkSubscriptionStatus(userId);
         setCheckResult(status);
       }
       
@@ -102,9 +104,10 @@ export default function SubscriptionFixTool() {
       <div className="bg-white rounded-xl w-full max-w-2xl overflow-hidden flex flex-col shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-emerald-50">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             <UserCheck className="w-6 h-6 text-emerald-600" />
             <h2 className="text-xl font-bold text-gray-900">Subscription Fix Tool</h2>
+            {isLiveMode && <LiveModeIndicator variant="badge" />}
           </div>
           <button
             onClick={() => setIsOpen(false)}
@@ -116,6 +119,8 @@ export default function SubscriptionFixTool() {
         
         {/* Content */}
         <div className="p-6 space-y-6">
+          {isLiveMode && <LiveModeIndicator variant="warning" className="mb-6" />}
+        
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h3 className="font-medium text-blue-900 mb-2">About This Tool</h3>
             <p className="text-sm text-blue-800">

@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import { CreditCard, Calendar, Lock, User, CheckCircle, AlertCircle } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
-import { STRIPE_CONFIG, stripePromise } from '../../lib/stripe';
+import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { STRIPE_CONFIG, stripePromise } from '../../utils/stripeUtils';
+import { isLiveMode } from '../../utils/liveMode';
+import { createPaymentIntent } from '../../utils/stripeUtils';
+import LiveModeIndicator from '../UI/LiveModeIndicator';
+import SecurePaymentNotice from '../UI/SecurePaymentNotice';
+import PlanFeatures from '../UI/PlanFeatures';
 
 interface CreditCardFormProps {
   plan: string;
@@ -23,6 +28,13 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSuccess, setIsSuccess] = useState(false);
   const [cardError, setCardError] = useState('');
+
+  // Log if we're in live mode
+  React.useEffect(() => {
+    if (isLiveMode) {
+      PaymentLogger.log('warn', 'CreditCardForm', '🔴 LIVE MODE - Real payments will be processed', { plan, amount });
+    }
+  }, [plan, amount]);
 
   const formatCardNumber = (value: string) => {
     // Remove all non-digits
@@ -102,31 +114,20 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
       });
       
       // For live mode, we should create a real payment intent on the server
-      if (import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_')) {
+      if (isLiveMode) {
         try {
-          // Create a payment intent on the server
-          const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-            },
-            body: JSON.stringify({
-              amount,
-              currency: 'usd',
-              metadata: {
-                userId: 'current-user', // In a real app, get this from auth
-                plan,
-                email: cardName // Using name as email for demo
-              }
-            })
+          // Create payment intent using the utility function
+          const result = await createPaymentIntent(amount, {
+            userId: 'current-user', // In a real app, get this from auth
+            plan,
+            email: cardName // Using name as email for demo
           });
-          
-          if (!response.ok) {
-            throw new Error('Failed to create payment intent');
+
+          if (!result.success) {
+            throw new Error(result.error || 'Failed to create payment intent');
           }
           
-          const { clientSecret } = await response.json();
+          const { clientSecret } = result.data;
           
           // Confirm the payment with the client secret
           const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
@@ -217,6 +218,8 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
   if (isSuccess) {
     return (
       <div className="max-w-md mx-auto bg-white rounded-xl border border-gray-200 p-8 text-center">
+        {isLiveMode && <LiveModeIndicator variant="warning" className="mb-6" />}
+        
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <CheckCircle className="w-8 h-8 text-green-600" />
         </div>
@@ -242,6 +245,8 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
   return (
     <div className="max-w-md mx-auto bg-white rounded-xl border border-gray-200 p-8">
       <div className="text-center mb-6">
+        {isLiveMode && <LiveModeIndicator variant="warning" className="mb-6" />}
+        
         <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <CreditCard className="w-8 h-8 text-blue-600" />
         </div>
@@ -296,17 +301,7 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
         </div>
 
         {/* Security Notice */}
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
-          <div className="flex items-start space-x-3">
-            <Lock className="w-5 h-5 text-green-600 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-medium text-green-900 mb-1">Secure Payment</h4>
-              <p className="text-sm text-green-800">
-                Your payment information is processed securely by Stripe. We never store your card details.
-              </p>
-            </div>
-          </div>
-        </div>
+        <SecurePaymentNotice className="mt-4" />
 
         {/* Action Buttons */}
         <div className="flex space-x-4 mt-6">

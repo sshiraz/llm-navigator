@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Bug, Download, Trash2, RefreshCw, AlertTriangle, CheckCircle, Clock, Database, Webhook, CreditCard, Zap, X } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
-import { supabase } from '../../lib/supabase';
+import { checkDatabaseConnection, checkEdgeFunctions, testWebhookEndpoint, simulateWebhook } from '../../utils/webhookUtils';
 import StripeStatus from '../Payment/StripeStatus';
+import { isLiveMode } from '../../utils/liveMode';
 
 export default function PaymentDebugger() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -10,7 +11,6 @@ export default function PaymentDebugger() {
   const [filter, setFilter] = useState<'all' | 'info' | 'warn' | 'error'>('all');
   const [webhookStatus, setWebhookStatus] = useState<any>(null);
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
-  const isLiveMode = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
 
   // Disable certain features in live mode
   const disableInLiveMode = isLiveMode;
@@ -38,104 +38,15 @@ export default function PaymentDebugger() {
   const testWebhookEndpoint = async () => {
     setIsTestingWebhook(true);
     PaymentLogger.log('info', 'Debug', 'Testing webhook endpoint...');
-    
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({ test: 'debug-test' })
-      });
-
-      const result = {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
-      };
-
+      const result = await testWebhookEndpoint();
       setWebhookStatus(result);
-      PaymentLogger.log(response.ok ? 'info' : 'error', 'Debug', 'Webhook test result', result);
     } catch (error) {
-      const errorResult = { error: error.message };
-      setWebhookStatus(errorResult);
-      PaymentLogger.log('error', 'Debug', 'Webhook test failed', errorResult);
+      setWebhookStatus({ error: error.message });
     } finally {
       setIsTestingWebhook(false);
       loadLogs();
     }
-  };
-
-  const checkDatabaseConnection = async () => {
-    PaymentLogger.log('info', 'Debug', 'Testing database connection...');
-    
-    try {
-      const { data, error } = await supabase.from('users').select('count').limit(1);
-      
-      if (error) {
-        PaymentLogger.log('error', 'Debug', 'Database connection failed', error);
-      } else {
-        PaymentLogger.log('info', 'Debug', 'Database connection successful', data);
-      }
-    } catch (error) {
-      PaymentLogger.log('error', 'Debug', 'Database connection error', error);
-    }
-    
-    loadLogs();
-  };
-
-  const checkEdgeFunctions = async () => {
-    PaymentLogger.log('info', 'Debug', 'Checking Edge Functions deployment...');
-    
-    const functions = [
-      'create-payment-intent',
-      'create-subscription', 
-      'stripe-webhook'
-    ];
-    
-    for (const func of functions) {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${func}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-          },
-          body: JSON.stringify({ test: true })
-        });
-        
-        PaymentLogger.log(
-          response.status === 404 ? 'error' : 'info', 
-          'Debug', 
-          `Edge Function ${func}: ${response.status === 404 ? 'NOT DEPLOYED' : 'Available'}`,
-          { status: response.status, statusText: response.statusText }
-        );
-      } catch (error) {
-        PaymentLogger.log('error', 'Debug', `Edge Function ${func}: Error`, error);
-      }
-    }
-    
-    loadLogs();
-  };
-
-  const simulateWebhook = async () => {
-    PaymentLogger.log('info', 'Debug', 'Simulating successful payment webhook...');
-    
-    const mockPaymentIntent = {
-      id: 'pi_test_debug',
-      amount: 2900,
-      currency: 'usd',
-      status: 'succeeded',
-      metadata: {
-        userId: 'test-user-id',
-        plan: 'starter',
-        email: 'test@example.com'
-      }
-    };
-    
-    PaymentLogger.trackWebhook('payment_intent.succeeded', true, mockPaymentIntent);
-    loadLogs();
   };
 
   const exportLogs = () => {

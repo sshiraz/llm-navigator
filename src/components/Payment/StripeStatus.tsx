@@ -1,38 +1,10 @@
 import React from 'react';
 import { CheckCircle, AlertCircle, CreditCard, ExternalLink } from 'lucide-react';
-import { validateStripeConfig } from '../../lib/stripe';
-import { PaymentLogger } from '../../utils/paymentLogger'; 
+import { validateStripeConfig } from '../../utils/stripeUtils';
+import { isLiveMode } from '../../utils/liveMode';
 
 export default function StripeStatus() {
   const config = validateStripeConfig();
-  const isLiveMode = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
-  
-  // Add a warning banner for live mode
-  React.useEffect(() => {
-    if (isLiveMode) {
-      console.warn('🔴 LIVE MODE ACTIVE - Using production Stripe keys. Real credit cards will be charged.');
-      PaymentLogger.log('warn', 'StripeStatus', '🔴 LIVE MODE ACTIVE - Using production Stripe keys');
-    }
-  }, [isLiveMode]);
-  
-  // Log Stripe configuration status
-  React.useEffect(() => {
-    PaymentLogger.log(
-      'info', 
-      'StripeStatus', 
-      `Stripe configuration ${config.isValid ? 'valid' : 'invalid'}`, 
-      { 
-        isLiveMode,
-        issues: config.issues,
-        hasPublishableKey: !!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY,
-        hasPriceIds: {
-          starter: !!import.meta.env.VITE_STRIPE_STARTER_PRICE_ID,
-          professional: !!import.meta.env.VITE_STRIPE_PROFESSIONAL_PRICE_ID,
-          enterprise: !!import.meta.env.VITE_STRIPE_ENTERPRISE_PRICE_ID
-        }
-      }
-    );
-  }, [config.isValid, isLiveMode]);
 
   if (config.isValid) {
     return (

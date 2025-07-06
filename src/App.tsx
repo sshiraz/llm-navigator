@@ -17,6 +17,8 @@ import AuthPage from './components/Auth/AuthPage';
 import { mockProjects, mockAnalyses } from './utils/mockData';
 import { Project, Analysis, User } from './types';
 import PaymentDebugger from './components/Debug/PaymentDebugger';
+import { isLiveMode } from './utils/liveMode';
+import LiveModeIndicator from './components/UI/LiveModeIndicator';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -136,9 +138,6 @@ function App() {
   const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
   const isBasicConfigured = supabaseUrl && supabaseKey;
   
-  // Check if we're in live mode
-  const isLiveMode = stripeKey?.startsWith('pk_live_');
-
   const handleLogin = (userData: User) => {
     setUser(userData);
     setActiveSection('dashboard');
@@ -330,11 +329,7 @@ function App() {
   if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
     return (
       <>
-        {isLiveMode && (
-          <div className="fixed top-0 left-0 right-0 bg-red-600 text-white text-center py-1 z-50">
-            <strong>🔴 LIVE MODE</strong> - Real credit cards will be charged
-          </div>
-        )}
+        {isLiveMode && <LiveModeIndicator />}
         {renderContent()}
         {isLiveMode && <PaymentDebugger />}
       </>
@@ -343,11 +338,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {isLiveMode && (
-        <div className="fixed top-0 left-0 right-0 bg-red-600 text-white text-center py-1 z-50">
-          <strong>🔴 LIVE MODE</strong> - Real credit cards will be charged
-        </div>
-      )}
+      {isLiveMode && <LiveModeIndicator />}
       <Sidebar 
         activeSection={activeSection} 
         onSectionChange={setActiveSection}

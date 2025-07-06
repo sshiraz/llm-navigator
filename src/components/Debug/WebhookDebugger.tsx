@@ -1,24 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle, Copy, RefreshCw, Webhook, Key, Lock, X } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
-import { supabase } from '../../lib/supabase';
+import { isLiveMode } from '../../utils/liveMode';
+import { testWebhookEndpoint, updateWebhookSecret, generateDeployCommand } from '../../utils/webhookUtils';
+import LiveModeIndicator from '../UI/LiveModeIndicator';
 
 export default function WebhookDebugger() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
   const [webhookSecret, setWebhookSecret] = useState('');
-  const [showSecret, setShowSecret] = useState(false);
-  const [isLiveMode, setIsLiveMode] = useState(false);
-  
-  // Check if we're in live mode
-  useEffect(() => {
-    const isLive = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
-    setIsLiveMode(isLive);
-    if (isLive) {
-      PaymentLogger.log('warn', 'WebhookDebugger', '🔴 LIVE MODE DETECTED - Using production Stripe keys');
-    }
-  }, []);
+  const [showSecret, setShowSecret] = useState(false); 
   
   const testWebhook = async () => {
     setIsLoading(true);
@@ -29,76 +21,10 @@ export default function WebhookDebugger() {
     }
     
     try {
-      // First, test with a simple request to check if the endpoint is accessible
-      const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook`;
-      PaymentLogger.log('info', 'WebhookDebugger', `Testing webhook at: ${webhookUrl}`, {
-        timestamp: new Date().toISOString()
-      });
-      
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'stripe-signature': 'test_signature', // Add a dummy signature
-          'x-test-request': 'true' // Mark as test request
-        },
-        body: JSON.stringify({ 
-          type: 'payment_intent.succeeded',
-          test: true,
-          data: {
-            object: {
-              id: 'pi_test_' + Date.now(),
-              amount: 2900,
-              currency: 'usd',
-              status: 'succeeded',
-              metadata: {
-                userId: 'test-user',
-                plan: 'starter'
-              }
-            }
-          }
-        })
-      });
-      
-      const text = await response.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        data = { rawResponse: text };
-      }
-      
-      const result = {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        data,
-        headers: Object.fromEntries(response.headers.entries())
-      };
-      
+      const result = await testWebhookEndpoint();
       setTestResult(result);
-      
-      if (response.status === 400) {
-        if (text.includes('signature verification failed') || text.includes('test request')) {
-          PaymentLogger.log('info', 'WebhookDebugger', `Webhook signature verification failed - this is expected for test requests${isLiveMode ? ' (LIVE MODE)' : ''}`, {
-            status: response.status,
-            text: text.substring(0, 100) // Limit text length for logging
-          });
-        } else {
-          PaymentLogger.log('error', 'WebhookDebugger', 'Webhook returned unexpected 400 error', result);
-        }
-      } else if (response.status === 401 || response.status === 403) {
-        PaymentLogger.log('error', 'WebhookDebugger', 'Webhook authentication failed - check service role key', result);
-      } else if (response.status === 404) {
-        PaymentLogger.log('error', 'WebhookDebugger', `Webhook endpoint not found - check function deployment${isLiveMode ? ' (LIVE MODE)' : ''}`, result);
-      } else {
-        PaymentLogger.log(response.ok ? 'info' : 'error', 'WebhookDebugger', `Webhook test result: ${response.status} ${response.statusText}${isLiveMode ? ' (LIVE MODE)' : ''}`, result);
-      }
     } catch (error) {
-      const errorResult = { error: error.message };
-      setTestResult(errorResult);
-      PaymentLogger.log('error', 'WebhookDebugger', 'Webhook test failed', errorResult);
+      setTestResult({ error: error.message });
     } finally {
       setIsLoading(false);
     }
@@ -109,47 +35,33 @@ export default function WebhookDebugger() {
       alert('Please enter a valid webhook secret (starts with whsec_). For live mode, this should be your live webhook secret.');
       return;
     }
-    
-    setIsLoading(true);
-    PaymentLogger.log('info', 'WebhookDebugger', `Updating webhook secret...${isLiveMode ? ' (LIVE MODE)' : ''}`);
-    
     try {
-      // Try to update the secret in Supabase
-      const { error } = await supabase.functions.invoke('update-webhook-secret', {
-        body: { 
-          secret: webhookSecret,
-          isLiveMode
-        }
-      });
-      
-      if (error) {
-        throw new Error(`Failed to update webhook secret: ${error.message}`);
+      const result = await updateWebhookSecret(webhookSecret, isLiveMode);
+      if (result.success) {
+        alert(`Webhook secret command generated! ${isLiveMode ? '(LIVE MODE)' : ''} Please run the command in your terminal and redeploy your webhook function.`);
+        setWebhookSecret('');
+      } else {
+        alert(`Failed to generate webhook secret command: ${result.error}`);
       }
-      
-      // Show success message
-      alert(`Webhook secret updated successfully! ${isLiveMode ? '(LIVE MODE)' : ''} Please redeploy your webhook function for the changes to take effect.`);
-      PaymentLogger.log('info', 'WebhookDebugger', `Webhook secret updated successfully${isLiveMode ? ' (LIVE MODE)' : ''}`);
-      
-      // Clear the input
-      setWebhookSecret('');
     } catch (error) {
-      PaymentLogger.log('error', 'WebhookDebugger', 'Failed to update webhook secret', error);
       alert(`Failed to update webhook secret: ${error.message}`);
-    } finally {
-      setIsLoading(false);
     }
   };
   
   const copyDeployCommand = () => {
-    const command = 'npx supabase functions deploy stripe-webhook';
-    navigator.clipboard.writeText(command);
-    PaymentLogger.log('info', 'WebhookDebugger', `Copied deploy command to clipboard${isLiveMode ? ' (LIVE MODE)' : ''}`);
+    const result = generateDeployCommand();
+    if (result.success) {
+      navigator.clipboard.writeText(result.command);
+      alert('Deploy command copied to clipboard!');
+    }
   };
   
   const copySecretCommand = () => {
-    const command = `npx supabase secrets set STRIPE_WEBHOOK_SECRET=${webhookSecret || 'whsec_your_webhook_secret'}`;
-    navigator.clipboard.writeText(command);
-    PaymentLogger.log('info', 'WebhookDebugger', `Copied secret command to clipboard${isLiveMode ? ' (LIVE MODE)' : ''}`);
+    const result = updateWebhookSecret(webhookSecret || 'whsec_your_webhook_secret', isLiveMode);
+    if (result.success) {
+      navigator.clipboard.writeText(result.command);
+      alert('Secret command copied to clipboard!');
+    }
   };
   
   if (!isOpen) {
@@ -174,13 +86,11 @@ export default function WebhookDebugger() {
       <div className="bg-white rounded-xl w-full max-w-2xl overflow-hidden flex flex-col shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-indigo-50">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             <Webhook className="w-6 h-6 text-indigo-600" />
             <h2 className="text-xl font-bold text-gray-900">
               Webhook Debugger
-              {isLiveMode && 
-                <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full">LIVE MODE</span>
-              }
+              {isLiveMode && <LiveModeIndicator variant="badge" />}
             </h2>
           </div>
           <button
@@ -196,8 +106,7 @@ export default function WebhookDebugger() {
           {/* Test Webhook */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              Test Webhook Endpoint
-              {isLiveMode && <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full">LIVE MODE</span>}
+              Test Webhook Endpoint {isLiveMode && <LiveModeIndicator variant="badge" />}
             </h3>
             <button
               title={isLiveMode ? 
