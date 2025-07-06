@@ -61,14 +61,12 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
       features: [
         'Unlimited AI analyses',
         'Advanced competitor strategy',
-        'White-label reporting',
-        'Email support',
+        'White-label reporting & custom branding',
         'Priority email support',
         'Premium performance metrics',
         'Unlimited projects',
         'Unlimited users',
-        'Custom PDF branding',
-        'Advanced export options',
+        'Advanced PDF export options',
         'Historical data retention',
         'Access to all AI models including Claude 3 Opus'
       ],
