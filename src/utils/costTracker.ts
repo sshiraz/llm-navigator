@@ -145,6 +145,23 @@ export class CostTracker {
     console.log('Checking usage limits for:', userId, userPlan);
     const limits = this.PLAN_LIMITS[userPlan as keyof typeof this.PLAN_LIMITS];
     if (!limits) {
+      // Check if user is admin from localStorage
+      try {
+        const userStr = localStorage.getItem('currentUser');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          if (user.isAdmin === true) {
+            // Admin users have unlimited access
+            return {
+              allowed: true,
+              currentUsage: this.getDefaultUsage('enterprise')
+            };
+          }
+        }
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+      }
+      
       return {
         allowed: false,
         reason: 'Invalid plan',
@@ -155,8 +172,21 @@ export class CostTracker {
     const currentUsage = await this.getCurrentUsage(userId);
     
     console.log('Current usage:', currentUsage, 'Limits:', limits);
-    // For demo accounts (free/trial), always allow unlimited usage
-    if (userPlan === 'free' || userPlan === 'trial') {
+    
+    // Check if user is admin from localStorage
+    let isAdmin = false;
+    try {
+      const userStr = localStorage.getItem('currentUser');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        isAdmin = user.isAdmin === true;
+      }
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+    }
+    
+    // For demo accounts (free/trial) or admin users, always allow unlimited usage
+    if (userPlan === 'free' || userPlan === 'trial' || isAdmin) {
       return {
         allowed: true,
         currentUsage: this.formatUsageLimits(userPlan, currentUsage)

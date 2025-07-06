@@ -8,7 +8,8 @@ export class AnalysisEngine {
 
   // Check if user should get real analysis
   static shouldUseRealAnalysis(user: User): boolean {
-    return ['starter', 'professional', 'enterprise'].includes(user.subscription);
+    // Admin users and paid plans get real analysis
+    return ['starter', 'professional', 'enterprise'].includes(user.subscription) || user.isAdmin === true;
   }
 
   // Main analysis method that routes to simulation or real analysis
@@ -22,7 +23,12 @@ export class AnalysisEngine {
     // Check usage limits first
     const usageCheck = await CostTracker.checkUsageLimits(user.id, user.subscription);
     if (!usageCheck.allowed) {
+      // Allow admin users to bypass usage limits
+      if (user.isAdmin === true) {
+        console.log('Admin user bypassing usage limits');
+      } else {
       throw new Error(usageCheck.reason || 'Usage limit exceeded');
+      }
     }
 
     // Check rate limits

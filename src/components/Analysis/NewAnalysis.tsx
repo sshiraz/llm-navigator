@@ -23,7 +23,8 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     user?.subscription || 'free'
   );
 
-  const isRealAnalysis = user ? AnalysisEngine.shouldUseRealAnalysis(user) : false;
+  // Check if user is admin or has a paid plan for real analysis
+  const isRealAnalysis = user ? (AnalysisEngine.shouldUseRealAnalysis(user) || user.isAdmin === true) : false;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,9 +113,10 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
   ];
 
   const isFormValid = website.length > 0 && keywords.length > 0;
-  const canAnalyze = usageLimits ? 
+  // Admin users can always analyze regardless of limits
+  const canAnalyze = user?.isAdmin === true ? true : (usageLimits ? 
     (usageLimits.currentUsage.analyses < usageLimits.monthlyAnalyses) : 
-    true;
+    true);
     
   // Load last analysis parameters from localStorage
   useEffect(() => {
