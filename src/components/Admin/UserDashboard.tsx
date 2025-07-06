@@ -491,6 +491,7 @@ export default function UserDashboard() {
                               </div>
                             )}
                               {daysRemaining > 0 ? `${daysRemaining} days left` : 'Expired today'}
+                          </div>
                         ) : user.subscription === 'free' ? (
                           <span className="text-sm text-gray-500">N/A</span>
                         ) : (
