@@ -7,6 +7,7 @@ import AnalysisResults from './components/Analysis/AnalysisResults';
 import ProjectDetail from './components/Projects/ProjectDetail';
 import PricingTiers from './components/Subscription/PricingTiers';
 import UserDashboard from './components/Admin/UserDashboard';
+import AccountPage from './components/Account/AccountPage';
 import ContactPage from './components/Contact/ContactPage';
 import PrivacyPolicy from './components/Legal/PrivacyPolicy';
 import TermsOfService from './components/Legal/TermsOfService';
@@ -229,7 +230,7 @@ function App() {
 
   const renderContent = () => {
     // Public pages that don't require login
-    if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users') {
+    if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
       // Special handling for admin-users - only allow access if user is admin
       if (activeSection === 'admin-users') {
         // Check if user is admin
@@ -252,6 +253,18 @@ function App() {
           return <LandingPage onGetStarted={handleGetStarted} />;
         case 'auth':
           return <AuthPage onLogin={handleLogin} />;
+        case 'account':
+          return user ? (
+            <AccountPage 
+              user={user} 
+              onBack={() => setActiveSection('dashboard')}
+              onUpdateProfile={(updates) => {
+                const updatedUser = { ...user, ...updates };
+                setUser(updatedUser);
+                localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+              }}
+            />
+          ) : <AuthPage onLogin={handleLogin} />;
         case 'contact':
           return <ContactPage />;
         case 'privacy':
@@ -310,7 +323,7 @@ function App() {
   };
 
   // Show landing page or auth page without sidebar/header
-  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users') {
+  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
     return (
       <>
         {renderContent()}
