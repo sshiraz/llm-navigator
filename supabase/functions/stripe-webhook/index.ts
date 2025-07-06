@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.21.0";
+import { v4 as uuidv4 } from "https://esm.sh/uuid@9.0.0";
 
 // Improved CORS headers with all possible stripe signature header variations
 const corsHeaders = {
@@ -16,6 +17,14 @@ serve(async (req) => {
   }
 
   console.log("🔥 WEBHOOK RECEIVED - Starting processing...");
+
+  // Check if this is a live mode webhook
+  const isLiveMode = req.headers.get("stripe-mode") === "live" || 
+                     req.headers.get("x-stripe-mode") === "live";
+  
+  if (isLiveMode) {
+    console.log("🔴 LIVE MODE WEBHOOK - Processing real payment");
+  }
   
   // Log request details but sanitize sensitive information
   const sanitizedHeaders = Object.fromEntries(
@@ -73,6 +82,10 @@ serve(async (req) => {
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    // For live mode, use the live webhook secret if available
+    const liveWebhookSecret = Deno.env.get("STRIPE_LIVE_WEBHOOK_SECRET");
+    const finalWebhookSecret = isLiveMode && liveWebhookSecret ? liveWebhookSecret : webhookSecret;
     
     // If we're missing the Supabase URL, try to get it from the request URL
     let derivedSupabaseUrl = supabaseUrl;
@@ -88,11 +101,12 @@ serve(async (req) => {
 
     console.log("🔑 Environment check:", {
       hasStripeKey: !!stripeSecretKey,
-      hasWebhookSecret: !!webhookSecret,
+      hasWebhookSecret: !!finalWebhookSecret,
       hasSupabaseUrl: !!derivedSupabaseUrl,
       hasServiceKey: !!supabaseServiceKey,
       stripeKeyPrefix: stripeSecretKey ? stripeSecretKey.substring(0, 7) + "..." : "none",
-      webhookSecretPrefix: webhookSecret ? webhookSecret.substring(0, 7) + "..." : "none"
+      webhookSecretPrefix: finalWebhookSecret ? finalWebhookSecret.substring(0, 7) + "..." : "none",
+      isLiveMode: isLiveMode
     });
 
     if (!stripeSecretKey) {
@@ -106,8 +120,8 @@ serve(async (req) => {
       );
     }
 
-    if (!webhookSecret) {
-      console.error("❌ Missing STRIPE_WEBHOOK_SECRET environment variable");
+    if (!finalWebhookSecret) {
+      console.error(`❌ Missing ${isLiveMode ? 'STRIPE_LIVE_WEBHOOK_SECRET' : 'STRIPE_WEBHOOK_SECRET'} environment variable`);
       return new Response(
         JSON.stringify({ error: "Missing webhook secret" }), 
         { 
@@ -149,7 +163,7 @@ serve(async (req) => {
       console.log(`${isTestRequest ? "🧪 Test request" : "🔐 Production request"} - Attempting to verify webhook signature...`);
       
       try {
-        if (isTestRequest) {
+        if (isTestRequest && !isLiveMode) {
           // For test requests, create a mock event
           try {
             const jsonBody = JSON.parse(body);
@@ -183,7 +197,7 @@ serve(async (req) => {
           }
         } else {
           // For real requests, verify the signature
-          event = stripe.webhooks.constructEvent(body, finalSignature || "", webhookSecret);
+          event = stripe.webhooks.constructEvent(body, finalSignature || "", finalWebhookSecret);
           console.log("✅ Webhook signature verified successfully!");
           console.log("📋 Event details:", {
             type: event.type,
@@ -196,7 +210,7 @@ serve(async (req) => {
         // For test requests, try to parse the body as JSON to handle them
         try {
           const jsonBody = JSON.parse(body);
-          if (jsonBody.test === true || jsonBody.type === "test_event" || req.headers.get("x-test-request") === "true") {
+          if ((jsonBody.test === true || jsonBody.type === "test_event" || req.headers.get("x-test-request") === "true") && !isLiveMode) {
             console.log("🧪 Test request detected, bypassing signature verification");
             event = { 
               type: jsonBody.type || "test_event",
@@ -216,7 +230,7 @@ serve(async (req) => {
       console.error("❌ Webhook signature verification failed:", {
         error: err.message,
         signatureReceived: finalSignature ? finalSignature.substring(0, 10) + "..." : "none",
-        webhookSecretUsed: webhookSecret ? webhookSecret.substring(0, 7) + "..." : "none",
+        webhookSecretUsed: finalWebhookSecret ? finalWebhookSecret.substring(0, 7) + "..." : "none",
         bodyLength: body.length
       });
       return new Response(
@@ -236,7 +250,7 @@ serve(async (req) => {
       console.log(`🎯 Processing event: ${event.type}`);
 
       // For test requests, return success early
-      if (event.type === "test_event" || req.headers.get("x-test-request") === "true") {
+      if ((event.type === "test_event" || req.headers.get("x-test-request") === "true") && !isLiveMode) {
         console.log("🧪 Test event processed successfully");
         return new Response(
           JSON.stringify({ 
@@ -259,8 +273,9 @@ serve(async (req) => {
           console.log("🛒 Checkout Session details:", {
             id: session.id,
             payment_status: session.payment_status,
-            customer: session.customer,
-            metadata: session.metadata
+            customer: session.customer || "none",
+            metadata: session.metadata || {},
+            liveMode: isLiveMode || event.livemode
           });
           await handleCheckoutSessionCompleted(session, supabase);
           break;
@@ -271,9 +286,10 @@ serve(async (req) => {
           console.log("💳 Payment Intent details:", {
             id: paymentIntent.id,
             amount: paymentIntent.amount,
-            currency: paymentIntent.currency,
+            currency: paymentIntent.currency || "usd",
             status: paymentIntent.status,
-            metadata: paymentIntent.metadata
+            metadata: paymentIntent.metadata || {},
+            liveMode: isLiveMode || event.livemode
           });
           await handlePaymentSuccess(paymentIntent, supabase);
           break;
@@ -282,18 +298,36 @@ serve(async (req) => {
         case "customer.subscription.updated":
           console.log(`📋 Processing ${event.type}`);
           const subscription = event.data.object as Stripe.Subscription;
+          console.log("📋 Subscription details:", {
+            id: subscription.id,
+            status: subscription.status,
+            metadata: subscription.metadata || {},
+            liveMode: isLiveMode || event.livemode
+          });
           await handleSubscriptionChange(subscription, supabase);
           break;
 
         case "customer.subscription.deleted":
           console.log("🗑️ Processing subscription deletion");
           const deletedSubscription = event.data.object as Stripe.Subscription;
+          console.log("🗑️ Subscription deletion details:", {
+            id: deletedSubscription.id,
+            status: deletedSubscription.status,
+            metadata: deletedSubscription.metadata || {},
+            liveMode: isLiveMode || event.livemode
+          });
           await handleSubscriptionCancellation(deletedSubscription, supabase);
           break;
 
         case "invoice.payment_failed":
           console.log("❌ Processing payment failure");
           const failedInvoice = event.data.object as Stripe.Invoice;
+          console.log("❌ Failed invoice details:", {
+            id: failedInvoice.id,
+            amount_due: failedInvoice.amount_due,
+            status: failedInvoice.status,
+            liveMode: isLiveMode || event.livemode
+          });
           await handlePaymentFailure(failedInvoice, supabase);
           break;
 
@@ -305,8 +339,9 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           received: true, 
-          eventType: event.type,
-          eventId: event.id 
+          eventType: event.type || "unknown",
+          eventId: event.id || "unknown",
+          liveMode: isLiveMode || event.livemode || false
         }), 
         { 
           status: 200, 
@@ -351,6 +386,12 @@ serve(async (req) => {
 
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session, supabase: any) {
   console.log("🛒 Starting handleCheckoutSessionCompleted");
+
+  // Check if this is a live mode session
+  const isLiveMode = session.livemode === true;
+  if (isLiveMode) {
+    console.log("🔴 LIVE MODE SESSION - Processing real payment");
+  }
   
   const userId = session.metadata?.userId || session.client_reference_id;
   const plan = session.metadata?.plan;
@@ -360,8 +401,9 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session, 
     userId,
     plan,
     email,
-    sessionId: session.id,
-    paymentStatus: session.payment_status
+    sessionId: session.id || "unknown",
+    paymentStatus: session.payment_status || "unknown",
+    liveMode: isLiveMode
   });
 
   if (!userId || !plan) {
@@ -378,7 +420,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session, 
     // Update user subscription
     console.log("💾 Updating user subscription from checkout session...");
     const { data: updatedUser, error: userError } = await supabase
-      .from("users")
+      .from('users')
       .update({
         subscription: plan,
         payment_method_added: true,
@@ -392,6 +434,24 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session, 
       throw userError;
     }
 
+    // Log the payment in payment_logs table
+    try {
+      await supabase.from('payment_logs').insert({
+        event_type: 'checkout.session.completed',
+        event_id: session.id,
+        payment_intent_id: session.payment_intent,
+        subscription_id: session.subscription,
+        user_id: userId,
+        amount: session.amount_total,
+        currency: session.currency,
+        status: session.payment_status,
+        live_mode: isLiveMode,
+        metadata: session.metadata
+      });
+    } catch (logError) {
+      console.warn("⚠️ Failed to log payment event:", logError);
+    }
+
     console.log("✅ Successfully updated user from checkout session:", updatedUser);
   } catch (error) {
     console.error("💥 Error in handleCheckoutSessionCompleted:", error);
@@ -402,16 +462,23 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session, 
 async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabase: any) {
   console.log("🎯 Starting handlePaymentSuccess");
   console.log("🔍 Payment Intent ID:", paymentIntent?.id || "unknown");
+
+  // Check if this is a live mode payment
+  const isLiveMode = paymentIntent.livemode === true;
+  if (isLiveMode) {
+    console.log("🔴 LIVE MODE PAYMENT - Processing real payment");
+  }
   
   // Log payment intent details but sanitize sensitive information
   const sanitizedPaymentIntent = {
     id: paymentIntent?.id || "unknown",
     amount: paymentIntent?.amount || 0,
     currency: paymentIntent?.currency || "usd",
-    status: paymentIntent?.status || "unknown",
+    status: paymentIntent?.status || "unknown", 
     metadata: paymentIntent?.metadata || {},
     created: paymentIntent?.created || Math.floor(Date.now() / 1000),
-    customer: paymentIntent?.customer || null
+    customer: paymentIntent?.customer || null,
+    liveMode: isLiveMode
   };
   
   console.log("💰 Payment Intent Details:", JSON.stringify(sanitizedPaymentIntent, null, 2));
@@ -425,8 +492,9 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabas
     userId,
     plan,
     email,
-    amount,
-    amountInDollars: amount / 100
+    amount: amount || 0,
+    amountInDollars: amount ? amount / 100 : 0,
+    liveMode: isLiveMode
   });
 
   if (!userId || !plan) {
@@ -478,7 +546,7 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabas
     // First, check if this payment has already been processed
     console.log("🔍 Checking if payment has already been processed...");
     const { data: existingPayment, error: paymentCheckError } = await supabase
-      .from("payments")
+      .from('payments')
       .select("id, status")
       .eq("stripe_payment_intent_id", paymentIntent.id)
       .maybeSingle();
@@ -494,7 +562,7 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabas
     // Check if user exists
     console.log("🔍 Looking up user in database...");
     const { data: existingUser, error: fetchError } = await supabase
-      .from("users")
+      .from('users')
       .select("id, email, subscription, payment_method_added")
       .eq("id", userId)
       .maybeSingle();
@@ -539,16 +607,18 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabas
     // Log payment
     console.log("📝 Logging payment record...");
     const { data: paymentRecord, error: paymentError } = await supabase
-      .from('payments')
+      .from("payments")
       .upsert(
         {
           user_id: userId,
           stripe_payment_intent_id: paymentIntent.id,
           plan: finalPlan,
-          amount: amount,
+          amount,
           currency: paymentIntent.currency,
           status: "succeeded",
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          live_mode: isLiveMode,
+          webhook_event_id: uuidv4() // Generate a unique ID for idempotency
         },
         { 
           onConflict: "stripe_payment_intent_id",
@@ -562,6 +632,23 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent, supabas
       // Don't throw here as the main subscription update succeeded
     } else {
       console.log("✅ Payment logged successfully:", paymentRecord);
+    }
+
+    // Log the payment in payment_logs table
+    try {
+      await supabase.from('payment_logs').insert({
+        event_type: 'payment_intent.succeeded',
+        event_id: uuidv4(),
+        payment_intent_id: paymentIntent.id,
+        user_id: userId,
+        amount: amount,
+        currency: paymentIntent.currency,
+        status: "succeeded",
+        live_mode: isLiveMode,
+        metadata: paymentIntent.metadata
+      });
+    } catch (logError) {
+      console.warn("⚠️ Failed to log payment event:", logError);
     }
 
     console.log("🎉 Payment success handled completely!");
@@ -673,7 +760,13 @@ async function handlePaymentSuccessWithExtractedData(
 async function handleSubscriptionChange(subscription: Stripe.Subscription, supabase: any) {
   console.log("📋 Processing subscription change:", subscription.id);
   console.log("📋 Subscription status:", subscription.status);
-  console.log("📋 Subscription metadata:", subscription.metadata);
+  console.log("📋 Subscription metadata:", subscription.metadata || {});
+  
+  // Check if this is a live mode subscription
+  const isLiveMode = subscription.livemode === true;
+  if (isLiveMode) {
+    console.log("🔴 LIVE MODE SUBSCRIPTION - Processing real subscription");
+  }
   
   const userId = subscription.metadata.userId;
   const plan = subscription.metadata.plan;
@@ -704,6 +797,21 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, supab
       console.error("❌ Error updating subscription:", error);
       throw error;
     }
+    
+    // Log the subscription change in payment_logs table
+    try {
+      await supabase.from('payment_logs').insert({
+        event_type: 'customer.subscription.updated',
+        event_id: uuidv4(),
+        subscription_id: subscription.id,
+        user_id: userId,
+        status: subscription.status,
+        live_mode: isLiveMode,
+        metadata: subscription.metadata
+      });
+    } catch (logError) {
+      console.warn("⚠️ Failed to log subscription event:", logError);
+    }
 
     console.log(`✅ Successfully updated user ${userId} subscription to ${subscriptionStatus}`);
   } catch (error) {
@@ -714,6 +822,12 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, supab
 
 async function handleSubscriptionCancellation(subscription: Stripe.Subscription, supabase: any) {
   console.log("🗑️ Processing subscription cancellation:", subscription.id);
+  
+  // Check if this is a live mode subscription
+  const isLiveMode = subscription.livemode === true;
+  if (isLiveMode) {
+    console.log("🔴 LIVE MODE SUBSCRIPTION CANCELLATION - Processing real cancellation");
+  }
   
   const userId = subscription.metadata.userId;
 
@@ -735,6 +849,21 @@ async function handleSubscriptionCancellation(subscription: Stripe.Subscription,
       console.error("❌ Error cancelling subscription:", error);
       throw error;
     }
+    
+    // Log the subscription cancellation in payment_logs table
+    try {
+      await supabase.from('payment_logs').insert({
+        event_type: 'customer.subscription.deleted',
+        event_id: uuidv4(),
+        subscription_id: subscription.id,
+        user_id: userId,
+        status: 'cancelled',
+        live_mode: isLiveMode,
+        metadata: subscription.metadata
+      });
+    } catch (logError) {
+      console.warn("⚠️ Failed to log subscription cancellation:", logError);
+    }
 
     console.log(`✅ Successfully cancelled subscription for user ${userId}`);
   } catch (error) {
@@ -746,12 +875,19 @@ async function handleSubscriptionCancellation(subscription: Stripe.Subscription,
 async function handlePaymentFailure(invoice: Stripe.Invoice, supabase: any) {
   console.log("❌ Processing payment failure:", invoice.id);
   console.log("❌ Invoice details:", {
-    id: invoice.id,
-    customer: invoice.customer,
-    status: invoice.status,
-    amount_due: invoice.amount_due,
-    currency: invoice.currency
+    id: invoice.id || "unknown",
+    customer: invoice.customer || "unknown",
+    status: invoice.status || "unknown",
+    amount_due: invoice.amount_due || 0,
+    currency: invoice.currency || "usd",
+    liveMode: invoice.livemode || false
   });
+  
+  // Check if this is a live mode invoice
+  const isLiveMode = invoice.livemode === true;
+  if (isLiveMode) {
+    console.log("🔴 LIVE MODE PAYMENT FAILURE - Processing real payment failure");
+  }
   
   const customerId = invoice.customer as string;
   
@@ -778,15 +914,32 @@ async function handlePaymentFailure(invoice: Stripe.Invoice, supabase: any) {
     
     console.log(`❌ Payment failed for user ${userId}`);
     
-    // Log the payment failure
-    await supabase.from("payments").insert({
+    // Log the payment failure in payments table
+    await supabase.from('payments').insert({
       user_id: userId,
       stripe_payment_intent_id: invoice.payment_intent ? String(invoice.payment_intent) : null,
       stripe_subscription_id: invoice.subscription ? String(invoice.subscription) : null,
       amount: invoice.amount_due,
       currency: invoice.currency,
       status: 'failed',
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      live_mode: isLiveMode,
+      webhook_event_id: uuidv4() // Generate a unique ID for idempotency
+    });
+    
+    // Log the payment failure in payment_logs table
+    await supabase.from('payment_logs').insert({
+      event_type: 'invoice.payment_failed',
+      event_id: uuidv4(),
+      payment_intent_id: invoice.payment_intent ? String(invoice.payment_intent) : null,
+      subscription_id: invoice.subscription ? String(invoice.subscription) : null,
+      user_id: userId,
+      amount: invoice.amount_due,
+      currency: invoice.currency,
+      status: 'failed',
+      live_mode: isLiveMode,
+      error_message: 'Payment failed',
+      metadata: { customerId }
     });
     
     // Note: In a production app, you might want to:
