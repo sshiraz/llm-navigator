@@ -28,9 +28,13 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
     { id: 'new-analysis', label: 'New Analysis', icon: Plus },
     { id: 'projects', label: 'Projects', icon: Target },
     { id: 'competitor-strategy', label: 'Competitor Strategy', icon: Users },
-    { id: 'pricing', label: 'Pricing', icon: DollarSign },
     { id: 'contact', label: 'Contact Us', icon: Mail }
   ];
+  
+  // Add pricing page for admin users only
+  if (isAdmin) {
+    menuItems.push({ id: 'pricing', label: 'Pricing (Admin)', icon: DollarSign });
+  }
   
   // Add admin menu items if user is admin
   const adminMenuItems = [

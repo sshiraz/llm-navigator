@@ -319,7 +319,23 @@ function App() {
         ) : null;
 
       case 'pricing':
-        return <PricingTiers currentPlan={user?.subscription || 'free'} onUpgrade={handleUpgrade} />;
+        // Only show pricing page to admin users
+        return isAdmin ? (
+          <PricingTiers currentPlan={user?.subscription || 'free'} onUpgrade={handleUpgrade} />
+        ) : (
+          <div className="max-w-2xl mx-auto text-center p-8 bg-yellow-50 rounded-xl border-2 border-yellow-300">
+            <h2 className="text-2xl font-bold text-yellow-800 mb-4">🚧 Pricing Page Temporarily Unavailable</h2>
+            <p className="text-yellow-700 mb-6">
+              We're currently updating our payment system. The pricing page will be available again soon.
+            </p>
+            <button
+              onClick={() => setActiveSection('dashboard')}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Return to Dashboard
+            </button>
+          </div>
+        );
 
       case 'competitor-strategy':
         return (
