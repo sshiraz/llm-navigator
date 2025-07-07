@@ -18,6 +18,8 @@ import { mockProjects, mockAnalyses } from './utils/mockData';
 import { Project, Analysis, User } from './types';
 import PaymentDebugger from './components/Debug/PaymentDebugger';
 import { isAdminUser } from './utils/authUtils';
+import { isLiveMode } from './utils/liveMode';
+import LiveModeBanner from './components/UI/LiveModeBanner';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
