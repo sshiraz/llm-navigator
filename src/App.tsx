@@ -30,7 +30,6 @@ function App() {
   useEffect(() => {
     // Don't clear user data on initial load - this was causing the blank screen
     // clearUserData();
-    console.log('App: Initial load, checking hash:', window.location.hash);
   }, []);
 
   const [user, setUser] = useState<User | null>(null);
@@ -153,16 +152,13 @@ function App() {
   // Load user from localStorage on initial load
   useEffect(() => {
     try {
-      console.log('App: Checking for stored user on initial load', { hash: window.location.hash });
       const storedUser = localStorage.getItem('currentUser');
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
-          console.log('App: Found stored user, setting user state', { id: parsedUser.id, hash: window.location.hash });
           setUser(parsedUser);
           // If we're on the auth page but already logged in, redirect to dashboard
           if (activeSection === 'auth') {
-            console.log('App: Already logged in, redirecting to dashboard');
             setActiveSection('dashboard');
             window.location.hash = 'dashboard';
           }
@@ -170,8 +166,6 @@ function App() {
           console.error('Failed to parse stored user', e);
           localStorage.removeItem('currentUser'); // Clear invalid data
         }
-      } else {
-        console.log('App: No stored user found');
       }
     } catch (error) {
       console.error('Error accessing localStorage:', error);
@@ -185,7 +179,6 @@ function App() {
   const isBasicConfigured = supabaseUrl && supabaseKey;
   
   const handleLogin = (userData: User) => {
-    console.log('App: handleLogin called', { id: userData.id });
     setUser(userData);
     setActiveSection('dashboard');
     
@@ -199,7 +192,6 @@ function App() {
   };
 
   const handleLogout = () => {
-    console.log('App: handleLogout called');
     setUser(null);
     
     // Clear user data from localStorage
@@ -300,13 +292,6 @@ function App() {
 
   const renderContent = () => {
     if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
-      console.log('App: Rendering special section:', activeSection);
-      
-      // For debugging
-      if (activeSection === 'auth') {
-        console.log('App: Rendering auth page, user state:', user ? 'logged in' : 'not logged in');
-      }
-      
       switch (activeSection) {
         case 'landing':
           return <LandingPage onGetStarted={handleGetStarted} />;
@@ -354,11 +339,9 @@ function App() {
     
     // Protected routes that require login
     if (!user && ['dashboard', 'new-analysis', 'analysis-results', 'project-detail', 'pricing', 'competitor-strategy'].includes(activeSection)) {
-      console.log('App: Attempted to access protected route without login, redirecting to auth page', { section: activeSection });
       return <AuthPage onLogin={handleLogin} />;
     }
 
-    console.log('App: Rendering section:', activeSection);
     switch (activeSection) {
       case 'dashboard':
         return <Dashboard onProjectSelect={handleProjectSelect} onNewAnalysis={handleNewAnalysisClick} />;
@@ -448,11 +431,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* For debugging */}
-      <div className="fixed top-0 right-0 bg-black bg-opacity-75 text-white p-2 text-xs z-50">
-        Section: {activeSection} | User: {user ? user.email : 'none'}
-      </div>
-      
       <Sidebar 
         activeSection={activeSection} 
         onSectionChange={setActiveSection}

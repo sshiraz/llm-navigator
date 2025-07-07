@@ -7,10 +7,8 @@
 export const isAdminUser = (): boolean => {
   try {
     // Get current user from localStorage
-    console.log('authUtils: Checking if user is admin');
     const userStr = localStorage.getItem('currentUser');
     if (!userStr) {
-      console.log('authUtils: No current user found');
       return false;
     }
     
@@ -18,7 +16,6 @@ export const isAdminUser = (): boolean => {
     
     // Check if user is admin or has admin email
     const isAdmin = user.isAdmin === true || (user.email && user.email.toLowerCase() === 'info@convologix.com');
-    console.log('authUtils: User admin status:', isAdmin);
     return isAdmin;
   } catch (error) {
     console.error('Error checking admin status:', error);
@@ -34,13 +31,11 @@ export const getCurrentUserId = (): string | null => {
   try {
     const userStr = localStorage.getItem('currentUser');
     if (!userStr) {
-      console.log('authUtils: No current user found when getting ID');
       return null;
     }
     
     const user = JSON.parse(userStr);
     const userId = user.id || null;
-    console.log('authUtils: Current user ID:', userId);
     return userId;
   } catch (error) {
     console.error('Error getting current user ID:', error);
@@ -63,8 +58,6 @@ export const hasPermission = (permission: string): boolean => {
  */
 export const clearUserData = (): void => {
   try {
-    console.log('authUtils: Clearing user data');
-
     // Remove user data
     localStorage.removeItem('currentUser'); 
     
@@ -78,7 +71,6 @@ export const clearUserData = (): void => {
     localStorage.removeItem('projects');
     localStorage.removeItem('payment_logs');
     
-    console.log('User data cleared successfully');
   } catch (error) {
     console.error('Error clearing user data:', error);
   }

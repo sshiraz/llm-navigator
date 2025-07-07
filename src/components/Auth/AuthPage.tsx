@@ -12,9 +12,9 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    name: 'Demo User',
-    email: 'demo@example.com',
-    password: 'demo123',
+    name: '',
+    email: '',
+    password: '',
     company: '',
     website: ''
   });
@@ -274,6 +274,11 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
                 : 'Join thousands optimizing for AI search'
               }
             </p>
+            {isLogin && (
+              <div className="mt-2 text-sm text-blue-600">
+                <strong>Demo credentials:</strong> demo@example.com / demo123
+              </div>
+            )}
             {import.meta.env.DEV && (
               <div className="mt-2 text-sm text-blue-600">
                 <strong>Demo credentials:</strong> demo@example.com / demo123

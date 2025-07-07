@@ -228,9 +228,6 @@ export const mockKeywordSuggestions: KeywordSuggestion[] = [
 // Add a demo user to localStorage if it doesn't exist
 const initializeDemoUser = () => {
   try {
-    // Clear localStorage if needed for testing
-    // localStorage.clear();
-    
     // Get existing users or initialize empty array
     const usersStr = localStorage.getItem('users');
     let users = [];
@@ -251,9 +248,6 @@ const initializeDemoUser = () => {
     const adminUserExists = Array.isArray(users) && users.some((user: any) => 
       user && user.email && user.email.toLowerCase() === 'info@convologix.com'
     );
-    
-    // Don't log sensitive information
-    console.log('Initializing users:', { existingUsers: users.length });
     
     if (!demoUserExists) {
       // Add demo user
@@ -311,7 +305,6 @@ const initializeDemoUser = () => {
 // Run this in a try-catch to prevent any issues with localStorage
 try {
   // Force initialization of demo users - this is critical for the app to work
-  console.log('mockData: Starting initialization of demo users and data...');
 
   // Always ensure users array exists
   let existingUsers = [];
@@ -320,18 +313,17 @@ try {
     if (usersStr) {
       existingUsers = JSON.parse(usersStr);
       if (!Array.isArray(existingUsers)) {
-        console.error('Users in localStorage is not an array, resetting');
+        console.warn('Users in localStorage is not an array, resetting');
         existingUsers = [];
       }
     }
   } catch (e) {
-    console.error('Error parsing users from localStorage, resetting', e);
+    console.warn('Error parsing users from localStorage, resetting');
     existingUsers = [];
   }
   
   // If no users or empty array, initialize with empty array
   if (!existingUsers || existingUsers.length === 0) {
-    console.log('mockData: No valid users found, initializing with empty array');
     localStorage.setItem('users', '[]');
   }
   
@@ -345,11 +337,10 @@ try {
     
     // Check if admin exists
     const adminExists = users.some((u: any) => 
-      u && u.email && u.email.toLowerCase() === 'info@convologix.com'
+      u && u.email && u.email.toLowerCase() === 'info@convologix.com' 
     );
     
     if (!adminExists) {
-      console.log('mockData: Admin user not found, creating...');
       const adminUser = {
         id: 'admin-user-456',
         email: 'info@convologix.com', 
@@ -363,7 +354,6 @@ try {
       
       users.push(adminUser);
       localStorage.setItem('users', JSON.stringify(users));
-      console.log('mockData: Admin user created successfully');
     }
   } catch (error) {
     console.error('Error creating admin user:', error);
@@ -375,7 +365,6 @@ try {
       // Check if analyses already exist in localStorage
       const existingAnalyses = localStorage.getItem('analyses');
       if (!existingAnalyses) {
-        console.log('mockData: Initializing demo analyses...');
         // Store mockAnalyses in localStorage
         localStorage.setItem('analyses', JSON.stringify(mockAnalyses));
         console.log('Demo analyses initialized successfully');
@@ -389,9 +378,7 @@ try {
   const initializeProjects = () => {
     try {
       // Check if projects already exist in localStorage
-      console.log('mockData: Checking for existing projects...');
       if (!localStorage.getItem('projects')) {
-        console.log('mockData: Initializing empty projects array...');
         localStorage.setItem('projects', '[]');
         console.log('Projects array initialized successfully');
       }
@@ -402,21 +389,6 @@ try {
   
   initializeAnalyses();
   initializeProjects();
-  
-  // Log all users for debugging
-  try {
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    // Don't log sensitive information
-    console.log('mockData: Users initialized:', users.length);
-    
-    // Check if admin user exists
-    const adminExists = users.some((u: any) => 
-      u && u.email && u.email.toLowerCase() === 'info@convologix.com'
-    );
-    console.log('mockData: Admin user exists:', adminExists);
-  } catch (error) {
-    console.error('Error logging users:', error);
-  }
 } catch (error) {
   console.error('Failed to initialize demo user:', error);
 }

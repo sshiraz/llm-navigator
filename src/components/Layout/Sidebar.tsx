@@ -26,7 +26,7 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'new-analysis', label: 'New Analysis', icon: Plus },
-    { id: 'dashboard', label: 'Projects', icon: Target },
+    { id: 'projects', label: 'Projects', icon: Target },
     { id: 'competitor-strategy', label: 'Competitor Strategy', icon: Users },
     { id: 'contact', label: 'Contact Us', icon: Mail }
   ];
@@ -121,8 +121,8 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
       <div className="p-4 border-t border-gray-200 mt-auto">
         <button
           onClick={() => {
-            console.log('Sidebar: Logout button clicked');
             window.location.hash = 'logout';
+            onSectionChange('logout');
           }}
           className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
         >
