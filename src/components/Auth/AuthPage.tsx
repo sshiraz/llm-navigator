@@ -65,6 +65,9 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
       localStorage.setItem('currentUser', JSON.stringify(adminUser));
       console.log('Admin login successful');
       
+      // Set hash to dashboard before login to ensure proper redirection
+      window.location.hash = 'dashboard';
+      
       onLogin(adminUser);
       setIsLoading(false);
       return;
@@ -111,6 +114,9 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           // Store current user in localStorage
           localStorage.setItem('currentUser', JSON.stringify(userData));
           console.log('Login successful');
+          
+          // Set hash to dashboard before login to ensure proper redirection
+          window.location.hash = 'dashboard';
           
           onLogin(userData as User);
         } catch (error) {
@@ -172,6 +178,9 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           // Store current user in localStorage
           localStorage.setItem('currentUser', JSON.stringify(user)); 
           console.log('Signup successful');
+          
+          // Set hash to dashboard before login to ensure proper redirection
+          window.location.hash = 'dashboard';
           
           onLogin(user);
         } catch (error) {

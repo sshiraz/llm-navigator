@@ -64,7 +64,7 @@ function App() {
   // Listen for hash changes to handle browser back/forward buttons
   useEffect(() => {
     const handleHashChange = () => {
-      let hash = window.location.hash.slice(1);
+      const hash = window.location.hash.slice(1);
       if (hash) {
         setActiveSection(hash);
       } else {
@@ -87,13 +87,13 @@ function App() {
     // Add event listener for hash changes
     window.addEventListener('hashchange', handleHashChange);
 
+    // Run once on initial load to handle direct URL access
+    handleHashChange();
+    
     // Clean up event listener
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
     };
-    
-    // Run once on initial load to handle direct URL access
-    handleHashChange();
   }, []);
 
   // Load projects from localStorage when user changes
@@ -151,14 +151,18 @@ function App() {
   // Load user from localStorage on initial load
   useEffect(() => {
     try {
+      console.log('Checking for stored user on initial load');
       const storedUser = localStorage.getItem('currentUser');
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
+          console.log('Found stored user, setting user state');
           setUser(parsedUser);
           // If we're on the auth page but already logged in, redirect to dashboard
           if (activeSection === 'auth') {
+            console.log('Already logged in, redirecting to dashboard');
             setActiveSection('dashboard');
+            window.location.hash = 'dashboard';
           }
         } catch (e) {
           console.error('Failed to parse stored user', e);
@@ -179,7 +183,12 @@ function App() {
   const handleLogin = (userData: User) => {
     setUser(userData);
     setActiveSection('dashboard');
-    window.location.hash = 'dashboard';
+    
+    // Ensure hash is set to dashboard
+    if (window.location.hash !== '#dashboard') {
+      window.location.hash = 'dashboard';
+    }
+    
     // Store user data in localStorage for persistence
     localStorage.setItem('currentUser', JSON.stringify(userData));
   };

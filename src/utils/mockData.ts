@@ -313,8 +313,14 @@ try {
   // Force initialization of demo users
   console.log('Forcing initialization of demo users...');
   
-  // Clear existing users to ensure fresh initialization
-  localStorage.setItem('users', '[]');
+  // Check if users exist before initializing
+  const existingUsers = localStorage.getItem('users');
+  if (!existingUsers || JSON.parse(existingUsers).length === 0) {
+    console.log('No users found, initializing demo users');
+    localStorage.setItem('users', '[]');
+  } else {
+    console.log('Users already exist, skipping initialization');
+  }
   
   // Initialize demo users
   initializeDemoUser(); 
