@@ -267,36 +267,42 @@ function App() {
     
     setCurrentAnalysis(newAnalysis);
     
-    // Store analyses in localStorage
+    // Store analysis in localStorage for persistence
     try {
+      localStorage.setItem('currentAnalysis', JSON.stringify(newAnalysis));
+      
       if (user) {
         const existingAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
+        existingAnalyses.push(newAnalysis);
         localStorage.setItem('analyses', JSON.stringify(existingAnalyses));
       }
+    } catch (error) {
+      console.error('Error storing analysis:', error);
+    }
+    
+    // Navigate to analysis results
+    setActiveSection('analysis-results');
+    window.location.hash = 'analysis-results';
+  };
+
+  const handleGetStarted = () => {
+    setActiveSection('auth');
+    window.location.hash = 'auth';
+  };
+
+  const handleUpgrade = (plan: string) => {
+    // Handle upgrade logic here
+    console.log('Upgrading to plan:', plan);
+  };
+
+  const renderContent = () => {
+    // Public routes that don't require login
+    if (['landing', 'auth', 'contact', 'privacy', 'terms'].includes(activeSection)) {
       switch (activeSection) {
         case 'landing':
           return <LandingPage onGetStarted={handleGetStarted} />;
         case 'auth':
           return <AuthPage onLogin={handleLogin} />;
-        case 'logout':
-          return <LogoutHandler onLogout={handleLogout} />;
-        case 'logout':
-          return <LogoutHandler onLogout={handleLogout} />;
-        case 'account':
-          return user ? (
-            <AccountPage 
-              user={user} 
-              onBack={() => {
-                setActiveSection('dashboard');
-                window.location.hash = 'dashboard';
-              }}
-              onUpdateProfile={(updates) => {
-                const updatedUser = { ...user, ...updates };
-                setUser(updatedUser);
-                localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-              }}
-            />
-          ) : <AuthPage onLogin={handleLogin} />;
         case 'contact':
           return <ContactPage onBack={() => {
             setActiveSection('landing');
@@ -312,37 +318,48 @@ function App() {
             setActiveSection('landing');
             window.location.hash = '';
           }} />;
-        case 'admin-users':
-          // Check if user is admin
-          if (!user || !user.isAdmin) {
-            // Redirect to dashboard if not admin
-            setTimeout(() => {
-              window.location.hash = 'dashboard';
-            }, 100);
-            return <div className="flex items-center justify-center h-screen">
-              <div className="text-center">
-                <h2 className="text-xl font-semibold text-red-600 mb-2">Access Denied</h2>
-                <p className="text-gray-600">You don't have permission to access this page.</p>
-              </div>
-            </div>;
-          }
-          // Check if user is admin
-          if (!user || !user.isAdmin) {
-            // Redirect to dashboard if not admin
-            setTimeout(() => {
-              window.location.hash = '#dashboard';
-            }, 100);
-            return <div className="flex items-center justify-center h-screen">
-              <div className="text-center">
-                <h2 className="text-xl font-semibold text-red-600 mb-2">Access Denied</h2>
-                <p className="text-gray-600">You don't have permission to access this page.</p>
-              </div>
-            </div>;
-          }
-          return <UserDashboard />;
         default:
           return <LandingPage onGetStarted={handleGetStarted} />;
       }
+    }
+
+    // Special routes
+    if (activeSection === 'logout') {
+      return <LogoutHandler onLogout={handleLogout} />;
+    }
+
+    if (activeSection === 'account') {
+      return user ? (
+        <AccountPage 
+          user={user} 
+          onBack={() => {
+            setActiveSection('dashboard');
+            window.location.hash = 'dashboard';
+          }}
+          onUpdateProfile={(updates) => {
+            const updatedUser = { ...user, ...updates };
+            setUser(updatedUser);
+            localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+          }}
+        />
+      ) : <AuthPage onLogin={handleLogin} />;
+    }
+
+    if (activeSection === 'admin-users') {
+      // Check if user is admin
+      if (!user || !user.isAdmin) {
+        // Redirect to dashboard if not admin
+        setTimeout(() => {
+          window.location.hash = 'dashboard';
+        }, 100);
+        return <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-red-600 mb-2">Access Denied</h2>
+            <p className="text-gray-600">You don't have permission to access this page.</p>
+          </div>
+        </div>;
+      }
+      return <UserDashboard />;
     }
     
     // Protected routes that require login
@@ -414,6 +431,7 @@ function App() {
         );
 
       case 'competitor-strategy':
+        const analyses = JSON.parse(localStorage.getItem('analyses') || '[]');
         return (
           <CompetitorStrategy
             userAnalysis={analyses[0] || mockAnalyses[0]} 
