@@ -53,8 +53,9 @@ export const hasPermission = (permission: string): boolean => {
 export const clearUserData = (): void => {
   try {
     // Remove user data
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('users');
+    localStorage.removeItem('currentUser'); 
+    // Don't remove users to preserve demo accounts
+    // localStorage.removeItem('users');
     
     // Also clear any analysis-related data
     localStorage.removeItem('currentAnalysis');
@@ -67,6 +68,14 @@ export const clearUserData = (): void => {
     localStorage.removeItem('payment_logs');
     
     console.log('User data cleared successfully');
+    
+    // Force re-initialization of demo users if they don't exist
+    const usersExist = localStorage.getItem('users');
+    if (!usersExist || JSON.parse(usersExist).length === 0) {
+      console.log('No users found after clearing, reinitializing demo users...');
+      // Import mockData to trigger initialization
+      import('../utils/mockData');
+    }
   } catch (error) {
     console.error('Error clearing user data:', error);
   }

@@ -10,6 +10,7 @@ interface AuthPageProps {
 
 export default function AuthPage({ onLogin }: AuthPageProps) {
   const [isLogin, setIsLogin] = useState(true);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -39,7 +40,8 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
+    setError(null); 
+    setLoginError(null);
 
     // Special handling for admin account
     if (isLogin && formData.email.toLowerCase() === 'info@convologix.com' && formData.password === '4C0nv0@LLMNav') {
@@ -57,6 +59,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
       
       // Store admin user in localStorage
       localStorage.setItem('currentUser', JSON.stringify(adminUser));
+      console.log('Admin login successful:', adminUser);
       
       onLogin(adminUser);
       setIsLoading(false);
@@ -67,11 +70,16 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     setTimeout(() => {
       if (isLogin) {
         // Check if user exists in localStorage
+        console.log('Attempting to login with:', formData.email);
         try {
           const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
+          console.log('Found users in localStorage:', existingUsersList.length);
+          
           const user = existingUsersList.find((u: any) => u.email.toLowerCase() === formData.email.toLowerCase());
         
           if (!user) {
+            console.error('No account found with email:', formData.email);
+            console.log('Available accounts:', existingUsersList.map((u: any) => u.email));
             setError('No account found with this email address');
             setIsLoading(false);
             return;
@@ -79,6 +87,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         
           // Validate password (in a real app, this would be done securely on the server)
           if (user.password !== formData.password) {
+            console.error('Invalid password for user:', formData.email);
             setError('Invalid password');
             setIsLoading(false);
             return;
@@ -87,13 +96,14 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           // Login successful - remove password before storing in state
           const { password, ...userWithoutPassword } = user;
           const userData = {
-            ...userWithoutPassword,
-            email: user.email, // Preserve original email case
+            ...userWithoutPassword, 
+            email: user.email, // Preserve original email case 
             avatar: userWithoutPassword.avatar || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2'
           };
         
           // Store current user in localStorage
           localStorage.setItem('currentUser', JSON.stringify(userData));
+          console.log('Login successful:', userData);
           
           onLogin(userData as User);
         } catch (error) {
@@ -105,6 +115,9 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         // Check if email already exists
         try {
           const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
+          console.log('Checking if email exists:', formData.email);
+          console.log('Existing users:', existingUsersList.map((u: any) => u.email));
+          
           const existingUser = existingUsersList.find((u: any) => u.email === formData.email);
           
           if (existingUser) {
@@ -149,7 +162,8 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           localStorage.setItem('users', JSON.stringify(usersList)); 
           
           // Store current user in localStorage
-          localStorage.setItem('currentUser', JSON.stringify(user));
+          localStorage.setItem('currentUser', JSON.stringify(user)); 
+          console.log('Signup successful, created user:', user);
           
           onLogin(user);
         } catch (error) {
@@ -182,6 +196,21 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           </div>
         </div>
 
+        {/* Demo Credentials */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 text-white text-sm">
+          <h3 className="font-semibold mb-2">Demo Accounts:</h3>
+          <div className="space-y-2">
+            <div>
+              <p><strong>Admin:</strong> info@convologix.com</p>
+              <p><strong>Password:</strong> 4C0nv0@LLMNav</p>
+            </div>
+            <div>
+              <p><strong>Demo User:</strong> demo@example.com</p>
+              <p><strong>Password:</strong> demo123</p>
+            </div>
+          </div>
+        </div>
+
         {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -194,10 +223,19 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           </div>
         )}
 
-        {/* Demo Credentials */}
-
         {/* Auth Form */}
         <div className="bg-white rounded-2xl shadow-2xl p-8">
+          <div className="flex items-center justify-center space-x-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+              <Search className="w-7 h-7 text-white" />
+            </div>
+            <div className="text-left">
+              <h1 className="text-2xl font-bold text-white">LLM Navigator</h1>
+              <p className="text-sm text-blue-200">Answer Engine Optimization</p>
+            </div>
+          </div>
+        </div>
+
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               {isLogin ? 'Welcome Back' : 'Start Your Free Trial'}

@@ -305,6 +305,7 @@ const initializeDemoUser = () => {
 // Initialize demo user when this module is imported
 // Run this in a try-catch to prevent any issues with localStorage
 try {
+  console.log('Initializing demo users...');
   initializeDemoUser();
   
   // Also initialize demo analyses if they don't exist
@@ -313,6 +314,7 @@ try {
       // Check if analyses already exist in localStorage
       const existingAnalyses = localStorage.getItem('analyses');
       if (!existingAnalyses) {
+        console.log('Initializing demo analyses...');
         // Store mockAnalyses in localStorage
         localStorage.setItem('analyses', JSON.stringify(mockAnalyses));
         console.log('Demo analyses initialized successfully');
@@ -326,7 +328,9 @@ try {
   const initializeProjects = () => {
     try {
       // Check if projects already exist in localStorage
+      console.log('Checking for existing projects...');
       if (!localStorage.getItem('projects')) {
+        console.log('Initializing empty projects array...');
         localStorage.setItem('projects', '[]');
         console.log('Projects array initialized successfully');
       }
@@ -337,6 +341,27 @@ try {
   
   initializeAnalyses();
   initializeProjects();
+  
+  // Force re-initialization of users if they don't exist
+  const usersExist = localStorage.getItem('users');
+  if (!usersExist || JSON.parse(usersExist).length === 0) {
+    console.log('No users found, forcing initialization...');
+    // Clear users array and reinitialize
+    localStorage.setItem('users', '[]');
+    initializeDemoUser();
+  }
+  
+  // Log all users for debugging
+  try {
+    const allUsers = JSON.parse(localStorage.getItem('users') || '[]');
+    console.log('All users after initialization:', allUsers.map((u: any) => ({ 
+      email: u.email, 
+      name: u.name,
+      subscription: u.subscription
+    })));
+  } catch (error) {
+    console.error('Error logging users:', error);
+  }
 } catch (error) {
   console.error('Failed to initialize demo user:', error);
 }
