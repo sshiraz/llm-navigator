@@ -272,34 +272,14 @@ function App() {
   };
 
   const renderContent = () => {
-        return <PrivacyPolicy onBack={() => setActiveSection('landing')} />;
     if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
-      if (activeSection === 'terms') {
-        return <TermsOfService onBack={() => setActiveSection('landing')} />;
-      }
-      case 'logout':
-        return <LogoutHandler onLogout={handleLogout} />;
-      if (activeSection === 'admin-users') {
-        // Check if user is admin
-        if (!user || !user.isAdmin) {
-          // Redirect to dashboard if not admin
-          setTimeout(() => {
-            window.location.hash = '#dashboard';
-          }, 100);
-          return <div className="flex items-center justify-center h-screen">
-            <div className="text-center">
-              <h2 className="text-xl font-semibold text-red-600 mb-2">Access Denied</h2>
-              <p className="text-gray-600">You don't have permission to access this page.</p>
-            </div>
-          </div>;
-        }
-      }
-      
       switch (activeSection) {
         case 'landing':
           return <LandingPage onGetStarted={handleGetStarted} />;
         case 'auth':
           return <AuthPage onLogin={handleLogin} />;
+        case 'logout':
+          return <LogoutHandler onLogout={handleLogout} />;
         case 'account':
           return user ? (
             <AccountPage 
@@ -319,6 +299,19 @@ function App() {
         case 'terms':
           return <TermsOfService />;
         case 'admin-users':
+          // Check if user is admin
+          if (!user || !user.isAdmin) {
+            // Redirect to dashboard if not admin
+            setTimeout(() => {
+              window.location.hash = '#dashboard';
+            }, 100);
+            return <div className="flex items-center justify-center h-screen">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold text-red-600 mb-2">Access Denied</h2>
+                <p className="text-gray-600">You don't have permission to access this page.</p>
+              </div>
+            </div>;
+          }
           return <UserDashboard />;
         default:
           return <LandingPage onGetStarted={handleGetStarted} />;
