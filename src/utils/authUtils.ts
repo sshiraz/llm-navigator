@@ -38,7 +38,6 @@ export const getCurrentUserId = (): string | null => {
     
     const user = JSON.parse(userStr);
     const userId = user.id || null;
-    const userId = user.id || null;
     return userId;
   } catch (error) {
     console.error('Error getting current user ID:', error);
