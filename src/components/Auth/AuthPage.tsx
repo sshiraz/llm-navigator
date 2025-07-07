@@ -10,12 +10,6 @@ interface AuthPageProps {
 
 export default function AuthPage({ onLogin }: AuthPageProps) {
   const [isLogin, setIsLogin] = useState(true);
-  
-  // Clear any existing user data when the auth page is shown
-  useEffect(() => {
-    clearUserData();
-  }, []);
-  
   const [formData, setFormData] = useState({
     name: '',
     email: '',

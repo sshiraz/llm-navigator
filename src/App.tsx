@@ -20,11 +20,17 @@ import PaymentDebugger from './components/Debug/PaymentDebugger';
 import WebhookManager from './components/Debug/WebhookManager';
 import WebhookDeployer from './components/Debug/WebhookDeployer';
 import { isLiveMode } from './utils/liveMode';
+import { clearUserData } from './utils/authUtils';
 import WebhookHelper from './components/Debug/WebhookHelper';
 import LogoutHandler from './components/Auth/LogoutHandler';
 import { isAdminUser } from './utils/authUtils';
 
 function App() {
+  // Clear user data on initial load
+  useEffect(() => {
+    clearUserData();
+  }, []);
+
   const [user, setUser] = useState<User | null>(null);
   const [activeSection, setActiveSection] = useState(() => {
     // Check URL hash for initial section

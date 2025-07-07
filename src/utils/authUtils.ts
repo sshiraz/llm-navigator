@@ -54,6 +54,7 @@ export const clearUserData = (): void => {
   try {
     // Remove user data
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('users');
     
     // Also clear any analysis-related data
     localStorage.removeItem('currentAnalysis');
@@ -61,6 +62,9 @@ export const clearUserData = (): void => {
     localStorage.removeItem('lastAnalysisKeywords');
     localStorage.removeItem('lastSelectedProjectId');
     localStorage.removeItem('lastSelectedModel');
+    localStorage.removeItem('analyses');
+    localStorage.removeItem('projects');
+    localStorage.removeItem('payment_logs');
     
     console.log('User data cleared successfully');
   } catch (error) {
