@@ -17,6 +17,7 @@ import AuthPage from './components/Auth/AuthPage';
 import { mockProjects, mockAnalyses } from './utils/mockData';
 import { Project, Analysis, User } from './types';
 import PaymentDebugger from './components/Debug/PaymentDebugger';
+import WebhookManager from './components/Debug/WebhookManager';
 import { isLiveMode } from './utils/liveMode'; 
 import LiveModeBanner from './components/UI/LiveModeBanner';
 
@@ -353,6 +354,7 @@ function App() {
         </main>
       </div>
       {isLiveMode && <PaymentDebugger />}
+      <WebhookManager />
     </div>
   );
 }
