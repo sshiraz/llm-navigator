@@ -10,6 +10,36 @@ export const mockUser: User = {
   createdAt: '2024-01-15T10:00:00Z'
 };
 
+export const mockProjects: Project[] = [
+  {
+    id: '1',
+    name: 'TechStart Marketing',
+    website: 'techstart.com',
+    description: 'B2B SaaS marketing platform',
+    keywords: ['marketing automation', 'lead generation', 'email marketing'],
+    competitors: [
+      { id: '1', name: 'HubSpot', website: 'hubspot.com', addedAt: '2024-01-20T10:00:00Z' },
+      { id: '2', name: 'Mailchimp', website: 'mailchimp.com', addedAt: '2024-01-20T10:00:00Z' },
+      { id: '3', name: 'ActiveCampaign', website: 'activecampaign.com', addedAt: '2024-01-20T10:00:00Z' }
+    ],
+    createdAt: '2024-01-15T10:00:00Z',
+    updatedAt: '2024-01-20T10:00:00Z'
+  },
+  {
+    id: '2',
+    name: 'EcoStore',
+    website: 'ecostore.com',
+    description: 'Sustainable products marketplace',
+    keywords: ['sustainable products', 'eco-friendly', 'green living'],
+    competitors: [
+      { id: '4', name: 'Grove Collaborative', website: 'grove.co', addedAt: '2024-01-18T10:00:00Z' },
+      { id: '5', name: 'Thrive Market', website: 'thrivemarket.com', addedAt: '2024-01-18T10:00:00Z' }
+    ],
+    createdAt: '2024-01-16T10:00:00Z',
+    updatedAt: '2024-01-18T10:00:00Z'
+  }
+];
+
 export const mockAnalyses: Analysis[] = [
   // HubSpot - industry leader scores (should be #1)
   {
@@ -228,26 +258,11 @@ export const mockKeywordSuggestions: KeywordSuggestion[] = [
 // Add a demo user to localStorage if it doesn't exist
 const initializeDemoUser = () => {
   try {
-    // Get existing users or initialize empty array
-    const usersStr = localStorage.getItem('users');
-    let users = [];
-    
-    try {
-      if (usersStr) {
-        users = JSON.parse(usersStr);
-      }
-    } catch (parseError) {
-      console.error('Error parsing users from localStorage:', parseError);
-      users = [];
-    }
+    let users = JSON.parse(localStorage.getItem('users') || '[]');
     
     // Check if demo user already exists
-    const demoUserExists = Array.isArray(users) && users.some((user: any) => 
-      user && user.email && user.email.toLowerCase() === 'demo@example.com'
-    );
-    const adminUserExists = Array.isArray(users) && users.some((user: any) => 
-      user && user.email && user.email.toLowerCase() === 'info@convologix.com'
-    );
+    const demoUserExists = users.some((user: any) => user.email === 'demo@example.com');
+    const adminUserExists = users.some((user: any) => user.email === 'info@convologix.com');
     
     if (!demoUserExists) {
       // Add demo user
@@ -271,12 +286,6 @@ const initializeDemoUser = () => {
       users.push(demoUser);
       localStorage.setItem('users', JSON.stringify(users));
       console.log('Demo user initialized successfully');
-    }
-    
-    // Initialize empty projects array if it doesn't exist
-    if (!localStorage.getItem('projects')) {
-      localStorage.setItem('projects', '[]');
-      console.log('Projects array initialized successfully');
     }
     
     if (!adminUserExists) {
@@ -304,60 +313,7 @@ const initializeDemoUser = () => {
 // Initialize demo user when this module is imported
 // Run this in a try-catch to prevent any issues with localStorage
 try {
-  // Force initialization of demo users - this is critical for the app to work
-
-  // Always ensure users array exists
-  let existingUsers = [];
-  try {
-    const usersStr = localStorage.getItem('users');
-    if (usersStr) {
-      existingUsers = JSON.parse(usersStr);
-      if (!Array.isArray(existingUsers)) {
-        console.warn('Users in localStorage is not an array, resetting');
-        existingUsers = [];
-      }
-    }
-  } catch (e) {
-    console.warn('Error parsing users from localStorage, resetting');
-    existingUsers = [];
-  }
-  
-  // If no users or empty array, initialize with empty array
-  if (!existingUsers || existingUsers.length === 0) {
-    localStorage.setItem('users', '[]');
-  }
-  
-  // Initialize demo users
-  initializeDemoUser(); 
-
-  // Force create admin user for testing
-  try {
-    const usersStr = localStorage.getItem('users');
-    let users = usersStr ? JSON.parse(usersStr) : [];
-    
-    // Check if admin exists
-    const adminExists = users.some((u: any) => 
-      u && u.email && u.email.toLowerCase() === 'info@convologix.com' 
-    );
-    
-    if (!adminExists) {
-      const adminUser = {
-        id: 'admin-user-456',
-        email: 'info@convologix.com', 
-        password: '4C0nv0@LLMNav',
-        name: 'Admin User',
-        avatar: 'https://images.pexels.com/photos/2379005/pexels-photo-2379005.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-        subscription: 'enterprise',
-        isAdmin: true,
-        createdAt: new Date().toISOString()
-      };
-      
-      users.push(adminUser);
-      localStorage.setItem('users', JSON.stringify(users));
-    }
-  } catch (error) {
-    console.error('Error creating admin user:', error);
-  }
+  initializeDemoUser();
   
   // Also initialize demo analyses if they don't exist
   const initializeAnalyses = () => {
@@ -374,21 +330,7 @@ try {
     }
   };
   
-  // Initialize empty projects array
-  const initializeProjects = () => {
-    try {
-      // Check if projects already exist in localStorage
-      if (!localStorage.getItem('projects')) {
-        localStorage.setItem('projects', '[]');
-        console.log('Projects array initialized successfully');
-      }
-    } catch (error) {
-      console.error('Error initializing projects array:', error);
-    }
-  };
-  
   initializeAnalyses();
-  initializeProjects();
 } catch (error) {
   console.error('Failed to initialize demo user:', error);
 }

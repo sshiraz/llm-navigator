@@ -1,11 +1,11 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 
-interface TermsOfServiceProps {
-  onBack: () => void;
-}
-
-export default function TermsOfService({ onBack }: TermsOfServiceProps) {
+export default function TermsOfService() {
+  const goBack = () => {
+    window.location.hash = '';
+    window.location.reload();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -13,7 +13,7 @@ export default function TermsOfService({ onBack }: TermsOfServiceProps) {
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <button 
-            onClick={onBack}
+            onClick={goBack}
             className="inline-flex items-center space-x-2 text-blue-100 hover:text-white mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />

@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle, Copy, RefreshCw, Webhook, Key, Lock, X } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
 import { isLiveMode } from '../../utils/liveMode';
-import { testWebhookEndpoint, updateWebhookSecret, generateDeployCommand, getSupabaseProjectId } from '../../utils/webhookUtils';
-import { isAdminUser } from '../../utils/authUtils';
+import { testWebhookEndpoint, updateWebhookSecret, generateDeployCommand } from '../../utils/webhookUtils';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
 
 export default function WebhookDebugger() {
@@ -12,16 +11,6 @@ export default function WebhookDebugger() {
   const [testResult, setTestResult] = useState<any>(null);
   const [webhookSecret, setWebhookSecret] = useState('');
   const [showSecret, setShowSecret] = useState(false); 
-  const [projectId, setProjectId] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  
-  useEffect(() => {
-    // Check if user is admin
-    setIsAdmin(isAdminUser());
-    
-    // Get project ID when component mounts
-    setProjectId(getSupabaseProjectId());
-  }, []);
   
   const testWebhook = async () => {
     setIsLoading(true);
@@ -74,11 +63,6 @@ export default function WebhookDebugger() {
       alert('Secret command copied to clipboard!');
     }
   };
-  
-  // If not admin, don't render the component
-  if (!isAdmin) {
-    return null;
-  }
   
   if (!isOpen) {
     return (
@@ -329,10 +313,8 @@ export default function WebhookDebugger() {
           <div className="flex justify-between items-center">
             <div className="text-sm">
               <span className="text-gray-500">Webhook URL:</span> 
-              <span className={`font-mono text-xs break-all ${isLiveMode ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
-                {projectId 
-                  ? `https://${projectId}.supabase.co/functions/v1/stripe-webhook`
-                  : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook`}
+              <span className={`font-mono text-xs ${isLiveMode ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
+                {import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook
                 {isLiveMode && ' (LIVE)'}
               </span>
             </div>

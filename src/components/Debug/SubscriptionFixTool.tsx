@@ -3,7 +3,6 @@ import { UserCheck, AlertTriangle, CheckCircle, RefreshCw, X, Search, CreditCard
 import { PaymentLogger } from '../../utils/paymentLogger';
 import { checkSubscriptionStatus, getLatestPayment, fixSubscription } from '../../utils/paymentUtils';
 import { isLiveMode } from '../../utils/liveMode';
-import { isAdminUser } from '../../utils/authUtils';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
 
 export default function SubscriptionFixTool() {
@@ -14,12 +13,6 @@ export default function SubscriptionFixTool() {
   const [result, setResult] = useState<any>(null);
   const [checkResult, setCheckResult] = useState<any>(null);
   const [latestPayment, setLatestPayment] = useState<any>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  
-  // Check if user is admin when component mounts
-  useState(() => {
-    setIsAdmin(isAdminUser());
-  });
   
   const checkSubscription = async () => {
     if (!userId) {
@@ -85,11 +78,6 @@ export default function SubscriptionFixTool() {
       setIsLoading(false);
     }
   };
-
-  // If not admin, don't render the component
-  if (!isAdmin) {
-    return null;
-  }
   
   if (!isOpen) {
     return (

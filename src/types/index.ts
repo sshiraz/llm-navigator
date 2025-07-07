@@ -14,7 +14,6 @@ export interface User {
 
 export interface Project {
   id: string;
-  userId: string;
   name: string;
   website: string;
   description?: string;

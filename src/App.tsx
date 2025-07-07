@@ -14,24 +14,13 @@ import TermsOfService from './components/Legal/TermsOfService';
 import CompetitorStrategy from './components/Reports/CompetitorStrategy';
 import LandingPage from './components/Landing/LandingPage';
 import AuthPage from './components/Auth/AuthPage';
-import { mockAnalyses } from './utils/mockData';
+import { mockProjects, mockAnalyses } from './utils/mockData';
 import { Project, Analysis, User } from './types';
 import PaymentDebugger from './components/Debug/PaymentDebugger';
-import WebhookManager from './components/Debug/WebhookManager';
-import WebhookDeployer from './components/Debug/WebhookDeployer';
-import { isLiveMode } from './utils/liveMode';
-import { clearUserData } from './utils/authUtils';
-import WebhookHelper from './components/Debug/WebhookHelper';
-import LogoutHandler from './components/Auth/LogoutHandler';
-import { isAdminUser } from './utils/authUtils';
+import { isLiveMode } from './utils/liveMode'; 
+import LiveModeBanner from './components/UI/LiveModeBanner';
 
 function App() {
-  // Clear user data on initial load
-  useEffect(() => {
-    // Don't clear user data on initial load - this was causing the blank screen
-    // clearUserData();
-  }, []);
-
   const [user, setUser] = useState<User | null>(null);
   const [activeSection, setActiveSection] = useState(() => {
     // Check URL hash for initial section
@@ -40,13 +29,6 @@ function App() {
   });
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [projects, setProjects] = useState<Project[]>([]);
-
-  // Check if user is admin
-  useEffect(() => {
-    setIsAdmin(isAdminUser());
-  }, [user]);
 
   // Load current analysis from localStorage if available
   useEffect(() => {
@@ -65,7 +47,7 @@ function App() {
   // Listen for hash changes to handle browser back/forward buttons
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.slice(1);
+      let hash = window.location.hash.slice(1);
       if (hash) {
         setActiveSection(hash);
       } else {
@@ -88,35 +70,14 @@ function App() {
     // Add event listener for hash changes
     window.addEventListener('hashchange', handleHashChange);
 
-    // Run once on initial load to handle direct URL access
-    handleHashChange();
-    
     // Clean up event listener
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
     };
+    
+    // Run once on initial load to handle direct URL access
+    handleHashChange();
   }, []);
-
-  // Load projects from localStorage when user changes
-  useEffect(() => {
-    if (user) {
-      try {
-        // Get projects from localStorage
-        const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-        
-        // Filter projects to only show those belonging to the current user
-        const userProjects = storedProjects.filter((project: Project) => 
-          project.userId === user.id
-        );
-        
-        setProjects(userProjects);
-      } catch (error) {
-        console.error('Error loading projects from localStorage:', error);
-      }
-    } else {
-      setProjects([]);
-    }
-  }, [user]);
 
   // Check URL parameters for checkout success
   useEffect(() => {
@@ -160,7 +121,6 @@ function App() {
           // If we're on the auth page but already logged in, redirect to dashboard
           if (activeSection === 'auth') {
             setActiveSection('dashboard');
-            window.location.hash = 'dashboard';
           }
         } catch (e) {
           console.error('Failed to parse stored user', e);
@@ -181,38 +141,19 @@ function App() {
   const handleLogin = (userData: User) => {
     setUser(userData);
     setActiveSection('dashboard');
-    
-    // Ensure hash is set to dashboard
-    if (window.location.hash !== '#dashboard') {
-      window.location.hash = 'dashboard';
-    }
-    
     // Store user data in localStorage for persistence
     localStorage.setItem('currentUser', JSON.stringify(userData));
   };
 
   const handleLogout = () => {
     setUser(null);
-    
+    window.location.hash = '';
     // Clear user data from localStorage
     localStorage.removeItem('currentUser');
-    
-    // Redirect to landing page
-    setActiveSection('landing');
-    window.location.hash = '';
-  };
-
-  // Handle back button functionality
-  const handleBack = () => {
-    // Default back behavior goes to dashboard
-    setActiveSection('dashboard');
-    window.location.hash = 'dashboard';
   };
 
   const handleProjectSelect = (project: Project) => {
-    // Find the project in our state to ensure we have the latest version
-    const selectedProject = projects.find(p => p.id === project.id) || project;
-    setSelectedProject(selectedProject);
+    setSelectedProject(project);
     window.location.hash = 'project-detail';
   };
 
@@ -226,7 +167,7 @@ function App() {
     // The analysis creation logic is moved to AnalysisProgress component
     const newAnalysis: Analysis = {
       id: Date.now().toString(),
-      projectId: selectedProject?.id || 'default',
+      projectId: selectedProject?.id || '1',
       userId: user?.id || 'anonymous',
       website,
       keywords,
@@ -267,99 +208,77 @@ function App() {
     
     setCurrentAnalysis(newAnalysis);
     
-    // Store analysis in localStorage for persistence
+    // Store analyses in localStorage
     try {
-      localStorage.setItem('currentAnalysis', JSON.stringify(newAnalysis));
-      
       if (user) {
         const existingAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
-        existingAnalyses.push(newAnalysis);
+        existingAnalyses.unshift(newAnalysis); // Add to beginning of array
         localStorage.setItem('analyses', JSON.stringify(existingAnalyses));
       }
     } catch (error) {
-      console.error('Error storing analysis:', error);
+      console.error('Error storing analysis in localStorage:', error);
     }
     
-    // Navigate to analysis results
-    setActiveSection('analysis-results');
     window.location.hash = 'analysis-results';
   };
 
+  const handleUpgrade = (plan: string) => {
+    console.log('Upgrading to plan:', plan);
+    // Handle upgrade logic here
+  };
+
   const handleGetStarted = () => {
-    setActiveSection('auth');
     window.location.hash = 'auth';
   };
 
-  const handleUpgrade = (plan: string) => {
-    // Handle upgrade logic here
-    console.log('Upgrading to plan:', plan);
-  };
-
   const renderContent = () => {
-    // Public routes that don't require login
-    if (['landing', 'auth', 'contact', 'privacy', 'terms'].includes(activeSection)) {
+    // Public pages that don't require login
+    if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
+      // Special handling for admin-users - only allow access if user is admin
+      if (activeSection === 'admin-users') {
+        // Check if user is admin
+        if (!user || !user.isAdmin) {
+          // Redirect to dashboard if not admin
+          setTimeout(() => {
+            window.location.hash = '#dashboard';
+          }, 100);
+          return <div className="flex items-center justify-center h-screen">
+            <div className="text-center">
+              <h2 className="text-xl font-semibold text-red-600 mb-2">Access Denied</h2>
+              <p className="text-gray-600">You don't have permission to access this page.</p>
+            </div>
+          </div>;
+        }
+      }
+      
       switch (activeSection) {
         case 'landing':
           return <LandingPage onGetStarted={handleGetStarted} />;
         case 'auth':
           return <AuthPage onLogin={handleLogin} />;
+        case 'account':
+          return user ? (
+            <AccountPage 
+              user={user} 
+              onBack={() => setActiveSection('dashboard')}
+              onUpdateProfile={(updates) => {
+                const updatedUser = { ...user, ...updates };
+                setUser(updatedUser);
+                localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+              }}
+            />
+          ) : <AuthPage onLogin={handleLogin} />;
         case 'contact':
-          return <ContactPage onBack={() => {
-            setActiveSection('landing');
-            window.location.hash = '';
-          }} />;
+          return <ContactPage />;
         case 'privacy':
-          return <PrivacyPolicy onBack={() => {
-            setActiveSection('landing');
-            window.location.hash = '';
-          }} />;
+          return <PrivacyPolicy />;
         case 'terms':
-          return <TermsOfService onBack={() => {
-            setActiveSection('landing');
-            window.location.hash = '';
-          }} />;
+          return <TermsOfService />;
+        case 'admin-users':
+          return <UserDashboard />;
         default:
           return <LandingPage onGetStarted={handleGetStarted} />;
       }
-    }
-
-    // Special routes
-    if (activeSection === 'logout') {
-      return <LogoutHandler onLogout={handleLogout} />;
-    }
-
-    if (activeSection === 'account') {
-      return user ? (
-        <AccountPage 
-          user={user} 
-          onBack={() => {
-            setActiveSection('dashboard');
-            window.location.hash = 'dashboard';
-          }}
-          onUpdateProfile={(updates) => {
-            const updatedUser = { ...user, ...updates };
-            setUser(updatedUser);
-            localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-          }}
-        />
-      ) : <AuthPage onLogin={handleLogin} />;
-    }
-
-    if (activeSection === 'admin-users') {
-      // Check if user is admin
-      if (!user || !user.isAdmin) {
-        // Redirect to dashboard if not admin
-        setTimeout(() => {
-          window.location.hash = 'dashboard';
-        }, 100);
-        return <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold text-red-600 mb-2">Access Denied</h2>
-            <p className="text-gray-600">You don't have permission to access this page.</p>
-          </div>
-        </div>;
-      }
-      return <UserDashboard />;
     }
     
     // Protected routes that require login
@@ -385,58 +304,19 @@ function App() {
       case 'project-detail':
         return selectedProject ? (
           <ProjectDetail 
-            project={selectedProject}
-            onBack={() => setActiveSection('dashboard')}
-            onDelete={(projectId) => {
-              // Get stored projects from localStorage
-              try {
-                const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-                
-                // Filter out the project to delete
-                const updatedProjects = storedProjects.filter((p: Project) => p.id !== projectId);
-                
-                // Update state
-                setProjects(updatedProjects);
-                
-                // Save to localStorage
-                localStorage.setItem('projects', JSON.stringify(updatedProjects));
-                
-                // Navigate back to dashboard
-                setActiveSection('dashboard');
-              } catch (error) {
-                console.error('Error deleting project:', error);
-                alert('Failed to delete project. Please try again.');
-              }
-            }}
+            project={selectedProject} 
+            onBack={() => setActiveSection('dashboard')} 
           />
         ) : null;
 
       case 'pricing':
-        // Only show pricing page to admin users
-        return isAdmin ? (
-          <PricingTiers currentPlan={user?.subscription || 'free'} onUpgrade={handleUpgrade} />
-        ) : (
-          <div className="max-w-2xl mx-auto text-center p-8 bg-yellow-50 rounded-xl border-2 border-yellow-300">
-            <h2 className="text-2xl font-bold text-yellow-800 mb-4">🚧 Pricing Page Temporarily Unavailable</h2>
-            <p className="text-yellow-700 mb-6">
-              We're currently updating our payment system. The pricing page will be available again soon.
-            </p>
-            <button
-              onClick={() => setActiveSection('dashboard')}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Return to Dashboard
-            </button>
-          </div>
-        );
+        return <PricingTiers currentPlan={user?.subscription || 'free'} onUpgrade={handleUpgrade} />;
 
       case 'competitor-strategy':
-        const analyses = JSON.parse(localStorage.getItem('analyses') || '[]');
         return (
-          <CompetitorStrategy
-            userAnalysis={analyses[0] || mockAnalyses[0]} 
+          <CompetitorStrategy 
+            userAnalysis={mockAnalyses.find(a => a.userId === user?.id) || mockAnalyses[0]} 
             competitorAnalyses={mockAnalyses.filter(a => a.userId !== user?.id)} 
-            onBack={handleBack}
           />
         );
       
@@ -449,14 +329,16 @@ function App() {
   if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
     return (
       <>
+        {isLiveMode && <LiveModeBanner />}
         {renderContent()}
-        {isLiveMode && isAdmin && <PaymentDebugger />}
+        {isLiveMode && <PaymentDebugger />}
       </>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {isLiveMode && <LiveModeBanner />}
       <Sidebar 
         activeSection={activeSection} 
         onSectionChange={setActiveSection}
@@ -466,14 +348,11 @@ function App() {
       <div className="flex-1 flex flex-col">
         {user && <Header user={user} />}
         
-        <main className="flex-1 p-8">
+        <main className={`flex-1 p-8 ${isLiveMode ? 'mt-6' : ''}`}>
           {renderContent()}
         </main>
       </div>
-      {isLiveMode && isAdmin && <PaymentDebugger />}
-      {isAdmin && <WebhookHelper />}
-      {isAdmin && <WebhookManager />}
-      {isAdmin && <WebhookDeployer />}
+      {isLiveMode && <PaymentDebugger />}
     </div>
   );
 }

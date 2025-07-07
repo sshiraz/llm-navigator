@@ -28,13 +28,9 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
     { id: 'new-analysis', label: 'New Analysis', icon: Plus },
     { id: 'projects', label: 'Projects', icon: Target },
     { id: 'competitor-strategy', label: 'Competitor Strategy', icon: Users },
+    { id: 'pricing', label: 'Pricing', icon: DollarSign },
     { id: 'contact', label: 'Contact Us', icon: Mail }
   ];
-  
-  // Add pricing page for admin users only
-  if (isAdmin) {
-    menuItems.push({ id: 'pricing', label: 'Pricing (Admin)', icon: DollarSign });
-  }
   
   // Add admin menu items if user is admin
   const adminMenuItems = [
@@ -45,10 +41,7 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
     <div className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col">
       <div className="p-6 border-b border-gray-200">
         <button 
-          onClick={() => {
-            window.location.hash = 'dashboard';
-            onSectionChange('dashboard');
-          }}
+          onClick={() => onSectionChange('landing')}
           className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
         >
           <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
@@ -69,10 +62,7 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
           return (
             <button
               key={item.id}
-              onClick={() => {
-                window.location.hash = item.id;
-                onSectionChange(item.id);
-              }}
+              onClick={() => onSectionChange(item.id)}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
                 isActive
                   ? 'bg-blue-600 text-white shadow-lg'
@@ -118,12 +108,9 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
       </nav>
 
       {/* Logout Button */}
-      <div className="p-4 border-t border-gray-200 mt-auto">
+      <div className="p-4 border-t border-gray-200">
         <button
-          onClick={() => {
-            window.location.hash = 'logout';
-            onSectionChange('logout');
-          }}
+          onClick={onLogout}
           className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
         >
           <LogOut className="w-5 h-5" />

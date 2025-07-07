@@ -6,7 +6,6 @@ import ModelSelector from './ModelSelector';
 import { User } from '../../types';
 import { AnalysisEngine } from '../../utils/analysisEngine';
 import { useUsageMonitoring } from '../../utils/costTracker';
-import { getCurrentUserId } from '../../utils/authUtils';
 
 interface NewAnalysisProps {
   onAnalyze: (website: string, keywords: string[]) => void;
@@ -20,32 +19,11 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentAnalysis, setCurrentAnalysis] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [projectId, setProjectId] = useState<string>('default');
-  const [projects, setProjects] = useState<any[]>([]);
 
   const { usageLimits, isLoading: limitsLoading } = useUsageMonitoring(
     user?.id || '', 
     user?.subscription || 'free'
   );
-  
-  // Load projects when component mounts
-  useEffect(() => {
-    if (user) {
-      try {
-        // Get projects from localStorage
-        const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-        
-        // Filter projects to only show those belonging to the current user
-        const userProjects = storedProjects.filter((project: any) => 
-          project.userId === user.id
-        );
-        
-        setProjects(userProjects);
-      } catch (error) {
-        console.error('Error loading projects from localStorage:', error);
-      }
-    }
-  }, [user]);
 
   // Check if user is admin or has a paid plan for real analysis
   const isRealAnalysis = user ? (AnalysisEngine.shouldUseRealAnalysis(user) || user.isAdmin === true) : false;
@@ -58,7 +36,6 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     try {
       localStorage.setItem('lastAnalysisWebsite', website);
       localStorage.setItem('lastAnalysisKeywords', keywords);
-      localStorage.setItem('lastSelectedProjectId', projectId);
       localStorage.setItem('lastSelectedModel', selectedModel);
     } catch (error) {
       console.error('Error storing analysis parameters:', error);
@@ -68,7 +45,6 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     try {
       localStorage.setItem('lastAnalysisWebsite', website);
       localStorage.setItem('lastAnalysisKeywords', keywords);
-      localStorage.setItem('lastSelectedProjectId', projectId);
       localStorage.setItem('lastSelectedModel', selectedModel);
     } catch (error) {
       console.error('Error storing analysis parameters:', error);
@@ -98,7 +74,6 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     setIsAnalyzing(true);
     setCurrentAnalysis({ website: website.trim(), keywords: keywordList, model: selectedModel });
     console.log('Starting analysis for:', website.trim(), keywordList);
-    console.log('Using project ID:', projectId);
   };
   
   // Load last analysis parameters from localStorage
@@ -106,7 +81,6 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     try {
       const savedWebsite = localStorage.getItem('lastAnalysisWebsite');
       const savedKeywords = localStorage.getItem('lastAnalysisKeywords');
-      const savedProjectId = localStorage.getItem('lastSelectedProjectId');
       
       if (savedWebsite) {
         setWebsite(savedWebsite);
@@ -114,10 +88,6 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
       
       if (savedKeywords) {
         setKeywords(savedKeywords);
-      }
-      
-      if (savedProjectId) {
-        setProjectId(savedProjectId);
       }
       
       const savedModel = localStorage.getItem('lastSelectedModel');
@@ -132,13 +102,6 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
   const handleAnalysisComplete = (analysis: any) => {
     setIsAnalyzing(false);
     setCurrentAnalysis(null);
-    
-    // Add projectId to the analysis before passing it to onAnalyze
-    const analysisWithProject = {
-      ...analysis,
-      projectId: projectId
-    };
-    
     onAnalyze(analysis.website, analysis.keywords);
   };
   console.log('Current analysis state:', { isAnalyzing, currentAnalysis });
@@ -309,27 +272,6 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Project Selection */}
-      {user && projects.length > 0 && (
-        <div className="mb-8">
-          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Project</h3>
-            <select
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="default">No Project (Default)</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name} ({project.website})
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
       )}
 

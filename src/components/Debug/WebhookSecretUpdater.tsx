@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Key, Lock, Copy, RefreshCw, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
-import { isAdminUser } from '../../utils/authUtils';
 
 export default function WebhookSecretUpdater() {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,12 +8,6 @@ export default function WebhookSecretUpdater() {
   const [showSecret, setShowSecret] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  
-  // Check if user is admin when component mounts
-  useState(() => {
-    setIsAdmin(isAdminUser());
-  });
   
   const updateSecret = async () => {
     if (!webhookSecret || !webhookSecret.startsWith('whsec_')) {
@@ -52,11 +45,6 @@ export default function WebhookSecretUpdater() {
       setIsLoading(false);
     }
   };
-
-  // If not admin, don't render the component
-  if (!isAdmin) {
-    return null;
-  }
   
   const generateDeployCommand = () => {
     const command = 'npx supabase functions deploy stripe-webhook';

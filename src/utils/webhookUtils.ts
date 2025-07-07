@@ -1,31 +1,12 @@
 import { supabase } from '../lib/supabase';
 import { PaymentLogger } from './paymentLogger';
 
-// Get Supabase project ID from URL
-export const getSupabaseProjectId = () => {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  if (!supabaseUrl) return null;
-  
-  try {
-    // Extract project ID from URL (e.g., https://jgkdzaoajbzmuuajpndv.supabase.co)
-    const matches = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/);
-    return matches ? matches[1] : null;
-  } catch (error) {
-    console.error('Error extracting project ID:', error);
-    return null;
-  }
-};
-
 // Test webhook endpoint
 export const testWebhookEndpoint = async () => {
   try {
     PaymentLogger.log('info', 'WebhookUtils', 'Testing webhook endpoint...');
     
-    const projectId = getSupabaseProjectId();
-    const webhookUrl = projectId 
-      ? `https://${projectId}.supabase.co/functions/v1/stripe-webhook`
-      : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook`;
-      
+    const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-webhook`;
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
@@ -85,17 +66,12 @@ export const testWebhookEndpoint = async () => {
 export const checkEdgeFunctions = async () => {
   try {
     PaymentLogger.log('info', 'WebhookUtils', 'Checking Edge Functions deployment...');
-
-    const projectId = getSupabaseProjectId();
-    const baseUrl = projectId 
-      ? `https://${projectId}.supabase.co`
-      : import.meta.env.VITE_SUPABASE_URL;
     
     const functions = ['create-payment-intent', 'create-subscription', 'stripe-webhook'];
     const results = await Promise.all(
       functions.map(async (func) => {
         try {
-          const response = await fetch(`${baseUrl}/functions/v1/${func}`, {
+          const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${func}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -208,20 +184,11 @@ export const updateWebhookSecret = async (secret: string, isLiveMode = false) =>
 // Generate deploy command
 export const generateDeployCommand = () => {
   const command = 'npx supabase functions deploy stripe-webhook';
-  
-  // Get project ID for more specific instructions
-  const projectId = getSupabaseProjectId();
-  let fullCommand = command;
-  
-  if (projectId) {
-    fullCommand = `npx supabase functions deploy stripe-webhook --project-ref ${projectId}`;
-  }
-  
-  PaymentLogger.log('info', 'WebhookUtils', 'Generated deploy command', { command: fullCommand });
+  PaymentLogger.log('info', 'WebhookUtils', 'Generated deploy command', { command });
   
   return {
     success: true,
-    command: fullCommand,
+    command,
     message: 'Deploy command generated'
   };
 };

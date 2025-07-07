@@ -1,15 +1,14 @@
 import React from 'react';
-import { ArrowLeft, ExternalLink, Plus, Users, Target, Calendar, TrendingUp, Trash2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Plus, Users, Target, Calendar, TrendingUp } from 'lucide-react';
 import { Project } from '../../types';
 import { mockAnalyses } from '../../utils/mockData';
 
 interface ProjectDetailProps {
   project: Project;
   onBack: () => void;
-  onDelete?: (projectId: string) => void;
 }
 
-export default function ProjectDetail({ project, onBack, onDelete }: ProjectDetailProps) {
+export default function ProjectDetail({ project, onBack }: ProjectDetailProps) {
   const projectAnalyses = mockAnalyses.filter(analysis => analysis.projectId === project.id);
   const latestScore = projectAnalyses.length > 0 ? projectAnalyses[0].score : 0;
 
@@ -41,15 +40,9 @@ export default function ProjectDetail({ project, onBack, onDelete }: ProjectDeta
             <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
               New Analysis
             </button>
-            {onDelete && (
-              <button 
-                onClick={() => onDelete(project.id)}
-                className="px-4 py-2 border border-gray-300 text-red-600 rounded-lg hover:bg-red-50 hover:border-red-300 transition-colors flex items-center space-x-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Delete Project</span>
-              </button>
-            )}
+            <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+              Edit Project
+            </button>
           </div>
         </div>
       </div>

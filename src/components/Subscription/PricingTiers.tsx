@@ -1,5 +1,10 @@
 import React from 'react';
 import { Check, Star, Zap, Crown } from 'lucide-react';
+import TrialSignup from '../Auth/TrialSignup';
+import CreditCardForm from '../Payment/CreditCardForm';
+import { isLiveMode } from '../../utils/liveMode';
+import { getPlanAmount } from '../../utils/stripeUtils';
+import LiveModeIndicator from '../UI/LiveModeIndicator';
 
 interface PricingTiersProps {
   currentPlan: string;
@@ -7,6 +12,11 @@ interface PricingTiersProps {
 }
 
 export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersProps) {
+  const [selectedPlan, setSelectedPlan] = React.useState<string | null>(null);
+  const [showTrialSignup, setShowTrialSignup] = React.useState(false);
+  const [skipTrial, setSkipTrial] = React.useState(false);
+  const [showCheckout, setShowCheckout] = React.useState(false);
+  const [planAmount, setPlanAmount] = React.useState(0);
 
   const plans = [
     {
@@ -68,26 +78,72 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
     }
   ];
 
+  const handlePlanSelect = (planId: string, skipTrialOption = false) => {
+    if (planId === currentPlan) return;
+    
+    // Log the plan selection
+    console.log(`Selected plan: ${planId}, skip trial: ${skipTrialOption}`);
+    setSelectedPlan(planId);
+    setSkipTrial(skipTrialOption);
+    
+    // For other plans, show trial signup or checkout
+    if (skipTrialOption) {
+      // Set the plan amount based on the selected plan
+      setPlanAmount(getPlanAmount(planId));
+      setShowCheckout(true);
+    } else {
+      setShowTrialSignup(true);
+    }
+  };
+
+  const handleTrialSuccess = () => {
+    setShowTrialSignup(false);
+    if (selectedPlan) {
+      onUpgrade(selectedPlan);
+    }
+  };
+
+  const handleCheckoutSuccess = () => {
+    setShowCheckout(false);
+    if (selectedPlan) {
+      onUpgrade(selectedPlan);
+    }
+  };
+
+  // If showing trial signup or checkout, render those components
+  if (showTrialSignup && selectedPlan) {
+    return (
+      <TrialSignup
+        selectedPlan={selectedPlan}
+        skipTrial={skipTrial}
+        onSuccess={handleTrialSuccess}
+        onCancel={() => setShowTrialSignup(false)}
+      />
+    );
+  }
+
+  if (showCheckout && selectedPlan) {
+    return (
+      <CreditCardForm
+        plan={selectedPlan}
+        amount={planAmount}
+        onSuccess={handleCheckoutSuccess}
+        onCancel={() => setShowCheckout(false)}
+      />
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-12">
+        {isLiveMode && <LiveModeIndicator variant="warning" className="mb-8 mx-auto max-w-3xl" />}
+      
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
           Choose Your AI Optimization Plan
         </h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
           Unlock the power of AI-driven SEO optimization with plans designed to scale with your business needs
         </p>
-        
-        <div className="mt-8 bg-yellow-50 border-2 border-yellow-300 rounded-xl p-6 max-w-3xl mx-auto">
-          <h2 className="text-xl font-bold text-yellow-800 mb-3">🚧 Stripe Integration Coming Soon</h2>
-          <p className="text-yellow-700 mb-4">
-            We're currently working on integrating our payment system. You can still explore our pricing options below,
-            but payment processing is temporarily unavailable.
-          </p>
-          <p className="text-yellow-700 text-sm">
-            In the meantime, you can continue using all demo features of the platform.
-          </p>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
@@ -151,19 +207,36 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
                 </ul>
 
                 <button
-                  disabled={true}
+                  onClick={() => handlePlanSelect(plan.id)}
+                  disabled={isCurrentPlan}
                   className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-300 mb-2 ${
                     isCurrentPlan
                       ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                      : 'bg-gray-400 text-white cursor-not-allowed'
+                      : isPopular
+                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:-translate-y-1'
+                      : 'bg-gray-900 text-white hover:bg-gray-800 shadow-lg hover:shadow-xl transform hover:-translate-y-1'
                   }`}
                 >
-                  {isCurrentPlan ? 'Current Plan' : 'Coming Soon'}
+                  {isCurrentPlan ? 'Current Plan' : plan.buttonText}
                 </button>
                 
-                <div className="w-full py-2 px-6 rounded-xl font-medium text-sm text-gray-500 text-center">
-                  Payment processing unavailable
-                </div>
+                {!isCurrentPlan && plan.id !== 'enterprise' && (
+                <button
+                  onClick={() => handlePlanSelect(plan.id, true)}
+                  className="w-full py-2 px-6 rounded-xl font-medium text-sm transition-all duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                >
+                  Skip Trial - Buy Now
+                </button>
+                )}
+                
+                {!isCurrentPlan && plan.id === 'enterprise' && (
+                <button
+                  onClick={() => handlePlanSelect(plan.id, true)}
+                  className="w-full py-2 px-6 rounded-xl font-medium text-sm transition-all duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                >
+                  Skip Trial - Buy Now
+                </button>
+                )}
               </div>
             </div>
           );
@@ -172,10 +245,10 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
 
       <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-8 text-center">
         <h3 className="text-2xl font-bold text-gray-900 mb-4">
-          Interested in Early Access?
+          Need Additional Support?
         </h3>
         <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-          Contact our team to get early access to our payment features or to discuss custom implementation needs.
+          Our team is available to help with custom implementations, training, and specialized support needs.
         </p>
         <button 
           onClick={() => {
@@ -184,7 +257,7 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
           }}
           className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl"
         >
-          Contact Us for Early Access
+          Contact Our Sales Team
         </button>
       </div>
     </div>
