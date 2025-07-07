@@ -42,16 +42,17 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     setError(null);
 
     // Special handling for admin account
-    if (isLogin && formData.email === 'info@convologix.com' && formData.password === '4C0nv0@LLMNav') {
+    if (isLogin && formData.email.toLowerCase() === 'info@convologix.com' && formData.password === '4C0nv0@LLMNav') {
       // Create admin user with unlimited access
       const adminUser = {
         id: 'admin-user',
-        email: 'info@convologix.com',
+        email: formData.email, // Use the exact case the user entered
         name: 'Admin User',
         avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
         subscription: 'enterprise',
         isAdmin: true,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        paymentMethodAdded: true
       };
       
       // Store admin user in localStorage
