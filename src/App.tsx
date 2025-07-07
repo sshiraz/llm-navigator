@@ -20,6 +20,7 @@ import PaymentDebugger from './components/Debug/PaymentDebugger';
 import WebhookManager from './components/Debug/WebhookManager';
 import { isLiveMode } from './utils/liveMode'; 
 import LiveModeBanner from './components/UI/LiveModeBanner';
+import WebhookHelper from './components/Debug/WebhookHelper';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -354,6 +355,7 @@ function App() {
         </main>
       </div>
       {isLiveMode && <PaymentDebugger />}
+     <WebhookHelper />
       <WebhookManager />
     </div>
   );
