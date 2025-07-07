@@ -245,8 +245,12 @@ const initializeDemoUser = () => {
     }
     
     // Check if demo user already exists
-    const demoUserExists = users.some((user: any) => user.email && user.email.toLowerCase() === 'demo@example.com');
-    const adminUserExists = users.some((user: any) => user.email && user.email.toLowerCase() === 'info@convologix.com');
+    const demoUserExists = Array.isArray(users) && users.some((user: any) => 
+      user && user.email && user.email.toLowerCase() === 'demo@example.com'
+    );
+    const adminUserExists = Array.isArray(users) && users.some((user: any) => 
+      user && user.email && user.email.toLowerCase() === 'info@convologix.com'
+    );
     
     // Don't log sensitive information
     console.log('Initializing users:', { existingUsers: users.length });

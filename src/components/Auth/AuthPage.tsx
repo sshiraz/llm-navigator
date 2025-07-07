@@ -42,14 +42,17 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     setIsLoading(true);
     setError(null); 
     setLoginError(null);
+    
+    // Trim email to prevent whitespace issues
+    const trimmedEmail = formData.email.trim();
 
     // Special handling for admin account
-    if (isLogin && formData.email.toLowerCase() === 'info@convologix.com' && formData.password === '4C0nv0@LLMNav') {
+    if (isLogin && trimmedEmail.toLowerCase() === 'info@convologix.com' && formData.password === '4C0nv0@LLMNav') {
       // Create admin user with unlimited access
       // Don't log sensitive information
       const adminUser: User = {
         id: 'admin-user',
-        email: formData.email, // Use the exact case the user entered
+        email: trimmedEmail, // Use the exact case the user entered
         name: 'Admin User',
         avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
         subscription: 'enterprise',
@@ -76,9 +79,11 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         console.log('Attempting to login');
         try {
           const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
-          console.log('Found users in localStorage:', existingUsersList.length);
+          console.log('Found users in localStorage:', existingUsersList.length); 
           
-          const user = existingUsersList.find((u: any) => u.email.toLowerCase() === formData.email.toLowerCase());
+          const user = existingUsersList.find((u: any) => 
+            u.email && u.email.toLowerCase() === trimmedEmail.toLowerCase()
+          );
         
           if (!user) {
             console.error('No account found with provided email');
@@ -119,7 +124,9 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
           console.log('Checking if email exists');
           
-          const existingUser = existingUsersList.find((u: any) => u.email === formData.email);
+          const existingUser = existingUsersList.find((u: any) => 
+            u.email && u.email.toLowerCase() === trimmedEmail.toLowerCase()
+          );
           
           if (existingUser) {
             setError('An account with this email already exists');
@@ -132,14 +139,14 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           
           // Signup logic - check fraud prevention for trials
           if (fraudCheck && !fraudCheck.isAllowed) {
-            alert(fraudCheck.reason);
+            setError(fraudCheck.reason || 'Trial not allowed');
             setIsLoading(false);
             return;
           }
 
           const user = {
             id: userId,
-            email: formData.email,
+            email: trimmedEmail,
             name: formData.name || 'New User',
             avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
             subscription: 'trial',

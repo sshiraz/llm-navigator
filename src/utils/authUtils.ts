@@ -13,7 +13,7 @@ export const isAdminUser = (): boolean => {
     const user = JSON.parse(userStr);
     
     // Check if user is admin or has admin email
-    return user.isAdmin === true || user.email.toLowerCase() === 'info@convologix.com';
+    return user.isAdmin === true || (user.email && user.email.toLowerCase() === 'info@convologix.com');
   } catch (error) {
     console.error('Error checking admin status:', error);
     return false;

@@ -178,12 +178,8 @@ function App() {
   
   const handleLogin = (userData: User) => {
     setUser(userData);
-    // Store the previous section to return to
-    const prevSection = activeSection;
-    
-    // Default back behavior goes to dashboard
     setActiveSection('dashboard');
-    window.location.hash = '#dashboard';
+    window.location.hash = 'dashboard';
     // Store user data in localStorage for persistence
     localStorage.setItem('currentUser', JSON.stringify(userData));
   };
@@ -193,6 +189,15 @@ function App() {
     window.location.hash = '';
     // Clear user data from localStorage
     localStorage.removeItem('currentUser');
+    // Redirect to landing page
+    setActiveSection('landing');
+  };
+
+  // Handle back button functionality
+  const handleBack = () => {
+    // Default back behavior goes to dashboard
+    setActiveSection('dashboard');
+    window.location.hash = 'dashboard';
   };
 
   const handleProjectSelect = (project: Project) => {
