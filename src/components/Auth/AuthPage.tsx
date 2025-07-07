@@ -69,7 +69,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         // Check if user exists in localStorage
         try {
           const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
-          const user = existingUsersList.find((u: any) => u.email === formData.email);
+          const user = existingUsersList.find((u: any) => u.email.toLowerCase() === formData.email.toLowerCase());
         
           if (!user) {
             setError('No account found with this email address');
@@ -88,6 +88,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           const { password, ...userWithoutPassword } = user;
           const userData = {
             ...userWithoutPassword,
+            email: user.email, // Preserve original email case
             avatar: userWithoutPassword.avatar || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2'
           };
         

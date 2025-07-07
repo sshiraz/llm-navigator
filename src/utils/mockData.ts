@@ -228,11 +228,27 @@ export const mockKeywordSuggestions: KeywordSuggestion[] = [
 // Add a demo user to localStorage if it doesn't exist
 const initializeDemoUser = () => {
   try {
-    let users = JSON.parse(localStorage.getItem('users') || '[]');
+    // Clear localStorage if needed for testing
+    // localStorage.clear();
+    
+    // Get existing users or initialize empty array
+    const usersStr = localStorage.getItem('users');
+    let users = [];
+    
+    try {
+      if (usersStr) {
+        users = JSON.parse(usersStr);
+      }
+    } catch (parseError) {
+      console.error('Error parsing users from localStorage:', parseError);
+      users = [];
+    }
     
     // Check if demo user already exists
-    const demoUserExists = users.some((user: any) => user.email === 'demo@example.com');
-    const adminUserExists = users.some((user: any) => user.email === 'info@convologix.com');
+    const demoUserExists = users.some((user: any) => user.email && user.email.toLowerCase() === 'demo@example.com');
+    const adminUserExists = users.some((user: any) => user.email && user.email.toLowerCase() === 'info@convologix.com');
+    
+    console.log('Initializing demo users:', { demoUserExists, adminUserExists, existingUsers: users.length });
     
     if (!demoUserExists) {
       // Add demo user
@@ -255,7 +271,7 @@ const initializeDemoUser = () => {
       
       users.push(demoUser);
       localStorage.setItem('users', JSON.stringify(users));
-      console.log('Demo user initialized successfully');
+      console.log('Demo user initialized successfully', demoUser);
     }
     
     // Initialize empty projects array if it doesn't exist
@@ -279,7 +295,7 @@ const initializeDemoUser = () => {
       
       users.push(adminUser);
       localStorage.setItem('users', JSON.stringify(users));
-      console.log('Admin user initialized successfully');
+      console.log('Admin user initialized successfully', adminUser);
     }
   } catch (error) {
     console.error('Error initializing demo user:', error);
