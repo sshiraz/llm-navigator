@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, TrendingUp, Target, BarChart3 } from 'lucide-react';
+import { Plus, TrendingUp, Target, BarChart3, X } from 'lucide-react';
 import ProjectCard from './ProjectCard';
 import ScoreCard from './ScoreCard';
 import RecentAnalyses from './RecentAnalyses';
 import { Project, Analysis, User } from '../../types';
-import { Project, Analysis } from '../../types';
 
 interface DashboardProps {
   onProjectSelect: (project: Project) => void;
