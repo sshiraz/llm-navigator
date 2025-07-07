@@ -17,9 +17,6 @@ export default function LogoutHandler({ onLogout }: LogoutHandlerProps) {
       window.location.hash = '';
     }, 500);
   }, []);
-    // Redirect to landing page after logout
-    window.location.hash = '';
-  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
