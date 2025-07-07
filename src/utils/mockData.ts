@@ -248,7 +248,8 @@ const initializeDemoUser = () => {
     const demoUserExists = users.some((user: any) => user.email && user.email.toLowerCase() === 'demo@example.com');
     const adminUserExists = users.some((user: any) => user.email && user.email.toLowerCase() === 'info@convologix.com');
     
-    console.log('Initializing demo users:', { demoUserExists, adminUserExists, existingUsers: users.length });
+    // Don't log sensitive information
+    console.log('Initializing users:', { existingUsers: users.length });
     
     if (!demoUserExists) {
       // Add demo user
@@ -271,7 +272,7 @@ const initializeDemoUser = () => {
       
       users.push(demoUser);
       localStorage.setItem('users', JSON.stringify(users));
-      console.log('Demo user initialized successfully', demoUser);
+      console.log('Demo user initialized successfully');
     }
     
     // Initialize empty projects array if it doesn't exist
@@ -295,7 +296,7 @@ const initializeDemoUser = () => {
       
       users.push(adminUser);
       localStorage.setItem('users', JSON.stringify(users));
-      console.log('Admin user initialized successfully', adminUser);
+      console.log('Admin user initialized successfully');
     }
   } catch (error) {
     console.error('Error initializing demo user:', error);
@@ -350,12 +351,9 @@ try {
   
   // Log all users for debugging
   try {
-    const allUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    console.log('All users after initialization:', allUsers.map((u: any) => ({ 
-      email: u.email, 
-      name: u.name,
-      subscription: u.subscription
-    })));
+    // Don't log sensitive user information
+    const userCount = JSON.parse(localStorage.getItem('users') || '[]').length;
+    console.log('Users initialized:', userCount);
   } catch (error) {
     console.error('Error logging users:', error);
   }

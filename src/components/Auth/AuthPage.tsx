@@ -46,7 +46,8 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     // Special handling for admin account
     if (isLogin && formData.email.toLowerCase() === 'info@convologix.com' && formData.password === '4C0nv0@LLMNav') {
       // Create admin user with unlimited access
-      const adminUser = {
+      // Don't log sensitive information
+      const adminUser: User = {
         id: 'admin-user',
         email: formData.email, // Use the exact case the user entered
         name: 'Admin User',
@@ -59,7 +60,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
       
       // Store admin user in localStorage
       localStorage.setItem('currentUser', JSON.stringify(adminUser));
-      console.log('Admin login successful:', adminUser);
+      console.log('Admin login successful');
       
       onLogin(adminUser);
       setIsLoading(false);
@@ -69,18 +70,18 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     // Simulate API call
     setTimeout(() => {
       if (isLogin) {
-        console.log('Login attempt with:', formData.email, formData.password);
+        // Don't log credentials
+        console.log('Login attempt');
         // Check if user exists in localStorage
-        console.log('Attempting to login with:', formData.email);
+        console.log('Attempting to login');
         try {
           const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
-          console.log('Found users in localStorage:', existingUsersList.length, existingUsersList);
+          console.log('Found users in localStorage:', existingUsersList.length);
           
           const user = existingUsersList.find((u: any) => u.email.toLowerCase() === formData.email.toLowerCase());
         
           if (!user) {
-            console.error('No account found with email:', formData.email);
-            console.log('Available accounts:', existingUsersList.map((u: any) => u.email));
+            console.error('No account found with provided email');
             setError('No account found with this email address');
             setIsLoading(false);
             return;
@@ -88,7 +89,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         
           // Validate password (in a real app, this would be done securely on the server)
           if (user.password !== formData.password) {
-            console.error('Invalid password for user:', formData.email);
+            console.error('Invalid password');
             setError('Invalid password');
             setIsLoading(false);
             return;
@@ -104,7 +105,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         
           // Store current user in localStorage
           localStorage.setItem('currentUser', JSON.stringify(userData));
-          console.log('Login successful:', userData);
+          console.log('Login successful');
           
           onLogin(userData as User);
         } catch (error) {
@@ -116,8 +117,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         // Check if email already exists
         try {
           const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
-          console.log('Checking if email exists:', formData.email);
-          console.log('Existing users:', existingUsersList.map((u: any) => u.email));
+          console.log('Checking if email exists');
           
           const existingUser = existingUsersList.find((u: any) => u.email === formData.email);
           
@@ -164,7 +164,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           
           // Store current user in localStorage
           localStorage.setItem('currentUser', JSON.stringify(user)); 
-          console.log('Signup successful, created user:', user);
+          console.log('Signup successful');
           
           onLogin(user);
         } catch (error) {
@@ -193,21 +193,6 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
             <div className="text-left">
               <h1 className="text-2xl font-bold text-white">LLM Navigator</h1>
               <p className="text-sm text-blue-200">Answer Engine Optimization</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Demo Credentials */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6 text-white text-sm">
-          <h3 className="font-semibold mb-2">Demo Accounts:</h3>
-          <div className="space-y-2">
-            <div>
-              <p><strong>Admin:</strong> info@convologix.com</p>
-              <p><strong>Password:</strong> 4C0nv0@LLMNav</p>
-            </div>
-            <div>
-              <p><strong>Demo User:</strong> demo@example.com</p>
-              <p><strong>Password:</strong> demo123</p>
             </div>
           </div>
         </div>
