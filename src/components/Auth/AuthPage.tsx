@@ -102,7 +102,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           const user = existingUsersList.find((u: any) => 
             u.email && u.email.toLowerCase() === trimmedEmail.toLowerCase()
           );
-          
+        
           if (!user) {
             console.log('No account found with email:', formData.email);
             console.error('No account found with email:', trimmedEmail);
