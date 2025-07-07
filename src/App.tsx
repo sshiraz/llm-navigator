@@ -19,8 +19,7 @@ import { Project, Analysis, User } from './types';
 import PaymentDebugger from './components/Debug/PaymentDebugger';
 import WebhookManager from './components/Debug/WebhookManager';
 import WebhookDeployer from './components/Debug/WebhookDeployer';
-import { isLiveMode } from './utils/liveMode'; 
-import LiveModeBanner from './components/UI/LiveModeBanner';
+import { isLiveMode } from './utils/liveMode';
 import WebhookHelper from './components/Debug/WebhookHelper';
 
 function App() {
@@ -332,7 +331,6 @@ function App() {
   if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
     return (
       <>
-        {isLiveMode && <LiveModeBanner />}
         {renderContent()}
         {isLiveMode && <PaymentDebugger />}
       </>
@@ -341,7 +339,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {isLiveMode && <LiveModeBanner />}
       <Sidebar 
         activeSection={activeSection} 
         onSectionChange={setActiveSection}
@@ -351,7 +348,7 @@ function App() {
       <div className="flex-1 flex flex-col">
         {user && <Header user={user} />}
         
-        <main className={`flex-1 p-8 ${isLiveMode ? 'mt-6' : ''}`}>
+        <main className="flex-1 p-8">
           {renderContent()}
         </main>
       </div>
