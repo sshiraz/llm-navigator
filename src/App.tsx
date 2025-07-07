@@ -272,6 +272,7 @@ function App() {
       if (user) {
         const existingAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
         localStorage.setItem('analyses', JSON.stringify(existingAnalyses));
+      }
       switch (activeSection) {
         case 'landing':
           return <LandingPage onGetStarted={handleGetStarted} />;
