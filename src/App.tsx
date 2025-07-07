@@ -21,6 +21,7 @@ import WebhookManager from './components/Debug/WebhookManager';
 import WebhookDeployer from './components/Debug/WebhookDeployer';
 import { isLiveMode } from './utils/liveMode';
 import WebhookHelper from './components/Debug/WebhookHelper';
+import { isAdminUser } from './utils/authUtils';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -31,6 +32,12 @@ function App() {
   });
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check if user is admin
+  useEffect(() => {
+    setIsAdmin(isAdminUser());
+  }, [user]);
 
   // Load current analysis from localStorage if available
   useEffect(() => {
@@ -332,7 +339,7 @@ function App() {
     return (
       <>
         {renderContent()}
-        {isLiveMode && <PaymentDebugger />}
+        {isLiveMode && isAdmin && <PaymentDebugger />}
       </>
     );
   }
@@ -352,10 +359,10 @@ function App() {
           {renderContent()}
         </main>
       </div>
-      {isLiveMode && <PaymentDebugger />}
-     <WebhookHelper />
-      <WebhookManager />
-      <WebhookDeployer />
+      {isLiveMode && isAdmin && <PaymentDebugger />}
+      {isAdmin && <WebhookHelper />}
+      {isAdmin && <WebhookManager />}
+      {isAdmin && <WebhookDeployer />}
     </div>
   );
 }

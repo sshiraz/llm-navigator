@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Webhook, RefreshCw, CheckCircle, AlertTriangle, X, Zap, Key, Copy, Code } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
 import { getSupabaseProjectId } from '../../utils/webhookUtils';
+import { isAdminUser } from '../../utils/authUtils';
 
 export default function WebhookDeployer() {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,8 +12,12 @@ export default function WebhookDeployer() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [webhookContent, setWebhookContent] = useState('');
   const [deployUrl, setDeployUrl] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
   
   useEffect(() => {
+    // Check if user is admin
+    setIsAdmin(isAdminUser());
+    
     if (isOpen) {
       // Get project ID
       const id = getSupabaseProjectId();
@@ -53,6 +58,11 @@ export default function WebhookDeployer() {
       PaymentLogger.log('info', 'WebhookDeployer', 'Opened Supabase deploy page', { deployUrl });
     }
   };
+  
+  // If not admin, don't render the component
+  if (!isAdmin) {
+    return null;
+  }
   
   if (!isOpen) {
     return (

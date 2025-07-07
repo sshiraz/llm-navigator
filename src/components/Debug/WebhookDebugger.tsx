@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle, Copy, RefreshCw, Webhook, Key, Lock, X } fr
 import { PaymentLogger } from '../../utils/paymentLogger';
 import { isLiveMode } from '../../utils/liveMode';
 import { testWebhookEndpoint, updateWebhookSecret, generateDeployCommand, getSupabaseProjectId } from '../../utils/webhookUtils';
+import { isAdminUser } from '../../utils/authUtils';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
 
 export default function WebhookDebugger() {
@@ -12,8 +13,12 @@ export default function WebhookDebugger() {
   const [webhookSecret, setWebhookSecret] = useState('');
   const [showSecret, setShowSecret] = useState(false); 
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   useEffect(() => {
+    // Check if user is admin
+    setIsAdmin(isAdminUser());
+    
     // Get project ID when component mounts
     setProjectId(getSupabaseProjectId());
   }, []);
@@ -69,6 +74,11 @@ export default function WebhookDebugger() {
       alert('Secret command copied to clipboard!');
     }
   };
+  
+  // If not admin, don't render the component
+  if (!isAdmin) {
+    return null;
+  }
   
   if (!isOpen) {
     return (

@@ -4,6 +4,7 @@ import { PaymentLogger } from '../../utils/paymentLogger';
 import { checkDatabaseConnection, checkEdgeFunctions, testWebhookEndpoint, simulateWebhook, getSupabaseProjectId } from '../../utils/webhookUtils';
 import StripeStatus from '../Payment/StripeStatus';
 import { isLiveMode } from '../../utils/liveMode';
+import { isAdminUser } from '../../utils/authUtils';
 
 export default function PaymentDebugger() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -12,11 +13,15 @@ export default function PaymentDebugger() {
   const [webhookStatus, setWebhookStatus] = useState<any>(null);
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Disable certain features in live mode
   const disableInLiveMode = isLiveMode;
 
   useEffect(() => {
+    // Check if user is admin
+    setIsAdmin(isAdminUser());
+    
     // Get project ID when component mounts
     setProjectId(getSupabaseProjectId());
     
@@ -31,6 +36,11 @@ export default function PaymentDebugger() {
     const interval = setInterval(loadLogs, 2000); // Refresh every 2 seconds
     return () => clearInterval(interval);
   }, [isOpen]);
+
+  // If not admin, don't render the component
+  if (!isAdmin) {
+    return null;
+  }
 
   const loadLogs = () => {
     const allLogs = [...PaymentLogger.getLogsFromStorage(), ...PaymentLogger.getLogs()];

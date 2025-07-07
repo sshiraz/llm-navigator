@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Webhook, RefreshCw, CheckCircle, AlertTriangle, X, Zap, Key, Copy, UserCheck } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
+import { isAdminUser } from '../../utils/authUtils';
 
 export default function WebhookHelper() {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,6 +10,12 @@ export default function WebhookHelper() {
   const [result, setResult] = useState<any>(null);
   const [userId, setUserId] = useState('');
   const [plan, setPlan] = useState('starter');
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  // Check if user is admin when component mounts
+  useState(() => {
+    setIsAdmin(isAdminUser());
+  });
   
   const checkWebhookStatus = async () => {
     setStatus('checking');
@@ -143,6 +150,11 @@ export default function WebhookHelper() {
     navigator.clipboard.writeText(command);
     PaymentLogger.log('info', 'WebhookHelper', 'Copied command to clipboard', { command });
   };
+
+  // If not admin, don't render the component
+  if (!isAdmin) {
+    return null;
+  }
   
   if (!isOpen) {
     return (

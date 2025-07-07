@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Webhook, RefreshCw, CheckCircle, AlertTriangle, X, Zap, Key, Copy } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
+import { isAdminUser } from '../../utils/authUtils';
 import { supabase } from '../../lib/supabase';
 
 export default function AutomaticWebhookFixer() {
@@ -15,8 +16,12 @@ export default function AutomaticWebhookFixer() {
     status: 'pending' | 'running' | 'success' | 'error';
     result?: any;
   }>>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   useEffect(() => {
+    // Check if user is admin
+    setIsAdmin(isAdminUser());
+    
     if (isOpen && status === 'idle') {
       checkWebhookStatus();
     }
@@ -210,6 +215,11 @@ export default function AutomaticWebhookFixer() {
     
     alert('All commands copied to clipboard! Paste and run them in your terminal.');
   };
+  
+  // If not admin, don't render the component
+  if (!isAdmin) {
+    return null;
+  }
   
   if (!isOpen) {
     return (

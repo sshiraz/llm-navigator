@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Webhook, RefreshCw, CheckCircle, AlertTriangle, X, Zap, Key, Copy, Code, Terminal } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
 import { isLiveMode } from '../../utils/liveMode';
+import { isAdminUser } from '../../utils/authUtils';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
 
 export default function WebhookManager() {
@@ -13,8 +14,12 @@ export default function WebhookManager() {
   const [deployCommands, setDeployCommands] = useState<string[]>([]);
   const [webhookUrl, setWebhookUrl] = useState('');
   const [commandsCopied, setCommandsCopied] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   useEffect(() => {
+    // Check if user is admin
+    setIsAdmin(isAdminUser());
+    
     if (isOpen) {
       // Generate the webhook URL
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -102,6 +107,11 @@ export default function WebhookManager() {
       setCommandsCopied(false);
     }, 3000);
   };
+
+  // If not admin, don't render the component
+  if (!isAdmin) {
+    return null;
+  }
   
   const copyWebhookUrl = () => {
     navigator.clipboard.writeText(webhookUrl);
