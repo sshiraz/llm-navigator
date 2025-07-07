@@ -17,8 +17,8 @@ import AuthPage from './components/Auth/AuthPage';
 import { mockProjects, mockAnalyses } from './utils/mockData';
 import { Project, Analysis, User } from './types';
 import PaymentDebugger from './components/Debug/PaymentDebugger';
-import { isLiveMode } from './utils/liveMode';
-import LiveModeIndicator from './components/UI/LiveModeIndicator';
+import { isLiveMode } from './utils/liveMode'; 
+import LiveModeBanner from './components/UI/LiveModeBanner';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -329,7 +329,7 @@ function App() {
   if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
     return (
       <>
-        {isLiveMode && <LiveModeIndicator />}
+        {isLiveMode && <LiveModeBanner />}
         {renderContent()}
         {isLiveMode && <PaymentDebugger />}
       </>
@@ -338,7 +338,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {isLiveMode && <LiveModeIndicator />}
+      {isLiveMode && <LiveModeBanner />}
       <Sidebar 
         activeSection={activeSection} 
         onSectionChange={setActiveSection}
