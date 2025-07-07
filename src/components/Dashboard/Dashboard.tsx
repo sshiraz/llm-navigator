@@ -3,7 +3,7 @@ import { Plus, TrendingUp, Target, BarChart3 } from 'lucide-react';
 import ProjectCard from './ProjectCard';
 import ScoreCard from './ScoreCard';
 import RecentAnalyses from './RecentAnalyses';
-import { mockProjects } from '../../utils/mockData';
+import { Project, Analysis, User } from '../../types';
 import { Project, Analysis } from '../../types';
 
 interface DashboardProps {
@@ -12,7 +12,9 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardProps) {
+  const [projects, setProjects] = useState<Project[]>([]);
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   
   // Get current user from localStorage
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -26,6 +28,24 @@ export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardP
       }
     } catch (error) {
       console.error('Error loading current user:', error);
+    }
+    
+    // Load projects from localStorage
+    try {
+      const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+      
+      // Filter projects to only show those belonging to the current user
+      if (currentUser) {
+        const userProjects = storedProjects.filter((project: Project) => 
+          project.userId === currentUser.id
+        );
+        setProjects(userProjects);
+      } else {
+        setProjects([]);
+      }
+    } catch (error) {
+      console.error('Error loading projects from localStorage:', error);
+      setProjects([]);
     }
     
     // Load analyses from localStorage
@@ -46,6 +66,33 @@ export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardP
       setAnalyses([]);
     }
   }, [currentUser]);
+  
+  const handleDeleteProject = (projectId: string) => {
+    setShowDeleteConfirm(projectId);
+  };
+  
+  const confirmDeleteProject = (projectId: string) => {
+    try {
+      // Get stored projects from localStorage
+      const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+      
+      // Filter out the project to delete
+      const updatedProjects = storedProjects.filter((p: Project) => p.id !== projectId);
+      
+      // Update state
+      setProjects(projects.filter(p => p.id !== projectId));
+      
+      // Save to localStorage
+      localStorage.setItem('projects', JSON.stringify(updatedProjects));
+      
+      // Close confirmation dialog
+      setShowDeleteConfirm(null);
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      alert('Failed to delete project. Please try again.');
+      setShowDeleteConfirm(null);
+    }
+  };
   
   const totalAnalyses = analyses.length;
   const avgScore = analyses.length > 0 
@@ -119,11 +166,12 @@ export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardP
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockProjects.map((project) => (
+          {projects.map((project) => (
             <ProjectCard
               key={project.id}
               project={project}
               onSelect={onProjectSelect}
+              onDelete={() => handleDeleteProject(project.id)}
             />
           ))}
           
@@ -146,6 +194,43 @@ export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardP
         analyses={analyses} 
         onDelete={handleDeleteAnalysis} 
       />
+      
+      {/* Delete Project Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Delete Project</h3>
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete this project? This action cannot be undone.
+            </p>
+            
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              
+              <button
+                onClick={() => confirmDeleteProject(showDeleteConfirm)}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

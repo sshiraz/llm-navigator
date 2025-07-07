@@ -1,24 +1,44 @@
 import React from 'react';
-import { ExternalLink, Calendar, Target, Users } from 'lucide-react';
+import { ExternalLink, Calendar, Target, Users, Trash2 } from 'lucide-react';
 import { Project } from '../../types';
 
 interface ProjectCardProps {
   project: Project;
   onSelect: (project: Project) => void;
+  onDelete?: (project: Project) => void;
 }
 
-export default function ProjectCard({ project, onSelect }: ProjectCardProps) {
+export default function ProjectCard({ project, onSelect, onDelete }: ProjectCardProps) {
   return (
     <div 
-      className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group"
-      onClick={() => onSelect(project)}
+      className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-200 group relative"
     >
+      {/* Delete button */}
+      {onDelete && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(project);
+          }}
+          className="absolute top-3 right-3 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+          title="Delete project"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      )}
+    
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+          <h3 
+            className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors cursor-pointer"
+            onClick={() => onSelect(project)}
+          >
             {project.name}
           </h3>
-          <div className="flex items-center space-x-2 mt-1">
+          <div 
+            className="flex items-center space-x-2 mt-1 cursor-pointer"
+            onClick={() => onSelect(project)}
+          >
             <span className="text-sm text-gray-500">{project.website}</span>
             <ExternalLink className="w-3 h-3 text-gray-400" />
           </div>
@@ -30,10 +50,18 @@ export default function ProjectCard({ project, onSelect }: ProjectCardProps) {
       </div>
 
       {project.description && (
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{project.description}</p>
+        <p 
+          className="text-gray-600 text-sm mb-4 line-clamp-2 cursor-pointer"
+          onClick={() => onSelect(project)}
+        >
+          {project.description}
+        </p>
       )}
 
-      <div className="grid grid-cols-3 gap-4 mb-4">
+      <div 
+        className="grid grid-cols-3 gap-4 mb-4 cursor-pointer"
+        onClick={() => onSelect(project)}
+      >
         <div className="text-center">
           <div className="flex items-center justify-center mb-1">
             <Target className="w-4 h-4 text-gray-400" />
@@ -61,7 +89,10 @@ export default function ProjectCard({ project, onSelect }: ProjectCardProps) {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-1">
+      <div 
+        className="flex flex-wrap gap-1 cursor-pointer"
+        onClick={() => onSelect(project)}
+      >
         {project.keywords.slice(0, 2).map((keyword, index) => (
           <span 
             key={index}
