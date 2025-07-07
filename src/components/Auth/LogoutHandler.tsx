@@ -13,16 +13,15 @@ export default function LogoutHandler({ onLogout }: LogoutHandlerProps) {
     // Clear localStorage first
     localStorage.removeItem('currentUser');
     console.log('LogoutHandler: Cleared currentUser from localStorage');
-    
-    // Then call the logout handler
-    onLogout();
-    
+
     // Force redirect to landing page
     setTimeout(() => {
       console.log('LogoutHandler: Redirecting to landing page');
       window.location.hash = '';
-      window.location.reload(); // Force reload to clear any state
-    }, 500);
+      
+      // Then call the logout handler
+      onLogout();
+    }, 100);
   }, []);
 
   return (

@@ -311,7 +311,7 @@ const initializeDemoUser = () => {
 // Run this in a try-catch to prevent any issues with localStorage
 try {
   // Force initialization of demo users - this is critical for the app to work
-  console.log('mockData: Starting initialization of demo users...');
+  console.log('mockData: Starting initialization of demo users and data...');
 
   // Always ensure users array exists
   let existingUsers = [];
@@ -337,6 +337,37 @@ try {
   
   // Initialize demo users
   initializeDemoUser(); 
+
+  // Force create admin user for testing
+  try {
+    const usersStr = localStorage.getItem('users');
+    let users = usersStr ? JSON.parse(usersStr) : [];
+    
+    // Check if admin exists
+    const adminExists = users.some((u: any) => 
+      u && u.email && u.email.toLowerCase() === 'info@convologix.com'
+    );
+    
+    if (!adminExists) {
+      console.log('mockData: Admin user not found, creating...');
+      const adminUser = {
+        id: 'admin-user-456',
+        email: 'info@convologix.com', 
+        password: '4C0nv0@LLMNav',
+        name: 'Admin User',
+        avatar: 'https://images.pexels.com/photos/2379005/pexels-photo-2379005.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
+        subscription: 'enterprise',
+        isAdmin: true,
+        createdAt: new Date().toISOString()
+      };
+      
+      users.push(adminUser);
+      localStorage.setItem('users', JSON.stringify(users));
+      console.log('mockData: Admin user created successfully');
+    }
+  } catch (error) {
+    console.error('Error creating admin user:', error);
+  }
   
   // Also initialize demo analyses if they don't exist
   const initializeAnalyses = () => {

@@ -28,7 +28,9 @@ import { isAdminUser } from './utils/authUtils';
 function App() {
   // Clear user data on initial load
   useEffect(() => {
-    clearUserData();
+    // Don't clear user data on initial load - this was causing the blank screen
+    // clearUserData();
+    console.log('App: Initial load, checking hash:', window.location.hash);
   }, []);
 
   const [user, setUser] = useState<User | null>(null);
@@ -199,11 +201,13 @@ function App() {
   const handleLogout = () => {
     console.log('App: handleLogout called');
     setUser(null);
-    window.location.hash = '';
+    
     // Clear user data from localStorage
     localStorage.removeItem('currentUser');
+    
     // Redirect to landing page
     setActiveSection('landing');
+    window.location.hash = '';
   };
 
   // Handle back button functionality
@@ -436,12 +440,6 @@ function App() {
   if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
     return (
       <>
-        {/* For debugging */}
-        {import.meta.env.DEV && (
-          <div className="fixed top-0 right-0 bg-black bg-opacity-75 text-white p-2 text-xs z-50">
-            Section: {activeSection} | User: {user ? user.email : 'none'}
-          </div>
-        )}
         {renderContent()}
         {isLiveMode && isAdmin && <PaymentDebugger />}
       </>
@@ -451,11 +449,9 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* For debugging */}
-      {import.meta.env.DEV && (
-        <div className="fixed top-0 right-0 bg-black bg-opacity-75 text-white p-2 text-xs z-50">
-          Section: {activeSection} | User: {user ? user.email : 'none'}
-        </div>
-      )}
+      <div className="fixed top-0 right-0 bg-black bg-opacity-75 text-white p-2 text-xs z-50">
+        Section: {activeSection} | User: {user ? user.email : 'none'}
+      </div>
       
       <Sidebar 
         activeSection={activeSection} 

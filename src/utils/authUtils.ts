@@ -64,22 +64,9 @@ export const hasPermission = (permission: string): boolean => {
 export const clearUserData = (): void => {
   try {
     console.log('authUtils: Clearing user data');
-    
-    // Save users array before clearing
-    let usersArray = [];
-    try {
-      const usersStr = localStorage.getItem('users');
-      if (usersStr) {
-        usersArray = JSON.parse(usersStr);
-      }
-    } catch (e) {
-      console.error('Error saving users array before clearing', e);
-    }
-    
+
     // Remove user data
     localStorage.removeItem('currentUser'); 
-    // Don't remove users to preserve demo accounts
-    // localStorage.removeItem('users');
     
     // Also clear any analysis-related data
     localStorage.removeItem('currentAnalysis');
@@ -92,12 +79,6 @@ export const clearUserData = (): void => {
     localStorage.removeItem('payment_logs');
     
     console.log('User data cleared successfully');
-    
-    // Restore users array if it was cleared
-    if (!localStorage.getItem('users') && usersArray.length > 0) {
-      console.log('authUtils: Restoring users array after clearing');
-      localStorage.setItem('users', JSON.stringify(usersArray));
-    }
   } catch (error) {
     console.error('Error clearing user data:', error);
   }

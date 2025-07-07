@@ -12,9 +12,9 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
+    name: 'Demo User',
+    email: 'demo@example.com',
+    password: 'demo123',
     company: '',
     website: ''
   });
@@ -257,11 +257,11 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           <div className="flex items-center justify-center space-x-3 mb-4">
             <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-              <Search className="w-7 h-7 text-white" />
+              <Search className="w-6 h-6 text-white" />
             </div>
             <div className="text-left">
-              <h1 className="text-2xl font-bold text-white">LLM Navigator</h1>
-              <p className="text-sm text-blue-200">Answer Engine Optimization</p>
+              <h1 className="text-xl font-bold text-gray-900">LLM Navigator</h1>
+              <p className="text-xs text-gray-500">Answer Engine Optimization</p>
             </div>
           </div>
           <div className="text-center mb-6">
@@ -274,6 +274,11 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
                 : 'Join thousands optimizing for AI search'
               }
             </p>
+            {import.meta.env.DEV && (
+              <div className="mt-2 text-sm text-blue-600">
+                <strong>Demo credentials:</strong> demo@example.com / demo123
+              </div>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

@@ -26,7 +26,7 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'new-analysis', label: 'New Analysis', icon: Plus },
-    { id: 'dashboard', label: 'Projects', icon: Target }, // Points to dashboard for now
+    { id: 'dashboard', label: 'Projects', icon: Target },
     { id: 'competitor-strategy', label: 'Competitor Strategy', icon: Users },
     { id: 'contact', label: 'Contact Us', icon: Mail }
   ];
@@ -44,7 +44,11 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
   return (
     <div className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col">
       <div className="p-6 border-b border-gray-200">
-        <div 
+        <button 
+          onClick={() => {
+            window.location.hash = 'dashboard';
+            onSectionChange('dashboard');
+          }}
           className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
         >
           <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
@@ -54,7 +58,7 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
             <h1 className="text-xl font-bold text-gray-900">LLM Navigator</h1>
             <p className="text-xs text-gray-500">Answer Engine Optimization</p>
           </div>
-        </div>
+        </button>
       </div>
 
       <nav className="flex-1 px-4 py-6 space-y-2">
@@ -65,7 +69,10 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
           return (
             <button
               key={item.id}
-              onClick={() => onSectionChange(item.id)}
+              onClick={() => {
+                window.location.hash = item.id;
+                onSectionChange(item.id);
+              }}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
                 isActive
                   ? 'bg-blue-600 text-white shadow-lg'
