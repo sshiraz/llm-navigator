@@ -18,6 +18,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     company: '',
     website: ''
   });
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [fraudCheck, setFraudCheck] = useState<FraudPreventionCheck | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,11 +43,15 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     setIsLoading(true);
     setError(null);
     
+    // Clear debug info
+    setDebugInfo(null);
+    
     // Trim email to prevent whitespace issues
     const trimmedEmail = formData.email.trim();
 
     // Special handling for admin account
     if (isLogin && trimmedEmail.toLowerCase() === 'info@convologix.com' && formData.password === '4C0nv0@LLMNav') {
+      console.log('Admin login detected');
       // Create admin user with unlimited access
       // Don't log sensitive information
       const adminUser: User = {
@@ -64,10 +69,14 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
       localStorage.setItem('currentUser', JSON.stringify(adminUser));
       console.log('Admin login successful', { id: adminUser.id });
       
-      // Set hash to dashboard before login to ensure proper redirection
-      window.location.hash = 'dashboard';
-      
+      // Call onLogin first, then set hash
       onLogin(adminUser);
+      
+      // Set hash to dashboard after login to ensure proper redirection
+      setTimeout(() => {
+        window.location.hash = 'dashboard';
+      }, 100);
+      
       setIsLoading(false);
       return;
     }
@@ -76,19 +85,21 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     setTimeout(() => {
       if (isLogin) {
         // Don't log credentials
-        console.log('Login attempt');
+        console.log('Login attempt with email:', trimmedEmail);
         // Check if user exists in localStorage
-        console.log('Checking localStorage for user');
+        setDebugInfo('Checking localStorage for users...');
         try {
           const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
-          console.log('Found users in localStorage:', existingUsersList.length, 'Looking for:', trimmedEmail); 
+          setDebugInfo(`Found ${existingUsersList.length} users in localStorage. Looking for: ${trimmedEmail}`);
+          console.log('Found users in localStorage:', existingUsersList.length);
           
           const user = existingUsersList.find((u: any) => 
             u.email && u.email.toLowerCase() === trimmedEmail.toLowerCase()
           );
         
           if (!user) {
-            console.error('No account found with provided email');
+            console.error('No account found with email:', trimmedEmail);
+            setDebugInfo(`No account found with email: ${trimmedEmail}`);
             setError('No account found with this email address');
             setIsLoading(false);
             return;
@@ -97,6 +108,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           // Validate password (in a real app, this would be done securely on the server)
           if (user.password !== formData.password) {
             console.error('Invalid password');
+            setDebugInfo('Invalid password');
             setError('Invalid password');
             setIsLoading(false);
             return;
@@ -113,13 +125,18 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           // Store current user in localStorage
           localStorage.setItem('currentUser', JSON.stringify(userData));
           console.log('Login successful', { id: userData.id });
+          setDebugInfo('Login successful, redirecting to dashboard...');
           
-          // Set hash to dashboard before login to ensure proper redirection
-          window.location.hash = 'dashboard';
-          
+          // Call onLogin first, then set hash
           onLogin(userData as User);
+          
+          // Set hash to dashboard after login
+          setTimeout(() => {
+            window.location.hash = 'dashboard';
+          }, 100);
         } catch (error) {
           console.error('Error parsing users from localStorage:', error);
+          setDebugInfo(`Error parsing users: ${error.message}`);
           setError('An error occurred during login. Please try again.');
           setIsLoading(false);
         }
@@ -177,13 +194,18 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           // Store current user in localStorage
           localStorage.setItem('currentUser', JSON.stringify(user)); 
           console.log('Signup successful', { id: user.id });
+          setDebugInfo('Signup successful, redirecting to dashboard...');
           
-          // Set hash to dashboard before login to ensure proper redirection
-          window.location.hash = 'dashboard';
-          
+          // Call onLogin first, then set hash
           onLogin(user);
+          
+          // Set hash to dashboard after login
+          setTimeout(() => {
+            window.location.hash = 'dashboard';
+          }, 100);
         } catch (error) {
           console.error('Error during signup:', error);
+          setDebugInfo(`Error during signup: ${error.message}`);
           setError('An error occurred during signup. Please try again.');
           setIsLoading(false);
         }
@@ -216,10 +238,17 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <div className="flex items-start space-x-2 text-red-800">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
+              <AlertTriangle className="h-5 w-5" />
               <span>{error}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Debug Info - Only in development */}
+        {import.meta.env.DEV && debugInfo && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 text-xs">
+            <div className="font-mono text-gray-600">
+              {debugInfo}
             </div>
           </div>
         )}

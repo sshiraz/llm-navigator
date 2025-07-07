@@ -310,16 +310,29 @@ const initializeDemoUser = () => {
 // Initialize demo user when this module is imported
 // Run this in a try-catch to prevent any issues with localStorage
 try {
-  // Force initialization of demo users
-  console.log('mockData: Initializing demo users...');
+  // Force initialization of demo users - this is critical for the app to work
+  console.log('mockData: Starting initialization of demo users...');
+
+  // Always ensure users array exists
+  let existingUsers = [];
+  try {
+    const usersStr = localStorage.getItem('users');
+    if (usersStr) {
+      existingUsers = JSON.parse(usersStr);
+      if (!Array.isArray(existingUsers)) {
+        console.error('Users in localStorage is not an array, resetting');
+        existingUsers = [];
+      }
+    }
+  } catch (e) {
+    console.error('Error parsing users from localStorage, resetting', e);
+    existingUsers = [];
+  }
   
-  // Check if users exist before initializing
-  const existingUsers = localStorage.getItem('users');
-  if (!existingUsers || JSON.parse(existingUsers).length === 0) {
-    console.log('mockData: No users found, initializing demo users');
+  // If no users or empty array, initialize with empty array
+  if (!existingUsers || existingUsers.length === 0) {
+    console.log('mockData: No valid users found, initializing with empty array');
     localStorage.setItem('users', '[]');
-  } else {
-    console.log('mockData: Users already exist:', JSON.parse(existingUsers).length);
   }
   
   // Initialize demo users
@@ -361,9 +374,15 @@ try {
   
   // Log all users for debugging
   try {
-    // Don't log sensitive user information
-    const userCount = JSON.parse(localStorage.getItem('users') || '[]').length;
-    console.log('mockData: Users initialized:', userCount);
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    // Don't log sensitive information
+    console.log('mockData: Users initialized:', users.length);
+    
+    // Check if admin user exists
+    const adminExists = users.some((u: any) => 
+      u && u.email && u.email.toLowerCase() === 'info@convologix.com'
+    );
+    console.log('mockData: Admin user exists:', adminExists);
   } catch (error) {
     console.error('Error logging users:', error);
   }

@@ -8,8 +8,21 @@ interface LogoutHandlerProps {
 export default function LogoutHandler({ onLogout }: LogoutHandlerProps) {
   useEffect(() => {
     // Perform logout immediately when component mounts
-    console.log('LogoutHandler: Performing logout');
+    console.log('LogoutHandler: Component mounted, performing logout');
+    
+    // Clear localStorage first
+    localStorage.removeItem('currentUser');
+    console.log('LogoutHandler: Cleared currentUser from localStorage');
+    
+    // Then call the logout handler
     onLogout();
+    
+    // Force redirect to landing page
+    setTimeout(() => {
+      console.log('LogoutHandler: Redirecting to landing page');
+      window.location.hash = '';
+      window.location.reload(); // Force reload to clear any state
+    }, 500);
   }, []);
 
   return (

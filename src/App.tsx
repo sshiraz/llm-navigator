@@ -151,12 +151,12 @@ function App() {
   // Load user from localStorage on initial load
   useEffect(() => {
     try {
-      console.log('App: Checking for stored user on initial load');
+      console.log('App: Checking for stored user on initial load', { hash: window.location.hash });
       const storedUser = localStorage.getItem('currentUser');
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
-          console.log('App: Found stored user, setting user state', { id: parsedUser.id });
+          console.log('App: Found stored user, setting user state', { id: parsedUser.id, hash: window.location.hash });
           setUser(parsedUser);
           // If we're on the auth page but already logged in, redirect to dashboard
           if (activeSection === 'auth') {
@@ -168,6 +168,8 @@ function App() {
           console.error('Failed to parse stored user', e);
           localStorage.removeItem('currentUser'); // Clear invalid data
         }
+      } else {
+        console.log('App: No stored user found');
       }
     } catch (error) {
       console.error('Error accessing localStorage:', error);
@@ -295,6 +297,12 @@ function App() {
   const renderContent = () => {
     if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
       console.log('App: Rendering special section:', activeSection);
+      
+      // For debugging
+      if (activeSection === 'auth') {
+        console.log('App: Rendering auth page, user state:', user ? 'logged in' : 'not logged in');
+      }
+      
       switch (activeSection) {
         case 'landing':
           return <LandingPage onGetStarted={handleGetStarted} />;
@@ -342,7 +350,7 @@ function App() {
     
     // Protected routes that require login
     if (!user && ['dashboard', 'new-analysis', 'analysis-results', 'project-detail', 'pricing', 'competitor-strategy'].includes(activeSection)) {
-      console.log('App: Attempted to access protected route without login, redirecting to auth page');
+      console.log('App: Attempted to access protected route without login, redirecting to auth page', { section: activeSection });
       return <AuthPage onLogin={handleLogin} />;
     }
 
@@ -428,6 +436,12 @@ function App() {
   if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
     return (
       <>
+        {/* For debugging */}
+        {import.meta.env.DEV && (
+          <div className="fixed top-0 right-0 bg-black bg-opacity-75 text-white p-2 text-xs z-50">
+            Section: {activeSection} | User: {user ? user.email : 'none'}
+          </div>
+        )}
         {renderContent()}
         {isLiveMode && isAdmin && <PaymentDebugger />}
       </>
@@ -436,6 +450,13 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {/* For debugging */}
+      {import.meta.env.DEV && (
+        <div className="fixed top-0 right-0 bg-black bg-opacity-75 text-white p-2 text-xs z-50">
+          Section: {activeSection} | User: {user ? user.email : 'none'}
+        </div>
+      )}
+      
       <Sidebar 
         activeSection={activeSection} 
         onSectionChange={setActiveSection}
