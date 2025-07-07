@@ -274,7 +274,9 @@ function App() {
   const renderContent = () => {
         return <PrivacyPolicy onBack={() => setActiveSection('landing')} />;
     if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
+      if (activeSection === 'terms') {
         return <TermsOfService onBack={() => setActiveSection('landing')} />;
+      }
       case 'logout':
         return <LogoutHandler onLogout={handleLogout} />;
       if (activeSection === 'admin-users') {
