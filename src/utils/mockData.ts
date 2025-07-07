@@ -10,36 +10,6 @@ export const mockUser: User = {
   createdAt: '2024-01-15T10:00:00Z'
 };
 
-export const mockProjects: Project[] = [
-  {
-    id: '1',
-    name: 'TechStart Marketing',
-    website: 'techstart.com',
-    description: 'B2B SaaS marketing platform',
-    keywords: ['marketing automation', 'lead generation', 'email marketing'],
-    competitors: [
-      { id: '1', name: 'HubSpot', website: 'hubspot.com', addedAt: '2024-01-20T10:00:00Z' },
-      { id: '2', name: 'Mailchimp', website: 'mailchimp.com', addedAt: '2024-01-20T10:00:00Z' },
-      { id: '3', name: 'ActiveCampaign', website: 'activecampaign.com', addedAt: '2024-01-20T10:00:00Z' }
-    ],
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-20T10:00:00Z'
-  },
-  {
-    id: '2',
-    name: 'EcoStore',
-    website: 'ecostore.com',
-    description: 'Sustainable products marketplace',
-    keywords: ['sustainable products', 'eco-friendly', 'green living'],
-    competitors: [
-      { id: '4', name: 'Grove Collaborative', website: 'grove.co', addedAt: '2024-01-18T10:00:00Z' },
-      { id: '5', name: 'Thrive Market', website: 'thrivemarket.com', addedAt: '2024-01-18T10:00:00Z' }
-    ],
-    createdAt: '2024-01-16T10:00:00Z',
-    updatedAt: '2024-01-18T10:00:00Z'
-  }
-];
-
 export const mockAnalyses: Analysis[] = [
   // HubSpot - industry leader scores (should be #1)
   {
@@ -288,6 +258,12 @@ const initializeDemoUser = () => {
       console.log('Demo user initialized successfully');
     }
     
+    // Initialize empty projects array if it doesn't exist
+    if (!localStorage.getItem('projects')) {
+      localStorage.setItem('projects', '[]');
+      console.log('Projects array initialized successfully');
+    }
+    
     if (!adminUserExists) {
       // Add admin user
       const adminUser = {
@@ -330,7 +306,21 @@ try {
     }
   };
   
+  // Initialize empty projects array
+  const initializeProjects = () => {
+    try {
+      // Check if projects already exist in localStorage
+      if (!localStorage.getItem('projects')) {
+        localStorage.setItem('projects', '[]');
+        console.log('Projects array initialized successfully');
+      }
+    } catch (error) {
+      console.error('Error initializing projects array:', error);
+    }
+  };
+  
   initializeAnalyses();
+  initializeProjects();
 } catch (error) {
   console.error('Failed to initialize demo user:', error);
 }

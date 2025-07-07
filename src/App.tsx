@@ -14,7 +14,7 @@ import TermsOfService from './components/Legal/TermsOfService';
 import CompetitorStrategy from './components/Reports/CompetitorStrategy';
 import LandingPage from './components/Landing/LandingPage';
 import AuthPage from './components/Auth/AuthPage';
-import { mockProjects, mockAnalyses } from './utils/mockData';
+import { mockAnalyses } from './utils/mockData';
 import { Project, Analysis, User } from './types';
 import PaymentDebugger from './components/Debug/PaymentDebugger';
 import WebhookManager from './components/Debug/WebhookManager';
@@ -33,6 +33,7 @@ function App() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
 
   // Check if user is admin
   useEffect(() => {
@@ -87,6 +88,27 @@ function App() {
     // Run once on initial load to handle direct URL access
     handleHashChange();
   }, []);
+
+  // Load projects from localStorage when user changes
+  useEffect(() => {
+    if (user) {
+      try {
+        // Get projects from localStorage
+        const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+        
+        // Filter projects to only show those belonging to the current user
+        const userProjects = storedProjects.filter((project: Project) => 
+          project.userId === user.id
+        );
+        
+        setProjects(userProjects);
+      } catch (error) {
+        console.error('Error loading projects from localStorage:', error);
+      }
+    } else {
+      setProjects([]);
+    }
+  }, [user]);
 
   // Check URL parameters for checkout success
   useEffect(() => {
@@ -162,6 +184,8 @@ function App() {
   };
 
   const handleProjectSelect = (project: Project) => {
+    // Find the project in our state to ensure we have the latest version
+    const selectedProject = projects.find(p => p.id === project.id) || project;
     setSelectedProject(project);
     window.location.hash = 'project-detail';
   };
@@ -176,7 +200,7 @@ function App() {
     // The analysis creation logic is moved to AnalysisProgress component
     const newAnalysis: Analysis = {
       id: Date.now().toString(),
-      projectId: selectedProject?.id || '1',
+      projectId: selectedProject?.id || 'default',
       userId: user?.id || 'anonymous',
       website,
       keywords,
@@ -313,7 +337,7 @@ function App() {
       case 'project-detail':
         return selectedProject ? (
           <ProjectDetail 
-            project={selectedProject} 
+            project={selectedProject}
             onBack={() => setActiveSection('dashboard')} 
           />
         ) : null;
@@ -339,9 +363,9 @@ function App() {
 
       case 'competitor-strategy':
         return (
-          <CompetitorStrategy 
-            userAnalysis={mockAnalyses.find(a => a.userId === user?.id) || mockAnalyses[0]} 
-            competitorAnalyses={mockAnalyses.filter(a => a.userId !== user?.id)} 
+          <CompetitorStrategy
+            userAnalysis={analyses[0] || mockAnalyses[0]}
+            competitorAnalyses={mockAnalyses.filter(a => a.userId !== user?.id)}
           />
         );
       
