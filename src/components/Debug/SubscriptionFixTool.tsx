@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserCheck, AlertTriangle, CheckCircle, RefreshCw, X, Search, CreditCard } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
+import { isAdminUser } from '../../utils/authUtils';
 import { checkSubscriptionStatus, getLatestPayment, fixSubscription } from '../../utils/paymentUtils';
 import { isLiveMode } from '../../utils/liveMode';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
@@ -13,6 +14,13 @@ export default function SubscriptionFixTool() {
   const [result, setResult] = useState<any>(null);
   const [checkResult, setCheckResult] = useState<any>(null);
   const [latestPayment, setLatestPayment] = useState<any>(null);
+  
+  // Check if user is admin
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  React.useEffect(() => {
+    setIsAdmin(isAdminUser());
+  }, []);
   
   const checkSubscription = async () => {
     if (!userId) {
@@ -78,6 +86,11 @@ export default function SubscriptionFixTool() {
       setIsLoading(false);
     }
   };
+  
+  // If not admin, don't render the component
+  if (!isAdmin) {
+    return null;
+  }
   
   if (!isOpen) {
     return (

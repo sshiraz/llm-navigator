@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Key, Lock, Copy, RefreshCw, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
+import { isAdminUser } from '../../utils/authUtils';
 
 export default function WebhookSecretUpdater() {
   const [isOpen, setIsOpen] = useState(false);
@@ -8,6 +9,13 @@ export default function WebhookSecretUpdater() {
   const [showSecret, setShowSecret] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  
+  // Check if user is admin
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  React.useEffect(() => {
+    setIsAdmin(isAdminUser());
+  }, []);
   
   const updateSecret = async () => {
     if (!webhookSecret || !webhookSecret.startsWith('whsec_')) {
@@ -58,6 +66,11 @@ export default function WebhookSecretUpdater() {
     
     PaymentLogger.log('info', 'WebhookSecretUpdater', 'Deploy command generated', { command });
   };
+  
+  // If not admin, don't render the component
+  if (!isAdmin) {
+    return null;
+  }
   
   if (!isOpen) {
     return (

@@ -1,7 +1,8 @@
 import { PaymentLogger } from './paymentLogger';
 
 // Check if we're in live mode
-export const isLiveMode = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY?.startsWith('pk_live_');
+// Disabled live mode banner
+export const isLiveMode = false;
 
 // Log live mode status on initialization
 if (isLiveMode) {

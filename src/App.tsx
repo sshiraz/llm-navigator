@@ -17,8 +17,7 @@ import AuthPage from './components/Auth/AuthPage';
 import { mockProjects, mockAnalyses } from './utils/mockData';
 import { Project, Analysis, User } from './types';
 import PaymentDebugger from './components/Debug/PaymentDebugger';
-import { isLiveMode } from './utils/liveMode'; 
-import LiveModeBanner from './components/UI/LiveModeBanner';
+import { isAdminUser } from './utils/authUtils';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -29,6 +28,13 @@ function App() {
   });
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
+
+  // Check if user is admin
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  useEffect(() => {
+    setIsAdmin(isAdminUser());
+  }, []);
 
   // Load current analysis from localStorage if available
   useEffect(() => {
@@ -338,7 +344,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {isLiveMode && <LiveModeBanner />}
       <Sidebar 
         activeSection={activeSection} 
         onSectionChange={setActiveSection}
@@ -352,7 +357,7 @@ function App() {
           {renderContent()}
         </main>
       </div>
-      {isLiveMode && <PaymentDebugger />}
+      {isAdmin && <PaymentDebugger />}
     </div>
   );
 }
