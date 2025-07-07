@@ -18,6 +18,7 @@ import { mockProjects, mockAnalyses } from './utils/mockData';
 import { Project, Analysis, User } from './types';
 import PaymentDebugger from './components/Debug/PaymentDebugger';
 import WebhookManager from './components/Debug/WebhookManager';
+import WebhookDeployer from './components/Debug/WebhookDeployer';
 import { isLiveMode } from './utils/liveMode'; 
 import LiveModeBanner from './components/UI/LiveModeBanner';
 import WebhookHelper from './components/Debug/WebhookHelper';
@@ -357,6 +358,7 @@ function App() {
       {isLiveMode && <PaymentDebugger />}
      <WebhookHelper />
       <WebhookManager />
+      <WebhookDeployer />
     </div>
   );
 }
