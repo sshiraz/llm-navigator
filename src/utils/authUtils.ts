@@ -15,7 +15,9 @@ export const isAdminUser = (): boolean => {
     const user = JSON.parse(userStr);
     
     // Check if user is admin or has admin email
-    const isAdmin = user.isAdmin === true || (user.email && user.email.toLowerCase() === 'info@convologix.com');
+    const isAdmin = user.isAdmin === true || 
+      (user.email && user.email.toLowerCase() === 'info@convologix.com');
+    return isAdmin;
     return isAdmin;
   } catch (error) {
     console.error('Error checking admin status:', error);
@@ -35,6 +37,7 @@ export const getCurrentUserId = (): string | null => {
     }
     
     const user = JSON.parse(userStr);
+    const userId = user.id || null;
     const userId = user.id || null;
     return userId;
   } catch (error) {
@@ -60,7 +63,6 @@ export const clearUserData = (): void => {
   try {
     // Remove user data
     localStorage.removeItem('currentUser'); 
-    
     // Also clear any analysis-related data
     localStorage.removeItem('currentAnalysis');
     localStorage.removeItem('lastAnalysisWebsite');
@@ -69,8 +71,6 @@ export const clearUserData = (): void => {
     localStorage.removeItem('lastSelectedModel');
     localStorage.removeItem('analyses');
     localStorage.removeItem('projects');
-    localStorage.removeItem('payment_logs');
-    
   } catch (error) {
     console.error('Error clearing user data:', error);
   }

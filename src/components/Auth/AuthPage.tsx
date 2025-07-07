@@ -41,7 +41,10 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
+    setError(null); 
+    
+    // Log attempt for debugging
+    console.log('Login attempt with email:', formData.email);
     
     // Clear debug info
     setDebugInfo(null);
@@ -50,7 +53,8 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     const trimmedEmail = formData.email.trim();
 
     // Special handling for admin account
-    if (isLogin && trimmedEmail.toLowerCase() === 'info@convologix.com' && formData.password === '4C0nv0@LLMNav') {
+    if (isLogin && formData.email.trim().toLowerCase() === 'info@convologix.com' && formData.password === '4C0nv0@LLMNav') {
+      console.log('Admin login detected');
       console.log('Admin login detected');
       // Create admin user with unlimited access
       // Don't log sensitive information
@@ -63,10 +67,12 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         isAdmin: true,
         createdAt: new Date().toISOString(),
         paymentMethodAdded: true
+        paymentMethodAdded: true
       };
       
       // Store admin user in localStorage
       localStorage.setItem('currentUser', JSON.stringify(adminUser));
+      console.log('Admin login successful');
       console.log('Admin login successful', { id: adminUser.id });
       
       // Call onLogin first, then set hash
@@ -87,6 +93,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         // Don't log credentials
         console.log('Login attempt with email:', trimmedEmail);
         // Check if user exists in localStorage
+        console.log('Checking localStorage for users');
         setDebugInfo('Checking localStorage for users...');
         try {
           const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
@@ -95,9 +102,15 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           
           const user = existingUsersList.find((u: any) => 
             u.email && u.email.toLowerCase() === trimmedEmail.toLowerCase()
+          console.log('Found users in localStorage:', existingUsersList.length);
+          
+          // Case-insensitive email comparison
+          const user = existingUsersList.find((u: any) => 
+            u && u.email && u.email.toLowerCase() === formData.email.trim().toLowerCase()
           );
         
           if (!user) {
+            console.log('No account found with email:', formData.email);
             console.error('No account found with email:', trimmedEmail);
             setDebugInfo(`No account found with email: ${trimmedEmail}`);
             setError('No account found with this email address');
@@ -107,6 +120,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         
           // Validate password (in a real app, this would be done securely on the server)
           if (user.password !== formData.password) {
+            console.log('Invalid password');
             console.error('Invalid password');
             setDebugInfo('Invalid password');
             setError('Invalid password');
@@ -124,6 +138,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         
           // Store current user in localStorage
           localStorage.setItem('currentUser', JSON.stringify(userData));
+          console.log('Login successful');
           console.log('Login successful', { id: userData.id });
           setDebugInfo('Login successful, redirecting to dashboard...');
           
@@ -148,6 +163,9 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           
           const existingUser = existingUsersList.find((u: any) => 
             u.email && u.email.toLowerCase() === trimmedEmail.toLowerCase()
+          // Case-insensitive email comparison
+          const existingUser = existingUsersList.find((u: any) => 
+            u && u.email && u.email.toLowerCase() === formData.email.trim().toLowerCase()
           );
           
           if (existingUser) {
@@ -196,6 +214,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           console.log('Signup successful', { id: user.id });
           setDebugInfo('Signup successful, redirecting to dashboard...');
           
+          console.log('Signup successful');
           // Call onLogin first, then set hash
           onLogin(user);
           
@@ -254,7 +273,17 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         )}
 
         {/* Auth Form */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="bg-white rounded-2xl shadow-2xl p-8"> 
+          {/* Demo Credentials */}
+          {isLogin && (
+            <div className="mb-4 text-center">
+              <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded-lg">
+                <strong>Demo Login:</strong> demo@example.com / demo123<br/>
+                <strong>Admin Login:</strong> info@convologix.com / 4C0nv0@LLMNav
+              </div>
+            </div>
+          )}
+          
           <div className="flex items-center justify-center space-x-3 mb-4">
             <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
               <Search className="w-6 h-6 text-white" />

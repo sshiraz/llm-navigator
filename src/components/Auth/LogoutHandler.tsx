@@ -8,8 +8,15 @@ interface LogoutHandlerProps {
 export default function LogoutHandler({ onLogout }: LogoutHandlerProps) {
   useEffect(() => {
     // Perform logout immediately when component mounts
+    console.log('LogoutHandler: Performing logout');
     onLogout();
     
+    // Redirect to landing page after logout
+    setTimeout(() => {
+      console.log('LogoutHandler: Redirecting to landing page');
+      window.location.hash = '';
+    }, 500);
+  }, []);
     // Redirect to landing page after logout
     window.location.hash = '';
   }, []);

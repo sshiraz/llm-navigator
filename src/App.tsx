@@ -271,27 +271,7 @@ function App() {
     try {
       if (user) {
         const existingAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
-        existingAnalyses.unshift(newAnalysis); // Add to beginning of array
         localStorage.setItem('analyses', JSON.stringify(existingAnalyses));
-      }
-    } catch (error) {
-      console.error('Error storing analysis in localStorage:', error);
-    }
-    
-    window.location.hash = 'analysis-results';
-  };
-
-  const handleUpgrade = (plan: string) => {
-    console.log('Upgrading to plan:', plan);
-    // Handle upgrade logic here
-  };
-
-  const handleGetStarted = () => {
-    window.location.hash = 'auth';
-  };
-
-  const renderContent = () => {
-    if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
       switch (activeSection) {
         case 'landing':
           return <LandingPage onGetStarted={handleGetStarted} />;
@@ -299,11 +279,16 @@ function App() {
           return <AuthPage onLogin={handleLogin} />;
         case 'logout':
           return <LogoutHandler onLogout={handleLogout} />;
+        case 'logout':
+          return <LogoutHandler onLogout={handleLogout} />;
         case 'account':
           return user ? (
             <AccountPage 
               user={user} 
-              onBack={() => setActiveSection('dashboard')}
+              onBack={() => {
+                setActiveSection('dashboard');
+                window.location.hash = 'dashboard';
+              }}
               onUpdateProfile={(updates) => {
                 const updatedUser = { ...user, ...updates };
                 setUser(updatedUser);
@@ -312,12 +297,34 @@ function App() {
             />
           ) : <AuthPage onLogin={handleLogin} />;
         case 'contact':
-          return <ContactPage />;
+          return <ContactPage onBack={() => {
+            setActiveSection('landing');
+            window.location.hash = '';
+          }} />;
         case 'privacy':
-          return <PrivacyPolicy />;
+          return <PrivacyPolicy onBack={() => {
+            setActiveSection('landing');
+            window.location.hash = '';
+          }} />;
         case 'terms':
-          return <TermsOfService />;
+          return <TermsOfService onBack={() => {
+            setActiveSection('landing');
+            window.location.hash = '';
+          }} />;
         case 'admin-users':
+          // Check if user is admin
+          if (!user || !user.isAdmin) {
+            // Redirect to dashboard if not admin
+            setTimeout(() => {
+              window.location.hash = 'dashboard';
+            }, 100);
+            return <div className="flex items-center justify-center h-screen">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold text-red-600 mb-2">Access Denied</h2>
+                <p className="text-gray-600">You don't have permission to access this page.</p>
+              </div>
+            </div>;
+          }
           // Check if user is admin
           if (!user || !user.isAdmin) {
             // Redirect to dashboard if not admin
