@@ -46,3 +46,24 @@ export const hasPermission = (permission: string): boolean => {
   // For now, only admins have special permissions
   return isAdminUser();
 };
+
+/**
+ * Clear all user data from localStorage
+ */
+export const clearUserData = (): void => {
+  try {
+    // Remove user data
+    localStorage.removeItem('currentUser');
+    
+    // Also clear any analysis-related data
+    localStorage.removeItem('currentAnalysis');
+    localStorage.removeItem('lastAnalysisWebsite');
+    localStorage.removeItem('lastAnalysisKeywords');
+    localStorage.removeItem('lastSelectedProjectId');
+    localStorage.removeItem('lastSelectedModel');
+    
+    console.log('User data cleared successfully');
+  } catch (error) {
+    console.error('Error clearing user data:', error);
+  }
+};

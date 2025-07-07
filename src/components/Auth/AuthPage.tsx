@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, ArrowRight, Mail, Lock, User as UserIcon, Building, Globe } from 'lucide-react';
 import { FraudPrevention } from '../../utils/fraudPrevention';
 import { FraudPreventionCheck, User } from '../../types';
+import { clearUserData } from '../../utils/authUtils';
 
 interface AuthPageProps {
   onLogin: (user: User) => void;
@@ -9,6 +10,12 @@ interface AuthPageProps {
 
 export default function AuthPage({ onLogin }: AuthPageProps) {
   const [isLogin, setIsLogin] = useState(true);
+  
+  // Clear any existing user data when the auth page is shown
+  useEffect(() => {
+    clearUserData();
+  }, []);
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',

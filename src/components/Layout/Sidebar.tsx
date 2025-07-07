@@ -112,9 +112,9 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
       </nav>
 
       {/* Logout Button */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 mt-auto">
         <button
-          onClick={onLogout}
+          onClick={() => onSectionChange('logout')}
           className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
         >
           <LogOut className="w-5 h-5" />

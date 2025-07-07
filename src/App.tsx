@@ -21,6 +21,7 @@ import WebhookManager from './components/Debug/WebhookManager';
 import WebhookDeployer from './components/Debug/WebhookDeployer';
 import { isLiveMode } from './utils/liveMode';
 import WebhookHelper from './components/Debug/WebhookHelper';
+import LogoutHandler from './components/Auth/LogoutHandler';
 import { isAdminUser } from './utils/authUtils';
 
 function App() {
@@ -265,9 +266,11 @@ function App() {
   };
 
   const renderContent = () => {
-    // Public pages that don't require login
+        return <PrivacyPolicy onBack={() => setActiveSection('landing')} />;
     if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
-      // Special handling for admin-users - only allow access if user is admin
+        return <TermsOfService onBack={() => setActiveSection('landing')} />;
+      case 'logout':
+        return <LogoutHandler onLogout={handleLogout} />;
       if (activeSection === 'admin-users') {
         // Check if user is admin
         if (!user || !user.isAdmin) {

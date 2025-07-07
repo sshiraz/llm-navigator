@@ -1,11 +1,11 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 
-export default function PrivacyPolicy() {
-  const goBack = () => {
-    window.location.hash = '';
-    window.location.reload();
-  };
+interface PrivacyPolicyProps {
+  onBack: () => void;
+}
+
+export default function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -13,7 +13,7 @@ export default function PrivacyPolicy() {
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <button 
-            onClick={goBack}
+            onClick={onBack}
             className="inline-flex items-center space-x-2 text-blue-100 hover:text-white mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
