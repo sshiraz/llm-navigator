@@ -1,13 +1,14 @@
 import React from 'react';
-import { TrendingUp, Target, Zap, AlertTriangle, CheckCircle, ArrowRight } from 'lucide-react';
+import { TrendingUp, Target, Zap, AlertTriangle, CheckCircle, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Analysis } from '../../types';
 
 interface CompetitorStrategyProps {
   userAnalysis: Analysis;
   competitorAnalyses: Analysis[];
+  onBack?: () => void;
 }
 
-export default function CompetitorStrategy({ userAnalysis, competitorAnalyses }: CompetitorStrategyProps) {
+export default function CompetitorStrategy({ userAnalysis, competitorAnalyses, onBack }: CompetitorStrategyProps) {
   const topCompetitor = competitorAnalyses.reduce((prev, current) => 
     (prev.score > current.score) ? prev : current
   );
@@ -82,6 +83,18 @@ export default function CompetitorStrategy({ userAnalysis, competitorAnalyses }:
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       {/* Header */}
+      <div className="mb-4">
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 mb-4 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Dashboard</span>
+          </button>
+        )}
+      </div>
+      
       <div className="text-center">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Competitor Strategy Report</h1>
         <p className="text-lg text-gray-600">

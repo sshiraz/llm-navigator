@@ -178,7 +178,12 @@ function App() {
   
   const handleLogin = (userData: User) => {
     setUser(userData);
+    // Store the previous section to return to
+    const prevSection = activeSection;
+    
+    // Default back behavior goes to dashboard
     setActiveSection('dashboard');
+    window.location.hash = '#dashboard';
     // Store user data in localStorage for persistence
     localStorage.setItem('currentUser', JSON.stringify(userData));
   };
@@ -389,8 +394,9 @@ function App() {
       case 'competitor-strategy':
         return (
           <CompetitorStrategy
-            userAnalysis={analyses[0] || mockAnalyses[0]}
-            competitorAnalyses={mockAnalyses.filter(a => a.userId !== user?.id)}
+            userAnalysis={analyses[0] || mockAnalyses[0]} 
+            competitorAnalyses={mockAnalyses.filter(a => a.userId !== user?.id)} 
+            onBack={handleBack}
           />
         );
       

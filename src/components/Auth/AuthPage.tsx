@@ -69,11 +69,12 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     // Simulate API call
     setTimeout(() => {
       if (isLogin) {
+        console.log('Login attempt with:', formData.email, formData.password);
         // Check if user exists in localStorage
         console.log('Attempting to login with:', formData.email);
         try {
           const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
-          console.log('Found users in localStorage:', existingUsersList.length);
+          console.log('Found users in localStorage:', existingUsersList.length, existingUsersList);
           
           const user = existingUsersList.find((u: any) => u.email.toLowerCase() === formData.email.toLowerCase());
         

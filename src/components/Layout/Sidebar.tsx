@@ -26,7 +26,7 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'new-analysis', label: 'New Analysis', icon: Plus },
-    { id: 'projects', label: 'Projects', icon: Target },
+    { id: 'dashboard', label: 'Projects', icon: Target },
     { id: 'competitor-strategy', label: 'Competitor Strategy', icon: Users },
     { id: 'contact', label: 'Contact Us', icon: Mail }
   ];

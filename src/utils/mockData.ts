@@ -305,8 +305,14 @@ const initializeDemoUser = () => {
 // Initialize demo user when this module is imported
 // Run this in a try-catch to prevent any issues with localStorage
 try {
-  console.log('Initializing demo users...');
-  initializeDemoUser();
+  // Force initialization of demo users
+  console.log('Forcing initialization of demo users...');
+  
+  // Clear existing users to ensure fresh initialization
+  localStorage.setItem('users', '[]');
+  
+  // Initialize demo users
+  initializeDemoUser(); 
   
   // Also initialize demo analyses if they don't exist
   const initializeAnalyses = () => {
@@ -341,15 +347,6 @@ try {
   
   initializeAnalyses();
   initializeProjects();
-  
-  // Force re-initialization of users if they don't exist
-  const usersExist = localStorage.getItem('users');
-  if (!usersExist || JSON.parse(usersExist).length === 0) {
-    console.log('No users found, forcing initialization...');
-    // Clear users array and reinitialize
-    localStorage.setItem('users', '[]');
-    initializeDemoUser();
-  }
   
   // Log all users for debugging
   try {
