@@ -186,7 +186,7 @@ function App() {
   const handleProjectSelect = (project: Project) => {
     // Find the project in our state to ensure we have the latest version
     const selectedProject = projects.find(p => p.id === project.id) || project;
-    setSelectedProject(project);
+    setSelectedProject(selectedProject);
     window.location.hash = 'project-detail';
   };
 
@@ -338,7 +338,28 @@ function App() {
         return selectedProject ? (
           <ProjectDetail 
             project={selectedProject}
-            onBack={() => setActiveSection('dashboard')} 
+            onBack={() => setActiveSection('dashboard')}
+            onDelete={(projectId) => {
+              // Get stored projects from localStorage
+              try {
+                const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+                
+                // Filter out the project to delete
+                const updatedProjects = storedProjects.filter((p: Project) => p.id !== projectId);
+                
+                // Update state
+                setProjects(updatedProjects);
+                
+                // Save to localStorage
+                localStorage.setItem('projects', JSON.stringify(updatedProjects));
+                
+                // Navigate back to dashboard
+                setActiveSection('dashboard');
+              } catch (error) {
+                console.error('Error deleting project:', error);
+                alert('Failed to delete project. Please try again.');
+              }
+            }}
           />
         ) : null;
 
