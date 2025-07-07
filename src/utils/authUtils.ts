@@ -52,6 +52,7 @@ export const hasPermission = (permission: string): boolean => {
  */
 export const clearUserData = (): void => {
   try {
+    console.log('authUtils: Clearing user data');
     // Remove user data
     localStorage.removeItem('currentUser'); 
     // Don't remove users to preserve demo accounts
@@ -72,7 +73,7 @@ export const clearUserData = (): void => {
     // Force re-initialization of demo users if they don't exist
     const usersExist = localStorage.getItem('users');
     if (!usersExist || JSON.parse(usersExist).length === 0) {
-      console.log('No users found after clearing, reinitializing demo users...');
+      console.log('authUtils: No users found after clearing, reinitializing demo users...');
       // Import mockData to trigger initialization
       import('../utils/mockData');
     }

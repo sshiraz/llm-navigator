@@ -311,15 +311,15 @@ const initializeDemoUser = () => {
 // Run this in a try-catch to prevent any issues with localStorage
 try {
   // Force initialization of demo users
-  console.log('Forcing initialization of demo users...');
+  console.log('mockData: Initializing demo users...');
   
   // Check if users exist before initializing
   const existingUsers = localStorage.getItem('users');
   if (!existingUsers || JSON.parse(existingUsers).length === 0) {
-    console.log('No users found, initializing demo users');
+    console.log('mockData: No users found, initializing demo users');
     localStorage.setItem('users', '[]');
   } else {
-    console.log('Users already exist, skipping initialization');
+    console.log('mockData: Users already exist:', JSON.parse(existingUsers).length);
   }
   
   // Initialize demo users
@@ -331,7 +331,7 @@ try {
       // Check if analyses already exist in localStorage
       const existingAnalyses = localStorage.getItem('analyses');
       if (!existingAnalyses) {
-        console.log('Initializing demo analyses...');
+        console.log('mockData: Initializing demo analyses...');
         // Store mockAnalyses in localStorage
         localStorage.setItem('analyses', JSON.stringify(mockAnalyses));
         console.log('Demo analyses initialized successfully');
@@ -345,9 +345,9 @@ try {
   const initializeProjects = () => {
     try {
       // Check if projects already exist in localStorage
-      console.log('Checking for existing projects...');
+      console.log('mockData: Checking for existing projects...');
       if (!localStorage.getItem('projects')) {
-        console.log('Initializing empty projects array...');
+        console.log('mockData: Initializing empty projects array...');
         localStorage.setItem('projects', '[]');
         console.log('Projects array initialized successfully');
       }
@@ -363,7 +363,7 @@ try {
   try {
     // Don't log sensitive user information
     const userCount = JSON.parse(localStorage.getItem('users') || '[]').length;
-    console.log('Users initialized:', userCount);
+    console.log('mockData: Users initialized:', userCount);
   } catch (error) {
     console.error('Error logging users:', error);
   }

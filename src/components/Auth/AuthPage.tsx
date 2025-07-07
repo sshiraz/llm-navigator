@@ -40,8 +40,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null); 
-    setLoginError(null);
+    setError(null);
     
     // Trim email to prevent whitespace issues
     const trimmedEmail = formData.email.trim();
@@ -63,7 +62,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
       
       // Store admin user in localStorage
       localStorage.setItem('currentUser', JSON.stringify(adminUser));
-      console.log('Admin login successful');
+      console.log('Admin login successful', { id: adminUser.id });
       
       // Set hash to dashboard before login to ensure proper redirection
       window.location.hash = 'dashboard';
@@ -79,10 +78,10 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         // Don't log credentials
         console.log('Login attempt');
         // Check if user exists in localStorage
-        console.log('Attempting to login');
+        console.log('Checking localStorage for user');
         try {
           const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
-          console.log('Found users in localStorage:', existingUsersList.length); 
+          console.log('Found users in localStorage:', existingUsersList.length, 'Looking for:', trimmedEmail); 
           
           const user = existingUsersList.find((u: any) => 
             u.email && u.email.toLowerCase() === trimmedEmail.toLowerCase()
@@ -113,7 +112,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         
           // Store current user in localStorage
           localStorage.setItem('currentUser', JSON.stringify(userData));
-          console.log('Login successful');
+          console.log('Login successful', { id: userData.id });
           
           // Set hash to dashboard before login to ensure proper redirection
           window.location.hash = 'dashboard';
@@ -177,7 +176,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           
           // Store current user in localStorage
           localStorage.setItem('currentUser', JSON.stringify(user)); 
-          console.log('Signup successful');
+          console.log('Signup successful', { id: user.id });
           
           // Set hash to dashboard before login to ensure proper redirection
           window.location.hash = 'dashboard';

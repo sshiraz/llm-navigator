@@ -151,16 +151,16 @@ function App() {
   // Load user from localStorage on initial load
   useEffect(() => {
     try {
-      console.log('Checking for stored user on initial load');
+      console.log('App: Checking for stored user on initial load');
       const storedUser = localStorage.getItem('currentUser');
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
-          console.log('Found stored user, setting user state');
+          console.log('App: Found stored user, setting user state', { id: parsedUser.id });
           setUser(parsedUser);
           // If we're on the auth page but already logged in, redirect to dashboard
           if (activeSection === 'auth') {
-            console.log('Already logged in, redirecting to dashboard');
+            console.log('App: Already logged in, redirecting to dashboard');
             setActiveSection('dashboard');
             window.location.hash = 'dashboard';
           }
@@ -181,6 +181,7 @@ function App() {
   const isBasicConfigured = supabaseUrl && supabaseKey;
   
   const handleLogin = (userData: User) => {
+    console.log('App: handleLogin called', { id: userData.id });
     setUser(userData);
     setActiveSection('dashboard');
     
@@ -194,6 +195,7 @@ function App() {
   };
 
   const handleLogout = () => {
+    console.log('App: handleLogout called');
     setUser(null);
     window.location.hash = '';
     // Clear user data from localStorage
@@ -292,6 +294,7 @@ function App() {
 
   const renderContent = () => {
     if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
+      console.log('App: Rendering special section:', activeSection);
       switch (activeSection) {
         case 'landing':
           return <LandingPage onGetStarted={handleGetStarted} />;
@@ -339,9 +342,11 @@ function App() {
     
     // Protected routes that require login
     if (!user && ['dashboard', 'new-analysis', 'analysis-results', 'project-detail', 'pricing', 'competitor-strategy'].includes(activeSection)) {
+      console.log('App: Attempted to access protected route without login, redirecting to auth page');
       return <AuthPage onLogin={handleLogin} />;
     }
 
+    console.log('App: Rendering section:', activeSection);
     switch (activeSection) {
       case 'dashboard':
         return <Dashboard onProjectSelect={handleProjectSelect} onNewAnalysis={handleNewAnalysisClick} />;

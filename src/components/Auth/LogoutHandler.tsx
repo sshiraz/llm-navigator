@@ -8,8 +8,9 @@ interface LogoutHandlerProps {
 export default function LogoutHandler({ onLogout }: LogoutHandlerProps) {
   useEffect(() => {
     // Perform logout immediately when component mounts
+    console.log('LogoutHandler: Performing logout');
     onLogout();
-  }, [onLogout]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
