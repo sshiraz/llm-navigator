@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, ArrowRight, Mail, Lock, User as UserIcon, Building, Globe } from 'lucide-react';
+import { Search, ArrowRight, Mail, Lock, User as UserIcon, Building, Globe, AlertTriangle } from 'lucide-react';
 import { FraudPrevention } from '../../utils/fraudPrevention';
 import { FraudPreventionCheck, User } from '../../types';
 import { clearUserData } from '../../utils/authUtils';
@@ -67,7 +67,6 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         isAdmin: true,
         createdAt: new Date().toISOString(),
         paymentMethodAdded: true
-        paymentMethodAdded: true
       };
       
       // Store admin user in localStorage
@@ -102,13 +101,8 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           
           const user = existingUsersList.find((u: any) => 
             u.email && u.email.toLowerCase() === trimmedEmail.toLowerCase()
-          console.log('Found users in localStorage:', existingUsersList.length);
-          
-          // Case-insensitive email comparison
-          const user = existingUsersList.find((u: any) => 
-            u && u.email && u.email.toLowerCase() === formData.email.trim().toLowerCase()
           );
-        
+          
           if (!user) {
             console.log('No account found with email:', formData.email);
             console.error('No account found with email:', trimmedEmail);
@@ -163,9 +157,6 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           
           const existingUser = existingUsersList.find((u: any) => 
             u.email && u.email.toLowerCase() === trimmedEmail.toLowerCase()
-          // Case-insensitive email comparison
-          const existingUser = existingUsersList.find((u: any) => 
-            u && u.email && u.email.toLowerCase() === formData.email.trim().toLowerCase()
           );
           
           if (existingUser) {
@@ -235,7 +226,6 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
-      {/* Background Pattern */}
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"></div>
       
