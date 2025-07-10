@@ -17,6 +17,8 @@ import AuthPage from './components/Auth/AuthPage';
 import { Project, Analysis, User } from './types';
 import EnvironmentStatus from './components/UI/EnvironmentStatus';
 import { mockAnalyses } from './utils/mockData';
+import { createClient } from '@supabase/supabase-js';
+import { supabase } from './lib/supabase';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -97,7 +99,7 @@ function App() {
       // You would typically verify the session and update the user's subscription here
 
       // For demo purposes, update the user's subscription in localStorage
-      const storedUser = localStorage.getItem('currentUser');
+      const storedUser = localStorage.getItem('currentUserId');
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
@@ -106,7 +108,7 @@ function App() {
             subscription: plan,
             paymentMethodAdded: true
           };
-          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+          localStorage.setItem('currentUserId', JSON.stringify(updatedUser));
           setUser(updatedUser);
         } catch (e) {
           console.error('Failed to update stored user', e);
@@ -117,38 +119,39 @@ function App() {
 
   // Load user from localStorage on initial load
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('currentUser');
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          setUser(parsedUser);
-          // If we're on the auth page but already logged in, redirect to dashboard
+    const loadUser = async () => {
+      const storedUserId = localStorage.getItem('currentUserId');
+      if (storedUserId) {
+        // Fetch user from Supabase
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', storedUserId)
+          .single();
+        if (data) {
+          setUser(data);
           if (activeSection === 'auth') {
             setActiveSection('dashboard');
           }
-        } catch (e) {
-          console.error('Failed to parse stored user', e);
-          localStorage.removeItem('currentUser'); // Clear invalid data
+        } else {
+          setUser(null);
+          localStorage.removeItem('currentUserId');
         }
       }
-    } catch (error) {
-      console.error('Error accessing localStorage:', error);
-    }
+    };
+    loadUser();
   }, []);
 
   const handleLogin = (userData: User) => {
     setUser(userData);
     setActiveSection('dashboard');
-    // Store user data in localStorage for persistence
-    localStorage.setItem('currentUser', JSON.stringify(userData));
+    localStorage.setItem('currentUserId', userData.id);
   };
 
   const handleLogout = () => {
     setUser(null);
     window.location.hash = '';
-    // Clear user data from localStorage
-    localStorage.removeItem('currentUser');
+    localStorage.removeItem('currentUserId');
   };
 
   const handleProjectSelect = (project: Project) => {
@@ -263,7 +266,7 @@ function App() {
               onUpdateProfile={(updates) => {
                 const updatedUser = { ...user, ...updates };
                 setUser(updatedUser);
-                localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+                localStorage.setItem('currentUserId', updatedUser.id);
               }}
             />
           ) : <AuthPage onLogin={handleLogin} />;
