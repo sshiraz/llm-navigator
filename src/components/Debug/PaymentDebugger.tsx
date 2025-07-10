@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bug, Download, Trash2, RefreshCw, AlertTriangle, CheckCircle, Clock, Database, Webhook, CreditCard, Zap, X } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
+import { isAdminUser } from '../../utils/authUtils';
 import { checkDatabaseConnection, checkEdgeFunctions, testWebhookEndpoint, simulateWebhook } from '../../utils/webhookUtils';
 import StripeStatus from '../Payment/StripeStatus';
 import { isLiveMode } from '../../utils/liveMode';
@@ -11,6 +12,13 @@ export default function PaymentDebugger() {
   const [filter, setFilter] = useState<'all' | 'info' | 'warn' | 'error'>('all');
   const [webhookStatus, setWebhookStatus] = useState<any>(null);
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
+
+  // Check if user is admin
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  useEffect(() => {
+    setIsAdmin(isAdminUser());
+  }, []);
 
   // Disable certain features in live mode
   const disableInLiveMode = isLiveMode;
@@ -27,6 +35,11 @@ export default function PaymentDebugger() {
     const interval = setInterval(loadLogs, 2000); // Refresh every 2 seconds
     return () => clearInterval(interval);
   }, [isOpen]);
+
+  // If not admin, don't render the component
+  if (!isAdmin) {
+    return null;
+  }
 
   const loadLogs = () => {
     const allLogs = [...PaymentLogger.getLogsFromStorage(), ...PaymentLogger.getLogs()];

@@ -18,7 +18,6 @@ export const isAdminUser = (): boolean => {
     const isAdmin = user.isAdmin === true || 
       (user.email && user.email.toLowerCase() === 'info@convologix.com');
     return isAdmin;
-    return isAdmin;
   } catch (error) {
     console.error('Error checking admin status:', error);
     return false;

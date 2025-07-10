@@ -27,6 +27,13 @@ function App() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
 
+  // Check if user is admin
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  useEffect(() => {
+    setIsAdmin(isAdminUser());
+  }, []);
+
   // Load current analysis from localStorage if available
   useEffect(() => {
     try {

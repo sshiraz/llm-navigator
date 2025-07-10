@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle, Copy, RefreshCw, Webhook, Key, Lock, X } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
+import { isAdminUser } from '../../utils/authUtils';
 import { isLiveMode } from '../../utils/liveMode';
 import { testWebhookEndpoint, updateWebhookSecret, generateDeployCommand } from '../../utils/webhookUtils';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
@@ -11,6 +12,13 @@ export default function WebhookDebugger() {
   const [testResult, setTestResult] = useState<any>(null);
   const [webhookSecret, setWebhookSecret] = useState('');
   const [showSecret, setShowSecret] = useState(false); 
+
+  // Check if user is admin
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  useEffect(() => {
+    setIsAdmin(isAdminUser());
+  }, []);
   
   const testWebhook = async () => {
     setIsLoading(true);
@@ -55,6 +63,11 @@ export default function WebhookDebugger() {
       alert('Deploy command copied to clipboard!');
     }
   };
+
+  // If not admin, don't render the component
+  if (!isAdmin) {
+    return null;
+  }
   
   const copySecretCommand = () => {
     const result = updateWebhookSecret(webhookSecret || 'whsec_your_webhook_secret', isLiveMode);
