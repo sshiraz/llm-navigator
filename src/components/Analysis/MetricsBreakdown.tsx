@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { HelpCircle, TrendingUp, ArrowUpRight, Download, X, ExternalLink } from 'lucide-react';
+import { HelpCircle, TrendingUp, ArrowUpRight, X, ExternalLink } from 'lucide-react';
 import { Analysis } from '../../types';
 
 interface MetricsBreakdownProps {
   analysis: Analysis;
   competitors?: Analysis[];
-  onViewInsights?: (analysisId: string) => void;
 }
 
 interface MetricInfo {
@@ -48,7 +47,7 @@ const metricsInfo: MetricInfo[] = [
   }
 ];
 
-export default function MetricsBreakdown({ analysis, competitors = [], onViewInsights }: MetricsBreakdownProps) {
+export default function MetricsBreakdown({ analysis, competitors = [] }: MetricsBreakdownProps) {
   const [hoveredMetric, setHoveredMetric] = useState<string | null>(null);
   const [selectedInsights, setSelectedInsights] = useState<Analysis | null>(null);
 
@@ -183,7 +182,7 @@ export default function MetricsBreakdown({ analysis, competitors = [], onViewIns
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {allAnalyses.map((analysisItem, index) => {
+              {allAnalyses.map((analysisItem) => {
                 const isUser = isUserSite(analysisItem.website);
                 
                 return (

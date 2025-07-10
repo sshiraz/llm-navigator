@@ -1,10 +1,11 @@
 // Analysis Engine - Handles both simulated and real analysis
 import { Analysis, User } from '../types';
+import type { AnalysisProvider } from '../types';
 import { CostTracker } from './costTracker';
 
 // Model configuration
 interface ModelConfig {
-  provider: 'openai' | 'anthropic' | 'perplexity' | 'local';
+  provider: AnalysisProvider;
   name: string;
   inputCost: number;
   outputCost: number;
@@ -133,7 +134,7 @@ export class AnalysisEngine {
       if (user.isAdmin === true) {
         console.log('Admin user bypassing rate limits');
       } else {
-        throw new Error(rateCheck.resetTime ? `Rate limit exceeded. Try again at ${new Date(rateCheck.resetTime).toLocaleTimeString()}` : 'Rate limit exceeded');
+        throw new Error(usageCheck.resetTime ? `Rate limit exceeded. Try again at ${new Date(usageCheck.resetTime).toLocaleTimeString()}` : 'Rate limit exceeded');
       }
     }
 

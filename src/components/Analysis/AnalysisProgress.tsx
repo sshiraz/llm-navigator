@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Zap, CheckCircle, AlertCircle, Sparkles, DollarSign } from 'lucide-react';
-import { User } from '../../types';
+import { User, Analysis } from '../../types';
 import { AnalysisEngine } from '../../utils/analysisEngine'; 
 
 interface AnalysisProgressProps {
@@ -8,7 +8,7 @@ interface AnalysisProgressProps {
   keywords: string[];
   model: string;
   user: User;
-  onComplete: (analysis: any) => void;
+  onComplete: (analysis: Analysis) => void;
   onError?: (error: string) => void;
 }
 
@@ -63,7 +63,7 @@ export default function AnalysisProgress({ website, keywords, model, user, onCom
               
               // Also update the analyses list in localStorage
               const existingAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
-              const updatedAnalyses = [analysisWithUserId, ...existingAnalyses.filter((a: any) => a.id !== result.id)];
+              const updatedAnalyses = [analysisWithUserId, ...existingAnalyses.filter((a: Analysis) => a.id !== result.id)];
               localStorage.setItem('analyses', JSON.stringify(updatedAnalyses));
             } catch (err) {
               console.error('Error storing analysis in localStorage:', err);

@@ -1,19 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Filter, Download, RefreshCw, CreditCard, Clock, CheckCircle, XCircle, ArrowLeft, Shield, Edit, Save, X } from 'lucide-react';
+import { Users, Search, Filter, Download, RefreshCw, CreditCard, Clock, CheckCircle, XCircle, ArrowLeft, Shield, Save, X } from 'lucide-react';
+import { User } from '../../types';
 
 export default function UserDashboard() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPlan, setFilterPlan] = useState('all');
-  const [sortBy, setSortBy] = useState<{field: string, direction: 'asc' | 'desc'}>({
+  // Define sortable fields
+  const sortableFields = ['createdAt', 'trialEndsAt', 'name', 'email', 'subscription'] as const;
+  type SortableUserField = typeof sortableFields[number];
+  const [sortBy, setSortBy] = useState<{field: SortableUserField, direction: 'asc' | 'desc'}>({
     field: 'createdAt',
     direction: 'desc'
   });
 
   // State for editing user
-  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editForm, setEditForm] = useState({
     name: '',
     email: '',
@@ -68,7 +72,7 @@ export default function UserDashboard() {
       }
       
       // Combine data from both sources
-      const allUsers = storedUsers.map((user: any) => {
+      const allUsers = storedUsers.map((user: User) => {
         // If this is the current user, use that data as it's more up-to-date
         if (currentUser && user.email === currentUser.email) {
           return {
@@ -109,26 +113,45 @@ export default function UserDashboard() {
     
     // Apply sorting
     result.sort((a, b) => {
-      let valueA = a[sortBy.field];
-      let valueB = b[sortBy.field];
-      
+      let valueA: string | number | undefined = a[sortBy.field];
+      let valueB: string | number | undefined = b[sortBy.field];
+
       // Handle dates
       if (sortBy.field === 'createdAt' || sortBy.field === 'trialEndsAt') {
-        valueA = valueA ? new Date(valueA).getTime() : 0;
-        valueB = valueB ? new Date(valueB).getTime() : 0;
+        valueA = typeof valueA === 'string' ? new Date(valueA).getTime() : 0;
+        valueB = typeof valueB === 'string' ? new Date(valueB).getTime() : 0;
       }
-      
-      if (sortBy.direction === 'asc') {
-        return valueA > valueB ? 1 : -1;
-      } else {
-        return valueA < valueB ? 1 : -1;
+
+      // Handle undefined
+      if (valueA === undefined) return 1;
+      if (valueB === undefined) return -1;
+
+      // Handle string comparison
+      if (typeof valueA === 'string' && typeof valueB === 'string') {
+        if (sortBy.direction === 'asc') {
+          return valueA.localeCompare(valueB);
+        } else {
+          return valueB.localeCompare(valueA);
+        }
       }
+
+      // Handle number comparison
+      if (typeof valueA === 'number' && typeof valueB === 'number') {
+        if (sortBy.direction === 'asc') {
+          return valueA - valueB;
+        } else {
+          return valueB - valueA;
+        }
+      }
+
+      // Fallback
+      return 0;
     });
     
     setFilteredUsers(result);
   }, [users, searchTerm, filterPlan, sortBy]);
 
-  const handleSort = (field: string) => {
+  const handleSort = (field: SortableUserField) => {
     setSortBy(prev => ({
       field,
       direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc'
@@ -161,7 +184,7 @@ export default function UserDashboard() {
     document.body.removeChild(link);
   };
 
-  const handleEditUser = (user: any) => {
+  const handleEditUser = (user: User) => {
     setEditingUser(user);
     setEditForm({
       name: user.name || '',
@@ -177,7 +200,7 @@ export default function UserDashboard() {
     try {
       // Update user in localStorage
       const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-      const updatedUsers = storedUsers.map((user: any) => {
+      const updatedUsers = storedUsers.map((user: User) => {
         if (user.id === editingUser.id) {
           return {
             ...user,
@@ -392,15 +415,6 @@ export default function UserDashboard() {
                   </th>
                   <th 
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('paymentMethodAdded')}
-                  >
-                    Payment Method
-                    {sortBy.field === 'paymentMethodAdded' && (
-                      <span className="ml-1">{sortBy.direction === 'asc' ? '↑' : '↓'}</span>
-                    )}
-                  </th>
-                  <th 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                     onClick={() => handleSort('createdAt')}
                   >
                     Created
@@ -416,6 +430,9 @@ export default function UserDashboard() {
                     {sortBy.field === 'trialEndsAt' && (
                       <span className="ml-1">{sortBy.direction === 'asc' ? '↑' : '↓'}</span>
                     )}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Payment Method
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -462,21 +479,6 @@ export default function UserDashboard() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          {user.paymentMethodAdded ? (
-                            <>
-                              <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                              <span className="text-sm text-gray-900">Added</span>
-                            </>
-                          ) : (
-                            <>
-                              <XCircle className="w-4 h-4 text-red-500 mr-2" />
-                              <span className="text-sm text-gray-900">None</span>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
                           <Clock className="w-4 h-4 text-gray-400 mr-2" />
                           <span className="text-sm text-gray-900">
                             {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
@@ -511,6 +513,14 @@ export default function UserDashboard() {
                             <span className="text-sm text-gray-900">Paid Plan</span>
                           </div>
                         )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                          <span className="text-sm text-gray-900">
+                            {user.paymentMethodAdded ? 'Yes' : 'No'}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <button

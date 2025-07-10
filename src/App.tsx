@@ -14,18 +14,15 @@ import TermsOfService from './components/Legal/TermsOfService';
 import CompetitorStrategy from './components/Reports/CompetitorStrategy';
 import LandingPage from './components/Landing/LandingPage';
 import AuthPage from './components/Auth/AuthPage';
-import { mockProjects, mockAnalyses } from './utils/mockData';
 import { Project, Analysis, User } from './types';
-import PaymentDebugger from './components/Debug/PaymentDebugger';
-import { isLiveMode } from './utils/liveMode'; 
-import LiveModeBanner from './components/UI/LiveModeBanner';
+import EnvironmentStatus from './components/UI/EnvironmentStatus';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [activeSection, setActiveSection] = useState(() => {
     // Check URL hash for initial section
     const hash = window.location.hash.slice(1);
-    return hash || 'landing'; 
+    return hash || 'landing';
   });
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
@@ -47,13 +44,13 @@ function App() {
   // Listen for hash changes to handle browser back/forward buttons
   useEffect(() => {
     const handleHashChange = () => {
-      let hash = window.location.hash.slice(1);
+      const hash = window.location.hash.slice(1);
       if (hash) {
         setActiveSection(hash);
       } else {
         setActiveSection('landing');
       }
-      
+
       // If we're on the analysis-results page, try to load the analysis from localStorage
       if (hash === 'analysis-results') {
         try {
@@ -74,7 +71,7 @@ function App() {
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
     };
-    
+
     // Run once on initial load to handle direct URL access
     handleHashChange();
   }, []);
@@ -85,12 +82,12 @@ function App() {
     const sessionId = params.get('session_id');
     const plan = params.get('plan');
     const userId = params.get('user_id');
-    
+
     if (sessionId && plan && userId) {
       // Handle successful checkout
       console.log('Checkout successful!', { sessionId, plan });
       // You would typically verify the session and update the user's subscription here
-      
+
       // For demo purposes, update the user's subscription in localStorage
       const storedUser = localStorage.getItem('currentUser');
       if (storedUser) {
@@ -132,12 +129,6 @@ function App() {
     }
   }, []);
 
-  // Check if basic configuration is present
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-  const isBasicConfigured = supabaseUrl && supabaseKey;
-  
   const handleLogin = (userData: User) => {
     setUser(userData);
     setActiveSection('dashboard');
@@ -205,9 +196,9 @@ function App() {
       createdAt: new Date().toISOString(),
       isSimulated: user ? !['starter', 'professional', 'enterprise'].includes(user.subscription) : true
     };
-    
+
     setCurrentAnalysis(newAnalysis);
-    
+
     // Store analyses in localStorage
     try {
       if (user) {
@@ -218,7 +209,7 @@ function App() {
     } catch (error) {
       console.error('Error storing analysis in localStorage:', error);
     }
-    
+
     window.location.hash = 'analysis-results';
   };
 
@@ -250,7 +241,7 @@ function App() {
           </div>;
         }
       }
-      
+
       switch (activeSection) {
         case 'landing':
           return <LandingPage onGetStarted={handleGetStarted} />;
@@ -258,8 +249,8 @@ function App() {
           return <AuthPage onLogin={handleLogin} />;
         case 'account':
           return user ? (
-            <AccountPage 
-              user={user} 
+            <AccountPage
+              user={user}
               onBack={() => setActiveSection('dashboard')}
               onUpdateProfile={(updates) => {
                 const updatedUser = { ...user, ...updates };
@@ -280,7 +271,7 @@ function App() {
           return <LandingPage onGetStarted={handleGetStarted} />;
       }
     }
-    
+
     // Protected routes that require login
     if (!user && ['dashboard', 'new-analysis', 'analysis-results', 'project-detail', 'pricing', 'competitor-strategy'].includes(activeSection)) {
       return <AuthPage onLogin={handleLogin} />;
@@ -289,23 +280,23 @@ function App() {
     switch (activeSection) {
       case 'dashboard':
         return <Dashboard onProjectSelect={handleProjectSelect} onNewAnalysis={handleNewAnalysisClick} />;
-      
+
       case 'new-analysis':
         return <NewAnalysis onAnalyze={handleNewAnalysis} user={user} />;
-      
+
       case 'analysis-results':
         return currentAnalysis ? (
-          <AnalysisResults 
-            analysis={currentAnalysis} 
-            onBack={() => setActiveSection('new-analysis')} 
+          <AnalysisResults
+            analysis={currentAnalysis}
+            onBack={() => setActiveSection('new-analysis')}
           />
         ) : null;
-      
+
       case 'project-detail':
         return selectedProject ? (
-          <ProjectDetail 
-            project={selectedProject} 
-            onBack={() => setActiveSection('dashboard')} 
+          <ProjectDetail
+            project={selectedProject}
+            onBack={() => setActiveSection('dashboard')}
           />
         ) : null;
 
@@ -314,45 +305,39 @@ function App() {
 
       case 'competitor-strategy':
         return (
-          <CompetitorStrategy 
-            userAnalysis={mockAnalyses.find(a => a.userId === user?.id) || mockAnalyses[0]} 
-            competitorAnalyses={mockAnalyses.filter(a => a.userId !== user?.id)} 
+          <CompetitorStrategy
+            userAnalysis={mockAnalyses.find(a => a.userId === user?.id) || mockAnalyses[0]}
+            competitorAnalyses={mockAnalyses.filter(a => a.userId !== user?.id)}
           />
         );
-      
+
       default:
         return <LandingPage onGetStarted={handleGetStarted} />;
     }
   };
 
+  const isAdmin = user && user.email && user.email.toLowerCase() === 'info@convologix.com';
+
   // Show landing page or auth page without sidebar/header
   if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
     return (
       <>
-        {isLiveMode && <LiveModeBanner />}
         {renderContent()}
-        {isLiveMode && <PaymentDebugger />}
       </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {isLiveMode && <LiveModeBanner />}
-      <Sidebar 
-        activeSection={activeSection} 
-        onSectionChange={setActiveSection}
-        onLogout={handleLogout}
-      />
-      
-      <div className="flex-1 flex flex-col">
-        {user && <Header user={user} />}
-        
-        <main className={`flex-1 p-8 ${isLiveMode ? 'mt-6' : ''}`}>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {user && <Header user={user} />}
+      <div className="flex flex-1">
+        <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} onLogout={handleLogout} />
+        <main className="flex-1 p-6">
+          {/* Show EnvironmentStatus only for admin user */}
+          {isAdmin && <EnvironmentStatus showDetails className="mb-6" />}
           {renderContent()}
         </main>
       </div>
-      {isLiveMode && <PaymentDebugger />}
     </div>
   );
 }

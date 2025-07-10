@@ -139,3 +139,5 @@ export interface UsageLimits {
   };
   resetDate: string;
 }
+
+export type AnalysisProvider = 'openai' | 'anthropic' | 'perplexity' | 'local';

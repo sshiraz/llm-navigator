@@ -3,9 +3,16 @@ import { Globe, Target, Sparkles, ArrowRight, Lightbulb, Zap, AlertCircle } from
 import AnalysisProgress from './AnalysisProgress';
 import UsageLimitsBanner from './UsageLimitsBanner';
 import ModelSelector from './ModelSelector';
-import { User } from '../../types';
+import { User, Analysis } from '../../types';
 import { AnalysisEngine } from '../../utils/analysisEngine';
 import { useUsageMonitoring } from '../../utils/costTracker';
+
+// Define a local type for analysis state if needed
+interface AnalysisState {
+  website: string;
+  keywords: string[];
+  model: string;
+}
 
 interface NewAnalysisProps {
   onAnalyze: (website: string, keywords: string[]) => void;
@@ -17,7 +24,7 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
   const [keywords, setKeywords] = useState('');
   const [selectedModel, setSelectedModel] = useState('gpt-4');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [currentAnalysis, setCurrentAnalysis] = useState<any>(null);
+  const [currentAnalysis, setCurrentAnalysis] = useState<AnalysisState | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { usageLimits, isLoading: limitsLoading } = useUsageMonitoring(
@@ -99,7 +106,7 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     }
   }, []);
 
-  const handleAnalysisComplete = (analysis: any) => {
+  const handleAnalysisComplete = (analysis: Analysis) => {
     setIsAnalyzing(false);
     setCurrentAnalysis(null);
     onAnalyze(analysis.website, analysis.keywords);

@@ -1,4 +1,5 @@
 import React from 'react';
+import type { AnalysisProvider } from '../types';
 
 // API Cost Tracking and Usage Monitoring
 export interface ApiUsage {
@@ -16,7 +17,7 @@ export interface ApiUsage {
     output: number;
     embeddings: number;
   };
-  provider: 'openai' | 'anthropic' | 'local';
+  provider: AnalysisProvider;
   success: boolean;
   errorCode?: string;
 }

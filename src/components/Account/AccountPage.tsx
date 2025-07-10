@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ArrowLeft, User, Mail, Building, Globe, Save, X, CheckCircle, AlertTriangle, CreditCard, Calendar } from 'lucide-react';
 import { User as UserType } from '../../types';
 import { getTrialStatus } from '../../utils/mockData';
@@ -46,7 +46,7 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
         setSaveStatus('idle');
         setIsEditing(false);
       }, 2000);
-    } catch (error) {
+    } catch {
       setIsSaving(false);
       setSaveStatus('error');
       setErrorMessage('Failed to update profile. Please try again.');

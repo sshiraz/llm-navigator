@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Globe, Target, Sparkles, ArrowRight } from 'lucide-react';
-import { KeywordSuggestion } from '../../types';
 import { mockKeywordSuggestions } from '../../utils/mockData';
 
 interface AnalysisFormProps {

@@ -1,3 +1,5 @@
+import type { AnalysisProvider } from './index';
+
 export interface Database {
   public: {
     Tables: {
@@ -185,7 +187,7 @@ export interface Database {
             output: number;
             embeddings: number;
           };
-          provider: 'openai' | 'anthropic' | 'local';
+          provider: AnalysisProvider;
           success: boolean;
           error_code?: string;
         };
@@ -196,7 +198,7 @@ export interface Database {
           timestamp?: string;
           costs: any;
           tokens: any;
-          provider: 'openai' | 'anthropic' | 'local';
+          provider: AnalysisProvider;
           success: boolean;
           error_code?: string;
         };
@@ -206,7 +208,7 @@ export interface Database {
           analysis_id?: string;
           costs?: any;
           tokens?: any;
-          provider?: 'openai' | 'anthropic' | 'local';
+          provider?: AnalysisProvider;
           success?: boolean;
           error_code?: string;
         };
@@ -263,7 +265,7 @@ export interface Database {
     };
     Enums: {
       subscription_type: 'free' | 'trial' | 'starter' | 'professional' | 'enterprise';
-      analysis_provider: 'openai' | 'anthropic' | 'local';
+      analysis_provider: AnalysisProvider;
     };
   };
 }

@@ -2,16 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, Users, AlertTriangle, BarChart3, Clock } from 'lucide-react';
 import { CostTracker } from '../../utils/costTracker';
 
+// Define Analytics type
+interface Analytics {
+  totalCost: number;
+  totalAnalyses: number;
+  averageCostPerAnalysis: number;
+  topUsers: Array<{ userId: string; cost: number; analyses: number }>;
+  costBreakdown: { crawling: number; embeddings: number; insights: number };
+  errorRate: number;
+}
+
 export default function UsageDashboard() {
-  const [analytics, setAnalytics] = useState<any>(null);
-  const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month'>('month');
+  // Use Analytics type for analytics state
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadAnalytics = async () => {
       setIsLoading(true);
       try {
-        const data = await CostTracker.getUsageAnalytics(timeframe);
+        const data = await CostTracker.getUsageAnalytics('month'); // Assuming 'month' is the default or a safe value
         setAnalytics(data);
       } catch (error) {
         console.error('Failed to load analytics:', error);
@@ -21,7 +31,7 @@ export default function UsageDashboard() {
     };
 
     loadAnalytics();
-  }, [timeframe]);
+  }, []); // Removed timeframe from dependency array as it's no longer a state variable
 
   if (isLoading) {
     return (
@@ -49,17 +59,7 @@ export default function UsageDashboard() {
           <p className="text-gray-600 mt-1">Monitor costs and optimize API usage</p>
         </div>
         
-        <div className="flex items-center space-x-3">
-          <select
-            value={timeframe}
-            onChange={(e) => setTimeframe(e.target.value as any)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="day">Last 24 Hours</option>
-            <option value="week">Last 7 Days</option>
-            <option value="month">Last 30 Days</option>
-          </select>
-        </div>
+        {/* Removed timeframe selection as it's no longer a state variable */}
       </div>
 
       {/* Key Metrics */}
@@ -197,7 +197,7 @@ export default function UsageDashboard() {
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Top Users by Cost</h3>
           
           <div className="space-y-3">
-            {analytics.topUsers.slice(0, 5).map((user: any, index: number) => (
+            {analytics.topUsers.slice(0, 5).map((user: { userId: string; cost: number; analyses: number }, index: number) => (
               <div key={user.userId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">

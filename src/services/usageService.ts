@@ -1,4 +1,5 @@
 import { supabase, handleSupabaseError, handleSupabaseSuccess } from '../lib/supabase';
+import type { AnalysisProvider } from '../types';
 
 export class UsageService {
   // Track API usage
@@ -7,7 +8,7 @@ export class UsageService {
     analysis_id: string;
     costs: any;
     tokens: any;
-    provider: 'openai' | 'anthropic' | 'local';
+    provider: AnalysisProvider;
     success: boolean;
     error_code?: string;
   }) {

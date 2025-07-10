@@ -48,7 +48,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         email: 'info@convologix.com',
         name: 'Admin User',
         avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-        subscription: 'enterprise',
+        subscription: 'enterprise' as User['subscription'],
         isAdmin: true,
         createdAt: new Date().toISOString()
       };
@@ -67,7 +67,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         // Check if user exists in localStorage
         try {
           const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
-          const user = existingUsersList.find((u: any) => u.email === formData.email);
+          const user = existingUsersList.find((u: User) => u.email === formData.email);
         
           if (!user) {
             setError('No account found with this email address');
@@ -83,7 +83,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           }
         
           // Login successful - remove password before storing in state
-          const { password, ...userWithoutPassword } = user;
+          const { ...userWithoutPassword } = user;
           const userData = {
             ...userWithoutPassword,
             avatar: userWithoutPassword.avatar || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2'
@@ -102,7 +102,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         // Check if email already exists
         try {
           const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
-          const existingUser = existingUsersList.find((u: any) => u.email === formData.email);
+          const existingUser = existingUsersList.find((u: User) => u.email === formData.email);
           
           if (existingUser) {
             setError('An account with this email already exists');
@@ -125,7 +125,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
             email: formData.email,
             name: formData.name || 'New User',
             avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-            subscription: 'trial',
+            subscription: 'trial' as User['subscription'],
             // Set trial to end 14 days from now at 23:59:59
             trialEndsAt: (() => {
               const date = new Date();
