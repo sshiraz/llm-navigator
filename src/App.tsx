@@ -16,6 +16,7 @@ import LandingPage from './components/Landing/LandingPage';
 import AuthPage from './components/Auth/AuthPage';
 import { Project, Analysis, User } from './types';
 import EnvironmentStatus from './components/UI/EnvironmentStatus';
+import { mockAnalyses } from './utils/mockData';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -28,11 +29,11 @@ function App() {
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
 
   // Check if user is admin
-  const [isAdmin, setIsAdmin] = useState(false);
+  // const [isAdmin, setIsAdmin] = useState(false);
   
-  useEffect(() => {
-    setIsAdmin(isAdminUser());
-  }, []);
+  // useEffect(() => {
+  //   setIsAdmin(isAdminUser());
+  // }, []);
 
   // Load current analysis from localStorage if available
   useEffect(() => {
@@ -257,7 +258,7 @@ function App() {
         case 'account':
           return user ? (
             <AccountPage
-              user={user}
+              user={user ?? undefined}
               onBack={() => setActiveSection('dashboard')}
               onUpdateProfile={(updates) => {
                 const updatedUser = { ...user, ...updates };
@@ -313,8 +314,8 @@ function App() {
       case 'competitor-strategy':
         return (
           <CompetitorStrategy
-            userAnalysis={mockAnalyses.find(a => a.userId === user?.id) || mockAnalyses[0]}
-            competitorAnalyses={mockAnalyses.filter(a => a.userId !== user?.id)}
+            userAnalysis={mockAnalyses.find((a: Analysis) => a.userId === user?.id) || mockAnalyses[0]}
+            competitorAnalyses={mockAnalyses.filter((a: Analysis) => a.userId !== user?.id)}
           />
         );
 
