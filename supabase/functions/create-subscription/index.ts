@@ -50,7 +50,7 @@ serve(async (req) => {
       },
     });
 
-    // Create subscription
+    // Create subscription with expanded payment intent for SCA/3DS support
     const subscription = await stripe.subscriptions.create({
       customer: customer.id,
       items: [{ price: priceId }],
@@ -59,7 +59,20 @@ serve(async (req) => {
         userId: userId,
         plan: plan,
       },
+      expand: ['latest_invoice.payment_intent'],
     });
+
+    // Prepare response for SCA/3DS if required
+    let clientSecret = null;
+    let requiresAction = false;
+    if (
+      subscription.latest_invoice &&
+      subscription.latest_invoice.payment_intent &&
+      subscription.latest_invoice.payment_intent.status === 'requires_action'
+    ) {
+      clientSecret = subscription.latest_invoice.payment_intent.client_secret;
+      requiresAction = true;
+    }
 
     return new Response(
       JSON.stringify({
@@ -75,6 +88,8 @@ serve(async (req) => {
             interval: subscription.items.data[0].price.recurring?.interval,
           },
         },
+        requiresAction,
+        clientSecret,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

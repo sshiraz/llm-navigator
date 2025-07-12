@@ -9,56 +9,10 @@ interface ModelSelectorProps {
 }
 
 export default function ModelSelector({ selectedModel, onModelChange, subscription, isAdmin = false }: ModelSelectorProps) {
-  // Define available models based on subscription level
-  const getAvailableModels = () => {
-    if (isAdmin) {
-      // Admins get access to all models
-      return [
-        { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI', tier: 'starter' },
-        { id: 'gpt-4-professional', name: 'GPT-4 Professional', provider: 'OpenAI', tier: 'professional' },
-        { id: 'claude-3-haiku', name: 'Claude 3 Haiku', provider: 'Anthropic', tier: 'starter' },
-        { id: 'claude-3-sonnet', name: 'Claude 3 Sonnet', provider: 'Anthropic', tier: 'professional' },
-        { id: 'claude-3-opus', name: 'Claude 3 Opus', provider: 'Anthropic', tier: 'enterprise' },
-        { id: 'perplexity-online', name: 'Perplexity Online', provider: 'Perplexity', tier: 'professional' },
-        { id: 'perplexity-offline', name: 'Perplexity Offline', provider: 'Perplexity', tier: 'starter' }
-      ];
-    }
-    
-    switch (subscription) {
-      case 'enterprise':
-        return [
-          { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI', tier: 'starter' },
-          { id: 'gpt-4-professional', name: 'GPT-4 Professional', provider: 'OpenAI', tier: 'professional' },
-          { id: 'claude-3-haiku', name: 'Claude 3 Haiku', provider: 'Anthropic', tier: 'starter' },
-          { id: 'claude-3-sonnet', name: 'Claude 3 Sonnet', provider: 'Anthropic', tier: 'professional' },
-          { id: 'claude-3-opus', name: 'Claude 3 Opus', provider: 'Anthropic', tier: 'enterprise' },
-          { id: 'perplexity-online', name: 'Perplexity Online', provider: 'Perplexity', tier: 'professional' },
-          { id: 'perplexity-offline', name: 'Perplexity Offline', provider: 'Perplexity', tier: 'starter' }
-        ];
-      case 'professional':
-        return [
-          { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI', tier: 'starter' },
-          { id: 'gpt-4-professional', name: 'GPT-4 Professional', provider: 'OpenAI', tier: 'professional' },
-          { id: 'claude-3-haiku', name: 'Claude 3 Haiku', provider: 'Anthropic', tier: 'starter' },
-          { id: 'claude-3-sonnet', name: 'Claude 3 Sonnet', provider: 'Anthropic', tier: 'professional' },
-          { id: 'perplexity-online', name: 'Perplexity Online', provider: 'Perplexity', tier: 'professional' },
-          { id: 'perplexity-offline', name: 'Perplexity Offline', provider: 'Perplexity', tier: 'starter' }
-        ];
-      case 'starter':
-        return [
-          { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI', tier: 'starter' },
-          { id: 'claude-3-haiku', name: 'Claude 3 Haiku', provider: 'Anthropic', tier: 'starter' },
-          { id: 'perplexity-offline', name: 'Perplexity Offline', provider: 'Perplexity', tier: 'starter' }
-        ];
-      default:
-        // Trial/Free users get simulated analysis, but we'll show them what's available
-        return [
-          { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI', tier: 'starter' }
-        ];
-    }
-  };
-
-  const models = getAvailableModels();
+  // Only show GPT-4 in the UI for now
+  const models = [
+    { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI', tier: 'starter' }
+  ];
   
   // Get model details for tooltips
   const getModelDetails = (modelId: string) => {

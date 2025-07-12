@@ -141,7 +141,8 @@ export default function StripeCheckout({ userId, plan, email, onSuccess, onCance
     <Elements stripe={stripePromise} options={options}>
       <CheckoutForm
         plan={plan}
-        amount={0} // Not needed for Stripe Elements
+        userId={userId}
+        email={email}
         onSuccess={onSuccess}
         onCancel={onCancel}
       />

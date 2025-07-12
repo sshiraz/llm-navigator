@@ -4,7 +4,7 @@ import ProjectCard from './ProjectCard';
 import ScoreCard from './ScoreCard';
 import RecentAnalyses from './RecentAnalyses';
 import { mockProjects } from '../../utils/mockData';
-import { Project, Analysis } from '../../types';
+import { Project, Analysis, User } from '../../types';
 
 interface DashboardProps {
   onProjectSelect: (project: Project) => void;
@@ -17,8 +17,8 @@ export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardP
   // Get current user from localStorage
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   
+  // Load current user from localStorage once on mount
   useEffect(() => {
-    // Load current user from localStorage
     try {
       const userStr = localStorage.getItem('currentUser');
       if (userStr) {
@@ -27,12 +27,12 @@ export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardP
     } catch (error) {
       console.error('Error loading current user:', error);
     }
-    
-    // Load analyses from localStorage
+  }, []);
+
+  // Load analyses when currentUser changes
+  useEffect(() => {
     try {
       const storedAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
-      
-      // Filter analyses to only show those belonging to the current user
       if (currentUser) {
         const userAnalyses = storedAnalyses.filter((analysis: Analysis) => 
           analysis.userId === currentUser.id

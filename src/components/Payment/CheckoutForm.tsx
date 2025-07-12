@@ -14,11 +14,13 @@ import PlanFeatures from '../UI/PlanFeatures';
 
 interface CheckoutFormProps {
   plan: string;
+  userId: string;
+  email: string;
   onSuccess: (paymentData: any) => void;
   onCancel: () => void;
 }
 
-export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutFormProps) {
+export default function CheckoutForm({ plan, userId, email, onSuccess, onCancel }: CheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
@@ -29,17 +31,13 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-
     PaymentLogger.trackPaymentFlow('Checkout form submitted', { plan });
-
     if (!stripe || !elements) {
       PaymentLogger.log('error', 'CheckoutForm', 'Stripe not initialized');
       return;
     }
-
     setIsLoading(true);
     setError('');
-
     try {
       const { error: submitError } = await elements.submit();
       if (submitError) {
@@ -48,36 +46,48 @@ export default function CheckoutForm({ plan, onSuccess, onCancel }: CheckoutForm
         setIsLoading(false);
         return;
       }
-
-      PaymentLogger.trackPaymentFlow('Confirming payment with Stripe', { plan });
-
-      const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/payment-success`,
-        },
-        redirect: 'if_required',
+      // Get payment method from PaymentElement
+      const { error: paymentMethodError, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: elements.getElement('card')!,
       });
 
-      if (confirmError) {
-        PaymentLogger.log('error', 'CheckoutForm', 'Payment confirmation error', confirmError);
-        setError(confirmError.message || 'Payment failed');
-      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-        PaymentLogger.trackPaymentFlow('Payment succeeded in Stripe', {
-          paymentIntentId: paymentIntent.id,
-          amount: paymentIntent.amount,
-          currency: paymentIntent.currency,
-          plan
-        });
-        
-        // Payment successful
-        onSuccess({
-          paymentIntentId: paymentIntent.id,
-          plan,
-          amount: paymentIntent.amount,
-          currency: paymentIntent.currency,
-        });
+      if (paymentMethodError) {
+        PaymentLogger.log('error', 'CheckoutForm', 'Payment method creation failed', paymentMethodError);
+        setError(paymentMethodError.message || 'Payment method creation failed');
+        setIsLoading(false);
+        return;
       }
+
+      // Call backend to create subscription
+      const res = await fetch('/functions/v1/create-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          email,
+          plan,
+          priceId: planConfig.priceId,
+          paymentMethodId: paymentMethod.id
+        })
+      });
+      const data = await res.json();
+      if (data.error) {
+        setError(data.error);
+        setIsLoading(false);
+        return;
+      }
+      // Handle SCA/3DS if required
+      if (data.requiresAction && data.clientSecret) {
+        const { error: scaError } = await stripe.confirmCardPayment(data.clientSecret);
+        if (scaError) {
+          setError(scaError.message || 'Authentication failed');
+          setIsLoading(false);
+          return;
+        }
+      }
+      // Success!
+      onSuccess(data.subscription);
     } catch (err) {
       PaymentLogger.log('error', 'CheckoutForm', 'Unexpected payment error', err);
       setError('An unexpected error occurred');

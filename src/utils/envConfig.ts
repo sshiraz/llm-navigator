@@ -6,14 +6,11 @@ export interface EnvironmentConfig {
   supabase: {
     url: string;
     anonKey: string;
-    serviceRoleKey?: string;
   };
   
   // Stripe configuration
   stripe: {
     publishableKey?: string;
-    secretKey?: string;
-    webhookSecret?: string;
     priceIds: {
       starter?: string;
       professional?: string;
@@ -46,12 +43,9 @@ export function getEnvironmentConfig(): EnvironmentConfig {
     supabase: {
       url: import.meta.env.VITE_SUPABASE_URL || '',
       anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
-      serviceRoleKey: import.meta.env.SUPABASE_SERVICE_ROLE_KEY,
     },
     stripe: {
       publishableKey: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY,
-      secretKey: import.meta.env.STRIPE_SECRET_KEY,
-      webhookSecret: import.meta.env.STRIPE_WEBHOOK_SECRET,
       priceIds: {
         starter: import.meta.env.VITE_STRIPE_STARTER_PRICE_ID,
         professional: import.meta.env.VITE_STRIPE_PROFESSIONAL_PRICE_ID,
@@ -88,21 +82,11 @@ export function validateEnvironment(): EnvValidationResult {
   }
 
   // Optional but recommended Supabase variables
-  if (!config.supabase.serviceRoleKey) {
-    warnings.push('SUPABASE_SERVICE_ROLE_KEY not set - server-side operations may fail');
-  }
+  // (serviceRoleKey removed from frontend)
 
   // Stripe configuration
   if (!config.stripe.publishableKey) {
     warnings.push('VITE_STRIPE_PUBLISHABLE_KEY not set - payment features will be disabled');
-  }
-
-  if (!config.stripe.secretKey) {
-    warnings.push('STRIPE_SECRET_KEY not set - server-side payment operations will fail');
-  }
-
-  if (!config.stripe.webhookSecret) {
-    warnings.push('STRIPE_WEBHOOK_SECRET not set - webhook verification will fail');
   }
 
   // Stripe price IDs
@@ -156,9 +140,6 @@ export function getEnvironmentStatus(): {
     if (warning.includes('VITE_STRIPE_STARTER_PRICE_ID')) return 'VITE_STRIPE_STARTER_PRICE_ID';
     if (warning.includes('VITE_STRIPE_PROFESSIONAL_PRICE_ID')) return 'VITE_STRIPE_PROFESSIONAL_PRICE_ID';
     if (warning.includes('VITE_STRIPE_ENTERPRISE_PRICE_ID')) return 'VITE_STRIPE_ENTERPRISE_PRICE_ID';
-    if (warning.includes('STRIPE_SECRET_KEY')) return 'STRIPE_SECRET_KEY';
-    if (warning.includes('STRIPE_WEBHOOK_SECRET')) return 'STRIPE_WEBHOOK_SECRET';
-    if (warning.includes('SUPABASE_SERVICE_ROLE_KEY')) return 'SUPABASE_SERVICE_ROLE_KEY';
     return '';
   }).filter(Boolean);
 

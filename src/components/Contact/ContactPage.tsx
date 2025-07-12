@@ -42,7 +42,7 @@ export default function ContactPage() {
         subject: '',
         message: ''
       });
-    } catch (error) {
+    } catch (error: any) {
       setSubmitStatus('error');
       setErrorMessage(error.message || 'Something went wrong. Please try again.');
     } finally {
@@ -61,11 +61,13 @@ export default function ContactPage() {
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <button 
-            onClick={goBack}
+            onClick={() => {
+              window.location.hash = '#dashboard';
+            }}
             className="inline-flex items-center space-x-2 text-blue-100 hover:text-white mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Home</span>
+            <span>Back to Dashboard</span>
           </button>
           
           <h1 className="text-4xl font-bold mb-4">Contact Us</h1>

@@ -55,10 +55,13 @@ function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1);
+      console.log('[NAV DEBUG] Hash changed:', hash); // Debug log
       if (hash) {
         setActiveSection(hash);
+        console.log('[NAV DEBUG] Setting activeSection to:', hash); // Debug log
       } else {
         setActiveSection('landing');
+        console.log('[NAV DEBUG] Setting activeSection to: landing'); // Debug log
       }
 
       // If we're on the analysis-results page, try to load the analysis from localStorage
@@ -98,60 +101,82 @@ function App() {
       console.log('Checkout successful!', { sessionId, plan });
       // You would typically verify the session and update the user's subscription here
 
-      // For demo purposes, update the user's subscription in localStorage
-      const storedUser = localStorage.getItem('currentUserId');
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          const updatedUser = {
-            ...parsedUser,
-            subscription: plan,
-            paymentMethodAdded: true
-          };
-          localStorage.setItem('currentUserId', JSON.stringify(updatedUser));
-          setUser(updatedUser);
-        } catch (e) {
-          console.error('Failed to update stored user', e);
+      // Instead of updating localStorage, fetch and update user from Supabase
+      const updateUserSubscription = async () => {
+        const { data: profile, error } = await supabase
+          .from('users')
+          .update({ subscription: plan, paymentMethodAdded: true })
+          .eq('id', userId)
+          .select()
+          .single();
+        if (profile) {
+          setUser(profile);
+        } else {
+          console.error('Failed to update user subscription', error);
         }
-      }
+      };
+      updateUserSubscription();
     }
   }, []);
 
-  // Load user from localStorage on initial load
+  // Load user from Supabase Auth and then fetch full profile from users table
   useEffect(() => {
     const loadUser = async () => {
-      const storedUserId = localStorage.getItem('currentUserId');
-      if (storedUserId) {
-        // Fetch user from Supabase
-        const { data, error } = await supabase
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      if (authUser) {
+        // Fetch user profile from your users table
+        let { data: profile, error: profileError } = await supabase
           .from('users')
           .select('*')
-          .eq('id', storedUserId)
+          .eq('id', authUser.id)
           .single();
-        if (data) {
-          setUser(data);
+        if (!profile) {
+          // Create profile if it doesn't exist
+          const { data: newProfile } = await supabase.from('users').insert({
+            id: authUser.id,
+            email: authUser.email,
+            name: authUser.user_metadata?.name || '',
+            subscription: 'free',
+            created_at: new Date().toISOString(),
+          }).select().single();
+          profile = newProfile;
+        }
+        if (profile) {
+          setUser(profile);
           if (activeSection === 'auth') {
             setActiveSection('dashboard');
           }
-        } else {
-          setUser(null);
-          localStorage.removeItem('currentUserId');
         }
+      } else {
+        setUser(null);
       }
     };
     loadUser();
   }, []);
 
-  const handleLogin = (userData: User) => {
+  const handleLogin = async (userData: User) => {
+    // Ensure user profile exists in users table
+    const { data: profile } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userData.id)
+      .single();
+    if (!profile) {
+      await supabase.from('users').insert({
+        id: userData.id,
+        email: userData.email,
+        name: userData.name || '',
+        subscription: 'free',
+        created_at: new Date().toISOString(),
+      });
+    }
     setUser(userData);
     setActiveSection('dashboard');
-    localStorage.setItem('currentUserId', userData.id);
   };
 
   const handleLogout = () => {
     setUser(null);
     window.location.hash = '';
-    localStorage.removeItem('currentUserId');
   };
 
   const handleProjectSelect = (project: Project) => {
@@ -239,7 +264,7 @@ function App() {
       // Special handling for admin-users - only allow access if user is admin
       if (activeSection === 'admin-users') {
         // Check if user is admin
-        if (!user || !user.isAdmin) {
+        if (!user || !user.email || user.email.toLowerCase() !== 'info@convologix.com') {
           // Redirect to dashboard if not admin
           setTimeout(() => {
             window.location.hash = '#dashboard';
@@ -261,12 +286,12 @@ function App() {
         case 'account':
           return user ? (
             <AccountPage
-              user={user ?? undefined}
+              user={user}
               onBack={() => setActiveSection('dashboard')}
               onUpdateProfile={(updates) => {
                 const updatedUser = { ...user, ...updates };
                 setUser(updatedUser);
-                localStorage.setItem('currentUserId', updatedUser.id);
+                // localStorage.setItem('currentUserId', updatedUser.id); // Removed
               }}
             />
           ) : <AuthPage onLogin={handleLogin} />;
@@ -293,7 +318,7 @@ function App() {
         return <Dashboard onProjectSelect={handleProjectSelect} onNewAnalysis={handleNewAnalysisClick} />;
 
       case 'new-analysis':
-        return <NewAnalysis onAnalyze={handleNewAnalysis} user={user} />;
+        return <NewAnalysis onAnalyze={handleNewAnalysis} user={user ?? undefined} />;
 
       case 'analysis-results':
         return currentAnalysis ? (
