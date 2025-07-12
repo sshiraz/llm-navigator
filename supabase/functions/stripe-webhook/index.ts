@@ -310,6 +310,18 @@ serve(async (req) => {
           await handlePaymentSuccess(paymentIntent, supabase);
           break;
 
+        case "setup_intent.succeeded":
+          console.log("🔧 Processing setup_intent.succeeded");
+          const setupIntent = event.data.object as Stripe.SetupIntent;
+          console.log("🔧 Setup Intent details:", {
+            id: setupIntent.id,
+            status: setupIntent.status,
+            metadata: setupIntent.metadata || {},
+            liveMode: isLiveMode || event.livemode
+          });
+          await handleSetupIntentSuccess(setupIntent, supabase);
+          break;
+
         case "customer.subscription.created":
         case "customer.subscription.updated":
           console.log(`📋 Processing ${event.type}`);
@@ -967,4 +979,66 @@ async function handlePaymentFailure(invoice: Stripe.Invoice, supabase: any) {
   }
   
   console.log(`💸 Payment failed for customer ${customerId}`);
+}
+
+async function handleSetupIntentSuccess(setupIntent: Stripe.SetupIntent, supabase: any) {
+  console.log("🔧 Processing setup intent success:", setupIntent.id);
+  
+  // Check if this is a live mode setup intent
+  const isLiveMode = setupIntent.livemode === true;
+  if (isLiveMode) {
+    console.log("🔴 LIVE MODE SETUP INTENT - Processing real setup");
+  }
+  
+  const userId = setupIntent.metadata?.userId;
+  const plan = setupIntent.metadata?.plan;
+  
+  console.log("🔧 Setup Intent metadata:", {
+    userId,
+    plan,
+    setupIntentId: setupIntent.id,
+    status: setupIntent.status,
+    liveMode: isLiveMode
+  });
+
+  if (!userId) {
+    console.error("❌ Missing userId in setup intent metadata");
+    return;
+  }
+
+  try {
+    // Update user to indicate payment method has been added
+    console.log("💾 Updating user payment method status...");
+    const { error } = await supabase
+      .from('users')
+      .update({
+        payment_method_added: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
+
+    if (error) {
+      console.error("❌ Error updating user payment method status:", error);
+      throw error;
+    }
+    
+    // Log the setup intent success in payment_logs table
+    try {
+      await supabase.from('payment_logs').insert({
+        event_type: 'setup_intent.succeeded',
+        event_id: setupIntent.id,
+        user_id: userId,
+        status: 'succeeded',
+        live_mode: isLiveMode,
+        metadata: setupIntent.metadata
+      });
+    } catch (logError) {
+      console.warn("⚠️ Failed to log setup intent event:", logError);
+    }
+
+    console.log(`✅ Successfully updated payment method status for user ${userId}`);
+  } catch (error) {
+    console.error("💥 Error in handleSetupIntentSuccess:", error);
+    throw error;
+  }
 }

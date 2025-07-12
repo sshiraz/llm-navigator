@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, email, plan, priceId, paymentMethodId } = await req.json();
+    const { userId, email, plan, priceId } = await req.json();
 
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
@@ -38,58 +38,22 @@ serve(async (req) => {
       });
     }
 
-    // Attach payment method to customer
-    await stripe.paymentMethods.attach(paymentMethodId, {
+    // Create SetupIntent for saving payment method
+    const setupIntent = await stripe.setupIntents.create({
       customer: customer.id,
-    });
-
-    // Set as default payment method
-    await stripe.customers.update(customer.id, {
-      invoice_settings: {
-        default_payment_method: paymentMethodId,
-      },
-    });
-
-    // Create subscription with expanded payment intent for SCA/3DS support
-    const subscription = await stripe.subscriptions.create({
-      customer: customer.id,
-      items: [{ price: priceId }],
-      default_payment_method: paymentMethodId,
+      payment_method_types: ['card'],
       metadata: {
         userId: userId,
         plan: plan,
+        priceId: priceId,
       },
-      expand: ['latest_invoice.payment_intent'],
+      usage: 'off_session', // Allow future payments
     });
-
-    // Prepare response for SCA/3DS if required
-    let clientSecret = null;
-    let requiresAction = false;
-    if (
-      subscription.latest_invoice &&
-      subscription.latest_invoice.payment_intent &&
-      subscription.latest_invoice.payment_intent.status === 'requires_action'
-    ) {
-      clientSecret = subscription.latest_invoice.payment_intent.client_secret;
-      requiresAction = true;
-    }
 
     return new Response(
       JSON.stringify({
-        subscription: {
-          id: subscription.id,
-          status: subscription.status,
-          current_period_start: subscription.current_period_start,
-          current_period_end: subscription.current_period_end,
-          plan: {
-            id: priceId,
-            amount: subscription.items.data[0].price.unit_amount,
-            currency: subscription.items.data[0].price.currency,
-            interval: subscription.items.data[0].price.recurring?.interval,
-          },
-        },
-        requiresAction,
-        clientSecret,
+        clientSecret: setupIntent.client_secret,
+        customerId: customer.id,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

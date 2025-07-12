@@ -46,48 +46,62 @@ export default function CheckoutForm({ plan, userId, email, onSuccess, onCancel 
         setIsLoading(false);
         return;
       }
-      // Get payment method from PaymentElement
-      const { error: paymentMethodError, paymentMethod } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: elements.getElement('card')!,
-      });
-
-      if (paymentMethodError) {
-        PaymentLogger.log('error', 'CheckoutForm', 'Payment method creation failed', paymentMethodError);
-        setError(paymentMethodError.message || 'Payment method creation failed');
-        setIsLoading(false);
-        return;
-      }
-
-      // Call backend to create subscription
-      const res = await fetch('/functions/v1/create-subscription', {
+      // Step 1: Get SetupIntent from backend
+      const setupRes = await fetch('/functions/v1/create-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId,
           email,
           plan,
-          priceId: planConfig.priceId,
-          paymentMethodId: paymentMethod.id
+          priceId: planConfig.priceId
         })
       });
-      const data = await res.json();
-      if (data.error) {
-        setError(data.error);
+      
+      const setupData = await setupRes.json();
+      if (setupData.error) {
+        setError(setupData.error);
         setIsLoading(false);
         return;
       }
-      // Handle SCA/3DS if required
-      if (data.requiresAction && data.clientSecret) {
-        const { error: scaError } = await stripe.confirmCardPayment(data.clientSecret);
-        if (scaError) {
-          setError(scaError.message || 'Authentication failed');
-          setIsLoading(false);
-          return;
-        }
+
+      // Step 2: Confirm the SetupIntent with PaymentElement
+      const { error: confirmError } = await stripe.confirmSetup({
+        elements,
+        clientSecret: setupData.clientSecret,
+        confirmParams: {
+          return_url: window.location.origin + '/dashboard',
+        },
+      });
+
+      if (confirmError) {
+        PaymentLogger.log('error', 'CheckoutForm', 'Setup confirmation failed', confirmError);
+        setError(confirmError.message || 'Payment setup failed');
+        setIsLoading(false);
+        return;
       }
+
+      // Step 3: Create subscription after successful setup
+      const subscriptionRes = await fetch('/functions/v1/create-subscription-after-setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId: setupData.customerId,
+          priceId: planConfig.priceId,
+          userId,
+          plan
+        })
+      });
+
+      const subscriptionData = await subscriptionRes.json();
+      if (subscriptionData.error) {
+        setError(subscriptionData.error);
+        setIsLoading(false);
+        return;
+      }
+
       // Success!
-      onSuccess(data.subscription);
+      onSuccess(subscriptionData.subscription);
     } catch (err) {
       PaymentLogger.log('error', 'CheckoutForm', 'Unexpected payment error', err);
       setError('An unexpected error occurred');
@@ -182,4 +196,4 @@ export default function CheckoutForm({ plan, userId, email, onSuccess, onCancel 
       </form>
     </div>
   );
-}
+} 
