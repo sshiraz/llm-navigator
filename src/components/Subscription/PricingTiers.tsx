@@ -1,10 +1,91 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, Star, Zap, Crown } from 'lucide-react';
 import TrialSignup from '../Auth/TrialSignup';
-import CreditCardForm from '../Payment/CreditCardForm';
+import CheckoutForm from '../Payment/CheckoutForm';
 import { isLiveMode } from '../../utils/liveMode';
-import { getPlanAmount } from '../../utils/stripeUtils';
+import { getPlanAmount, STRIPE_PLANS } from '../../utils/stripeUtils';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import { supabase } from '../../lib/supabase';
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+
+function CheckoutFormWithElements({ plan, onSuccess, onCancel }: { plan: string, onSuccess: any, onCancel: any }) {
+  // Get userId and email from localStorage (currentUser)
+  let userId = '';
+  let email = '';
+  try {
+    const userStr = localStorage.getItem('currentUser');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      userId = user.id || '';
+      email = user.email || '';
+    }
+  } catch (e) {}
+
+  const [clientSecret, setClientSecret] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch clientSecret from backend
+    const priceId = STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS]?.priceId;
+    async function fetchClientSecret() {
+      // Get Supabase access token
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      if (!accessToken) {
+        setLoading(false);
+        return;
+      }
+      // Log the data being sent
+      console.log('Sending to create-subscription:', { userId, email, plan, priceId });
+      fetch('https://jgkdzaoajbzmuuajpndv.functions.supabase.co/create-subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ userId, email, plan, priceId })
+      })
+        .then(async res => {
+          let data;
+          try {
+            data = await res.json();
+          } catch (e) {
+            data = { message: 'Non-JSON error', text: await res.text() };
+          }
+          if (!res.ok) {
+            console.error('Create subscription error:', data);
+          } else {
+            console.log('Create subscription success:', data);
+            setClientSecret(data.clientSecret);
+          }
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error('Fetch error:', err);
+          setLoading(false);
+        });
+    }
+    fetchClientSecret();
+  }, [userId, email, plan]);
+
+  if (loading) return <div>Loading payment...</div>;
+  if (!clientSecret) return <div>Failed to initialize payment.</div>;
+
+  return (
+    <Elements stripe={stripePromise} options={{ clientSecret }}>
+      <CheckoutForm
+        plan={plan}
+        userId={userId}
+        email={email}
+        onSuccess={onSuccess}
+        onCancel={onCancel}
+      />
+    </Elements>
+  );
+}
 
 interface PricingTiersProps {
   currentPlan: string;
@@ -124,9 +205,8 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
 
   if (showCheckout && selectedPlan) {
     return (
-      <CreditCardForm
+      <CheckoutFormWithElements
         plan={selectedPlan}
-        amount={planAmount}
         onSuccess={handleCheckoutSuccess}
         onCancel={() => setShowCheckout(false)}
       />

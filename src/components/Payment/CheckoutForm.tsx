@@ -4,13 +4,14 @@ import {
   useStripe,
   useElements
 } from '@stripe/react-stripe-js';
-import { Lock, CreditCard, CheckCircle } from 'lucide-react';
+import { Lock, CreditCard } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger'; 
 import { formatAmount, STRIPE_PLANS } from '../../utils/stripeUtils';
 import { isLiveMode } from '../../utils/liveMode';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
 import SecurePaymentNotice from '../UI/SecurePaymentNotice';
 import PlanFeatures from '../UI/PlanFeatures';
+import { supabase } from '../../lib/supabase';
 
 interface CheckoutFormProps {
   plan: string;
@@ -28,6 +29,7 @@ export default function CheckoutForm({ plan, userId, email, onSuccess, onCancel 
 
   const planConfig = STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS];
   const planPrice = planConfig ? formatAmount(planConfig.amount) : '$0';
+  const SUPABASE_FUNCTIONS_URL = 'https://jgkdzaoajbzmuuajpndv.functions.supabase.co';
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -46,25 +48,38 @@ export default function CheckoutForm({ plan, userId, email, onSuccess, onCancel 
         setIsLoading(false);
         return;
       }
-      // Step 1: Get SetupIntent from backend
-      const setupRes = await fetch('/functions/v1/create-subscription', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          email,
-          plan,
-          priceId: planConfig.priceId
-        })
-      });
-      
-      const setupData = await setupRes.json();
-      if (setupData.error) {
-        setError(setupData.error);
+      // Get Supabase access token
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      if (!accessToken) {
+        setError('Authentication required');
         setIsLoading(false);
         return;
       }
-
+      // Step 1: Get SetupIntent from backend
+      console.log('Sending to create-subscription:', { userId, email, plan, priceId: planConfig.priceId });
+      const setupRes = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-subscription`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ userId, email, plan, priceId: planConfig.priceId })
+      });
+      let setupData;
+      try {
+        setupData = await setupRes.json();
+      } catch (e) {
+        setupData = { error: 'Non-JSON error', text: await setupRes.text() };
+      }
+      if (!setupRes.ok) {
+        console.error('Create subscription error:', setupData);
+        setError(setupData.error || 'Failed to create subscription');
+        setIsLoading(false);
+        return;
+      } else {
+        console.log('Create subscription success:', setupData);
+      }
       // Step 2: Confirm the SetupIntent with PaymentElement
       const { error: confirmError } = await stripe.confirmSetup({
         elements,
@@ -73,18 +88,25 @@ export default function CheckoutForm({ plan, userId, email, onSuccess, onCancel 
           return_url: window.location.origin + '/dashboard',
         },
       });
-
       if (confirmError) {
         PaymentLogger.log('error', 'CheckoutForm', 'Setup confirmation failed', confirmError);
         setError(confirmError.message || 'Payment setup failed');
         setIsLoading(false);
         return;
       }
-
       // Step 3: Create subscription after successful setup
-      const subscriptionRes = await fetch('/functions/v1/create-subscription-after-setup', {
+      console.log('Sending to create-subscription-after-setup:', {
+        customerId: setupData.customerId,
+        priceId: planConfig.priceId,
+        userId,
+        plan
+      });
+      const subscriptionRes = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-subscription-after-setup`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
         body: JSON.stringify({
           customerId: setupData.customerId,
           priceId: planConfig.priceId,
@@ -92,14 +114,20 @@ export default function CheckoutForm({ plan, userId, email, onSuccess, onCancel 
           plan
         })
       });
-
-      const subscriptionData = await subscriptionRes.json();
-      if (subscriptionData.error) {
-        setError(subscriptionData.error);
+      let subscriptionData;
+      try {
+        subscriptionData = await subscriptionRes.json();
+      } catch (e) {
+        subscriptionData = { error: 'Non-JSON error', text: await subscriptionRes.text() };
+      }
+      if (!subscriptionRes.ok) {
+        console.error('Create subscription after setup error:', subscriptionData);
+        setError(subscriptionData.error || 'Failed to create subscription');
         setIsLoading(false);
         return;
+      } else {
+        console.log('Create subscription after setup success:', subscriptionData);
       }
-
       // Success!
       onSuccess(subscriptionData.subscription);
     } catch (err) {
