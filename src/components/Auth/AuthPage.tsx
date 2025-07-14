@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, ArrowRight, Mail, Lock, User as UserIcon, Building, Globe } from 'lucide-react';
 import { FraudPrevention } from '../../utils/fraudPrevention';
 import { FraudPreventionCheck, User } from '../../types';
+import { supabase } from '../../lib/supabase';
 
 interface AuthPageProps {
   onLogin: (user: User) => void;
@@ -23,7 +24,6 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
 
   const handleEmailBlur = async () => {
     if (!formData.email || isLogin) return;
-    
     setIsChecking(true);
     try {
       const check = await FraudPrevention.checkTrialEligibility(formData.email);
@@ -52,111 +52,99 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         isAdmin: true,
         createdAt: new Date().toISOString()
       };
-      
-      // Store admin user in localStorage
       localStorage.setItem('currentUser', JSON.stringify(adminUser));
-      
       onLogin(adminUser);
       setIsLoading(false);
       return;
     }
-    
-    // Simulate API call
-    setTimeout(() => {
-      if (isLogin) {
-        // Check if user exists in localStorage
-        try {
-          const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
-          const user = existingUsersList.find((u: User) => u.email === formData.email);
-        
-          if (!user) {
-            setError('No account found with this email address');
-            setIsLoading(false);
-            return;
-          }
-        
-          // Validate password (in a real app, this would be done securely on the server)
-          if (user.password !== formData.password) {
-            setError('Invalid password');
-            setIsLoading(false);
-            return;
-          }
-        
-          // Login successful - remove password before storing in state
-          const { ...userWithoutPassword } = user;
-          const userData = {
-            ...userWithoutPassword,
-            avatar: userWithoutPassword.avatar || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2'
-          };
-        
-          // Store current user in localStorage
-          localStorage.setItem('currentUser', JSON.stringify(userData));
-          
-          onLogin(userData as User);
-        } catch (error) {
-          console.error('Error parsing users from localStorage:', error);
-          setError('An error occurred during login. Please try again.');
-          setIsLoading(false);
-        }
-      } else {
-        // Check if email already exists
-        try {
-          const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
-          const existingUser = existingUsersList.find((u: User) => u.email === formData.email);
-          
-          if (existingUser) {
-            setError('An account with this email already exists');
-            setIsLoading(false);
-            return;
-          }
-          
-          // Generate a unique user ID for demo purposes
-          const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-          
-          // Signup logic - check fraud prevention for trials
-          if (fraudCheck && !fraudCheck.isAllowed) {
-            alert(fraudCheck.reason);
-            setIsLoading(false);
-            return;
-          }
 
-          const user = {
-            id: userId,
-            email: formData.email,
-            name: formData.name || 'New User',
-            avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-            subscription: 'trial' as User['subscription'],
-            // Set trial to end 14 days from now at 23:59:59
-            trialEndsAt: (() => {
-              const date = new Date();
-              date.setDate(date.getDate() + 14); // Add exactly 14 days
-              date.setHours(23, 59, 59, 999); // Set to end of day
-              return date.toISOString();
-            })(),
-            createdAt: new Date().toISOString()
-          };
-          
-          // Store user in localStorage
-          const usersList = JSON.parse(localStorage.getItem('users') || '[]');
-          const newUser = {
-            ...user,
-            password: formData.password // In a real app, this would be hashed
-          };
-          usersList.push(newUser);
-          localStorage.setItem('users', JSON.stringify(usersList)); 
-          
-          // Store current user in localStorage
-          localStorage.setItem('currentUser', JSON.stringify(user));
-          
-          onLogin(user);
-        } catch (error) {
-          console.error('Error during signup:', error);
-          setError('An error occurred during signup. Please try again.');
+    try {
+      if (isLogin) {
+        // Login with Supabase Auth
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password
+        });
+        if (signInError) {
+          setError(signInError.message);
           setIsLoading(false);
+          return;
         }
+        // Get user profile
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setError('Login failed. No user found.');
+          setIsLoading(false);
+          return;
+        }
+        onLogin({
+          id: user.id,
+          email: user.email || '',
+          name: user.user_metadata?.name || '',
+          subscription: 'free',
+          createdAt: user.created_at || ''
+        });
+      } else {
+        // Signup with Supabase Auth
+        if (fraudCheck && !fraudCheck.isAllowed) {
+          alert(fraudCheck.reason);
+          setIsLoading(false);
+          return;
+        }
+
+        // Basic validation
+        if (!formData.email || !formData.password) {
+          setError('Email and password are required');
+          setIsLoading(false);
+          return;
+        }
+
+        if (formData.password.length < 6) {
+          setError('Password must be at least 6 characters long');
+          setIsLoading(false);
+          return;
+        }
+
+        if (!formData.name) {
+          setError('Name is required');
+          setIsLoading(false);
+          return;
+        }
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              name: formData.name,
+              company: formData.company,
+              website: formData.website
+            }
+          }
+        });
+        
+        if (signUpError) {
+          setError(signUpError.message);
+          setIsLoading(false);
+          return;
+        }
+        if (!data.user) {
+          setError('Signup failed. No user returned.');
+          setIsLoading(false);
+          return;
+        }
+        onLogin({
+          id: data.user.id,
+          email: data.user.email || '',
+          name: formData.name,
+          subscription: 'trial',
+          createdAt: data.user.created_at || ''
+        });
       }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred during authentication.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -321,7 +309,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
 
             <button
               type="submit"
-              disabled={isLoading || (!isLogin && fraudCheck && !fraudCheck.isAllowed)}
+              disabled={isLoading || (!isLogin && !!fraudCheck && !fraudCheck.isAllowed)}
               className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-2"
             >
               {isLoading ? (
