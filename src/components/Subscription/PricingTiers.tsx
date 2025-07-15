@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, Star, Zap, Crown } from 'lucide-react';
 import TrialSignup from '../Auth/TrialSignup';
 import CheckoutForm from '../Payment/CheckoutForm';
@@ -71,10 +71,8 @@ function CheckoutFormWithElements({ plan, onSuccess, onCancel }: { plan: string,
   if (loading) return <div>Loading payment...</div>;
   if (!clientSecret || !userData) return <div>Failed to initialize payment.</div>;
 
-  const elementsOptions = useMemo(() => ({ clientSecret }), [clientSecret]);
-
   return (
-    <Elements stripe={stripePromise} options={elementsOptions}>
+    <Elements stripe={stripePromise} options={{ clientSecret }}>
       <CheckoutForm
         plan={plan}
         userId={userData.userId}
