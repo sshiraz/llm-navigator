@@ -12,32 +12,29 @@ import { supabase } from '../../lib/supabase';
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 function CheckoutFormWithElements({ plan, onSuccess, onCancel }: { plan: string, onSuccess: any, onCancel: any }) {
-  // Get userId and email from localStorage (currentUser)
-  let userId = '';
-  let email = '';
-  try {
-    const userStr = localStorage.getItem('currentUser');
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      userId = user.id || '';
-      email = user.email || '';
-    }
-  } catch (e) {}
-
   const [clientSecret, setClientSecret] = useState('');
   const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = useState<{ userId: string; email: string } | null>(null);
 
   useEffect(() => {
     // Fetch clientSecret from backend
     const priceId = STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS]?.priceId;
     async function fetchClientSecret() {
-      // Get Supabase access token
+      // Get Supabase access token and user data
       const { data: { session } } = await supabase.auth.getSession();
       const accessToken = session?.access_token;
-      if (!accessToken) {
+      const userId = session?.user?.id || '';
+      const email = session?.user?.email || '';
+      
+      if (!accessToken || !userId || !email) {
+        console.error('Missing auth data:', { accessToken: !!accessToken, userId, email });
         setLoading(false);
         return;
       }
+
+      // Store user data for later use
+      setUserData({ userId, email });
+      
       // Log the data being sent
       console.log('Sending to create-subscription:', { userId, email, plan, priceId });
       fetch('https://jgkdzaoajbzmuuajpndv.functions.supabase.co/create-subscription', {
@@ -69,17 +66,17 @@ function CheckoutFormWithElements({ plan, onSuccess, onCancel }: { plan: string,
         });
     }
     fetchClientSecret();
-  }, [userId, email, plan]);
+  }, [plan]);
 
   if (loading) return <div>Loading payment...</div>;
-  if (!clientSecret) return <div>Failed to initialize payment.</div>;
+  if (!clientSecret || !userData) return <div>Failed to initialize payment.</div>;
 
   return (
     <Elements stripe={stripePromise} options={{ clientSecret }}>
       <CheckoutForm
         plan={plan}
-        userId={userId}
-        email={email}
+        userId={userData.userId}
+        email={userData.email}
         onSuccess={onSuccess}
         onCancel={onCancel}
       />
