@@ -15,6 +15,7 @@ function CheckoutFormWithElements({ plan, onSuccess, onCancel }: { plan: string,
   const [clientSecret, setClientSecret] = useState('');
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<{ userId: string; email: string } | null>(null);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     // Fetch clientSecret from backend
@@ -54,6 +55,7 @@ function CheckoutFormWithElements({ plan, onSuccess, onCancel }: { plan: string,
           }
           if (!res.ok) {
             console.error('Create subscription error:', data);
+            setError(`Failed to create subscription: ${data.message || 'Unknown error'}`);
           } else {
             console.log('Create subscription success:', data);
             setClientSecret(data.clientSecret);
@@ -62,6 +64,7 @@ function CheckoutFormWithElements({ plan, onSuccess, onCancel }: { plan: string,
         })
         .catch((err) => {
           console.error('Fetch error:', err);
+          setError(`Network error: ${err.message}`);
           setLoading(false);
         });
     }
@@ -69,21 +72,27 @@ function CheckoutFormWithElements({ plan, onSuccess, onCancel }: { plan: string,
   }, [plan]);
 
   if (loading) return <div>Loading payment...</div>;
+  if (error) return <div>Error: {error}</div>;
   if (!clientSecret || !userData) return <div>Failed to initialize payment.</div>;
 
   const elementsOptions = useMemo(() => ({ clientSecret }), [clientSecret]);
 
-  return (
-    <Elements stripe={stripePromise} options={elementsOptions}>
-      <CheckoutForm
-        plan={plan}
-        userId={userData.userId}
-        email={userData.email}
-        onSuccess={onSuccess}
-        onCancel={onCancel}
-      />
-    </Elements>
-  );
+  try {
+    return (
+      <Elements stripe={stripePromise} options={elementsOptions}>
+        <CheckoutForm
+          plan={plan}
+          userId={userData.userId}
+          email={userData.email}
+          onSuccess={onSuccess}
+          onCancel={onCancel}
+        />
+      </Elements>
+    );
+  } catch (error) {
+    console.error('Elements rendering error:', error);
+    return <div>Error loading payment form. Please try again.</div>;
+  }
 }
 
 interface PricingTiersProps {
@@ -170,9 +179,12 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
     if (skipTrialOption) {
       // Set the plan amount based on the selected plan
       setPlanAmount(getPlanAmount(planId));
+      // Go directly to checkout for skip trial
       setShowCheckout(true);
+      setShowTrialSignup(false);
     } else {
       setShowTrialSignup(true);
+      setShowCheckout(false);
     }
   };
 
@@ -190,24 +202,33 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
     }
   };
 
-  // If showing trial signup or checkout, render those components
+  // If showing checkout directly (skip trial), render checkout
+  if (showCheckout && selectedPlan && skipTrial) {
+    return (
+      <CheckoutFormWithElements
+        plan={selectedPlan}
+        onSuccess={handleCheckoutSuccess}
+        onCancel={() => {
+          setShowCheckout(false);
+          setSelectedPlan(null);
+          setSkipTrial(false);
+        }}
+      />
+    );
+  }
+
+  // If showing trial signup, render trial signup
   if (showTrialSignup && selectedPlan) {
     return (
       <TrialSignup
         selectedPlan={selectedPlan}
         skipTrial={skipTrial}
         onSuccess={handleTrialSuccess}
-        onCancel={() => setShowTrialSignup(false)}
-      />
-    );
-  }
-
-  if (showCheckout && selectedPlan) {
-    return (
-      <CheckoutFormWithElements
-        plan={selectedPlan}
-        onSuccess={handleCheckoutSuccess}
-        onCancel={() => setShowCheckout(false)}
+        onCancel={() => {
+          setShowTrialSignup(false);
+          setSelectedPlan(null);
+          setSkipTrial(false);
+        }}
       />
     );
   }
