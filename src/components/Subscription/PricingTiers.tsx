@@ -1,88 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Star, Zap, Crown } from 'lucide-react';
 import TrialSignup from '../Auth/TrialSignup';
-import CheckoutForm from '../Payment/CheckoutForm';
+import StripeRedirectCheckout from './StripeRedirectCheckout';
+import CheckoutSuccessHandler from './CheckoutSuccessHandler';
 import { isLiveMode } from '../../utils/liveMode';
-import { getPlanAmount, STRIPE_PLANS } from '../../utils/stripeUtils';
+import { getPlanAmount } from '../../utils/stripeUtils';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
-import { supabase } from '../../lib/supabase';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
-function CheckoutFormWithElements({ plan, onSuccess, onCancel }: { plan: string, onSuccess: any, onCancel: any }) {
-  const [clientSecret, setClientSecret] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [userData, setUserData] = useState<{ userId: string; email: string } | null>(null);
-
-  useEffect(() => {
-    // Fetch clientSecret from backend
-    const priceId = STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS]?.priceId;
-    async function fetchClientSecret() {
-      // Get Supabase access token and user data
-      const { data: { session } } = await supabase.auth.getSession();
-      const accessToken = session?.access_token;
-      const userId = session?.user?.id || '';
-      const email = session?.user?.email || '';
-      
-      if (!accessToken || !userId || !email) {
-        console.error('Missing auth data:', { accessToken: !!accessToken, userId, email });
-        setLoading(false);
-        return;
-      }
-
-      // Store user data for later use
-      setUserData({ userId, email });
-      
-      // Log the data being sent
-      console.log('Sending to create-subscription:', { userId, email, plan, priceId });
-      fetch('https://jgkdzaoajbzmuuajpndv.functions.supabase.co/create-subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
-        },
-        body: JSON.stringify({ userId, email, plan, priceId })
-      })
-        .then(async res => {
-          let data;
-          try {
-            data = await res.json();
-          } catch (e) {
-            data = { message: 'Non-JSON error', text: await res.text() };
-          }
-          if (!res.ok) {
-            console.error('Create subscription error:', data);
-          } else {
-            console.log('Create subscription success:', data);
-            setClientSecret(data.clientSecret);
-          }
-          setLoading(false);
-        })
-        .catch((err) => {
-          console.error('Fetch error:', err);
-          setLoading(false);
-        });
-    }
-    fetchClientSecret();
-  }, [plan]);
-
-  if (loading) return <div>Loading payment...</div>;
-  if (!clientSecret || !userData) return <div>Failed to initialize payment.</div>;
-
-  return (
-    <Elements stripe={stripePromise} options={{ clientSecret }}>
-      <CheckoutForm
-        plan={plan}
-        userId={userData.userId}
-        email={userData.email}
-        onSuccess={onSuccess}
-        onCancel={onCancel}
-      />
-    </Elements>
-  );
-}
 
 interface PricingTiersProps {
   currentPlan: string;
@@ -94,7 +19,17 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
   const [showTrialSignup, setShowTrialSignup] = React.useState(false);
   const [skipTrial, setSkipTrial] = React.useState(false);
   const [showCheckout, setShowCheckout] = React.useState(false);
+  const [showSuccessHandler, setShowSuccessHandler] = React.useState(false);
   const [planAmount, setPlanAmount] = React.useState(0);
+
+  // Check for checkout status in URL on component mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const checkoutStatus = urlParams.get('checkout');
+    if (checkoutStatus === 'success' || checkoutStatus === 'cancel') {
+      setShowSuccessHandler(true);
+    }
+  }, []);
 
   const plans = [
     {
@@ -200,12 +135,36 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
     );
   }
 
+  // Handle checkout success/cancel status from URL
+  if (showSuccessHandler) {
+    return (
+      <CheckoutSuccessHandler
+        onSuccess={() => {
+          setShowSuccessHandler(false);
+          if (selectedPlan) {
+            onUpgrade(selectedPlan);
+          }
+        }}
+        onCancel={() => {
+          setShowSuccessHandler(false);
+          setSelectedPlan(null);
+          setSkipTrial(false);
+          // Clear URL parameters
+          window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+        }}
+      />
+    );
+  }
+
   if (showCheckout && selectedPlan) {
     return (
-      <CheckoutFormWithElements
+      <StripeRedirectCheckout
         plan={selectedPlan}
-        onSuccess={handleCheckoutSuccess}
-        onCancel={() => setShowCheckout(false)}
+        onCancel={() => {
+          setShowCheckout(false);
+          setSelectedPlan(null);
+          setSkipTrial(false);
+        }}
       />
     );
   }

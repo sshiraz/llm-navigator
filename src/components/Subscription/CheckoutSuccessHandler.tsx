@@ -1,157 +1,81 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle, RefreshCw, AlertCircle } from 'lucide-react';
-import { PaymentLogger } from '../../utils/paymentLogger';
-import { ManualSubscriptionFix } from '../../utils/manualSubscriptionFix';
+import { CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
 
 interface CheckoutSuccessHandlerProps {
-  sessionId: string;
-  plan: string;
-  userId: string;
   onSuccess: () => void;
-  onError: (error: string) => void;
+  onCancel: () => void;
 }
 
-export default function CheckoutSuccessHandler({ 
-  sessionId, 
-  plan, 
-  userId,
-  onSuccess,
-  onError
-}: CheckoutSuccessHandlerProps) {
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [message, setMessage] = useState('Verifying your payment...');
+export default function CheckoutSuccessHandler({ onSuccess, onCancel }: CheckoutSuccessHandlerProps) {
+  const [status, setStatus] = useState<'loading' | 'success' | 'cancel'>('loading');
 
   useEffect(() => {
-    verifyPaymentAndUpdateSubscription();
-  }, [sessionId, plan, userId]);
-
-  const verifyPaymentAndUpdateSubscription = async () => {
-    PaymentLogger.trackPaymentFlow('Verifying Stripe checkout session', { 
-      sessionId, 
-      plan, 
-      userId 
-    });
-
-    // Log the verification attempt with more details
-    PaymentLogger.log('info', 'CheckoutSuccessHandler', `Verifying payment for session ${sessionId}`, {
-      sessionId,
-      plan,
-      userId,
-      timestamp: new Date().toISOString()
-    });
-
-    try {
-      // 1. Verify the session with Stripe
-      // In a real implementation, you would verify the session with Stripe
-      // For this demo, we'll assume the session is valid if it exists
-      
-      // 2. Update the user's subscription
-      // First check if the subscription is already updated
-      const checkResult = await ManualSubscriptionFix.checkSubscriptionStatus(userId);
-
-      // Store updated user in localStorage
-      const storedUser = localStorage.getItem('currentUser');
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          const updatedUser = {
-            ...parsedUser,
-            subscription: plan,
-            paymentMethodAdded: true
-          };
-          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-        } catch (e) {
-          console.error('Failed to update stored user', e);
-        }
-      }
-      
-      if (checkResult.currentPlan === plan && checkResult.hasPayment) {
-        // Subscription is already updated
-        setStatus('success');
-        setMessage(`Your ${plan} plan is already active! Your account has been updated.`);
-        PaymentLogger.trackPaymentFlow('Subscription already updated', { 
-          userId, 
-          plan,
-          currentPlan: checkResult.currentPlan
-        });
+    // Parse URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const checkoutStatus = urlParams.get('checkout');
+    
+    if (checkoutStatus === 'success') {
+      setStatus('success');
+      setTimeout(() => {
         onSuccess();
-        return;
-      }
-      
-      // If not updated, fix it
-      const result = await ManualSubscriptionFix.fixSubscription(userId, plan);
-
-      if (result.success) {
-        setStatus('success');
-        setMessage(`Your payment was successful! Your subscription has been updated to the ${plan} plan.`);
-        PaymentLogger.trackPaymentFlow('Subscription updated successfully', { 
-          userId, 
-          plan 
-        });
-        onSuccess();
-      } else {
-        setStatus('error');
-        setMessage(`Failed to update subscription: ${result.message}`);
-        PaymentLogger.log('error', 'CheckoutSuccessHandler', 'Failed to update subscription', result.error);
-        onError(result.message);
-      }
-    } catch (error) {
-      setStatus('error');
-      setMessage(`An error occurred: ${error.message}`);
-      PaymentLogger.log('error', 'CheckoutSuccessHandler', `Error verifying payment for session ${sessionId}`, {
-        error: error.message,
-        stack: error.stack,
-        sessionId,
-        plan,
-        userId
-      });
-      onError(error.message);
+      }, 2000); // Show success message for 2 seconds before redirecting
+    } else if (checkoutStatus === 'cancel') {
+      setStatus('cancel');
+    } else {
+      // Default to loading if no status is found
+      setStatus('loading');
     }
-  };
+  }, [onSuccess]);
 
-  return (
-    <div className="max-w-md mx-auto bg-white rounded-xl border border-gray-200 p-8 text-center">
-      {status === 'loading' && (
-        <>
-          <RefreshCw className="w-16 h-16 text-blue-600 mx-auto mb-4 animate-spin" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Processing Your Payment</h2>
-          <p className="text-gray-600">{message}</p>
-        </>
-      )}
+  if (status === 'loading') {
+    return (
+      <div className="max-w-2xl mx-auto bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Processing...</h2>
+        <p className="text-gray-600">Please wait while we process your payment.</p>
+      </div>
+    );
+  }
 
-      {status === 'success' && (
-        <>
-          <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Payment Successful!</h2>
-          <p className="text-gray-600 mb-6">{message}</p>
-          <button
-            onClick={onSuccess}
-            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-          >
-            Continue to Dashboard
-          </button>
-        </>
-      )}
+  if (status === 'success') {
+    return (
+      <div className="max-w-2xl mx-auto bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <CheckCircle className="w-10 h-10 text-green-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h2>
+        <p className="text-gray-600 mb-6">
+          Thank you for your purchase. Your subscription has been activated and you now have access to all premium features.
+        </p>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <p className="text-green-800 text-sm">
+            Redirecting you to your dashboard...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-      {status === 'error' && (
-        <>
-          <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Payment Error</h2>
-          <p className="text-gray-600 mb-6">{message}</p>
-          <button
-            onClick={() => verifyPaymentAndUpdateSubscription()}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mr-4"
-          >
-            Try Again
-          </button>
-          <button
-            onClick={() => onError('User cancelled')}
-            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Cancel
-          </button>
-        </>
-      )}
-    </div>
-  );
+  if (status === 'cancel') {
+    return (
+      <div className="max-w-2xl mx-auto bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <XCircle className="w-10 h-10 text-red-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Payment Cancelled</h2>
+        <p className="text-gray-600 mb-6">
+          Your payment was cancelled. No charges have been made to your account.
+        </p>
+        <button
+          onClick={onCancel}
+          className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Pricing</span>
+        </button>
+      </div>
+    );
+  }
+
+  return null;
 }

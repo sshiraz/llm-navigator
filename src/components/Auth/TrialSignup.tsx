@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Shield, CreditCard, Mail, User, CheckCircle, XCircle, Gift, Zap } from 'lucide-react';
 import { FraudPrevention } from '../../utils/fraudPrevention';
-import CreditCardForm from '../Payment/CreditCardForm';
+import StripeRedirectCheckout from '../Subscription/StripeRedirectCheckout';
 import { isLiveMode } from '../../utils/liveMode';
 import { getPlanAmount } from '../../utils/stripeUtils';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
 import { PaymentLogger } from '../../utils/paymentLogger';
+import { User as UserType, FraudPreventionCheck } from '../../types';
 
 interface TrialSignupProps {
   selectedPlan: string;
@@ -116,10 +117,8 @@ export default function TrialSignup({ selectedPlan, skipTrial = false, onSuccess
   // Show checkout form for skip trial
   if (showCheckout) {
     return (
-      <CreditCardForm
+      <StripeRedirectCheckout
         plan={selectedPlan}
-        amount={planPrice * 100} // Convert to cents
-        onSuccess={(paymentData) => handleCheckoutSuccess(paymentData)}
         onCancel={() => setShowCheckout(false)}
       />
     );
