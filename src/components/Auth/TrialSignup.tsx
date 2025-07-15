@@ -6,6 +6,7 @@ import { isLiveMode } from '../../utils/liveMode';
 import { getPlanAmount } from '../../utils/stripeUtils';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
 import { PaymentLogger } from '../../utils/paymentLogger';
+import { User as UserType, FraudPreventionCheck } from '../../types';
 
 interface TrialSignupProps {
   selectedPlan: string;
@@ -89,7 +90,7 @@ export default function TrialSignup({ selectedPlan, skipTrial = false, onSuccess
         id: userId,
         email: formData.email,
         name: formData.name,
-        subscription: skipTrial ? selectedPlan : 'trial',
+        subscription: skipTrial ? (selectedPlan as 'starter' | 'professional' | 'enterprise') : 'trial',
         trialEndsAt: skipTrial ? undefined : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
         createdAt: new Date().toISOString(),
         avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2'
@@ -311,7 +312,7 @@ export default function TrialSignup({ selectedPlan, skipTrial = false, onSuccess
           
           <button
             type="submit"
-            disabled={isProcessing || (!skipTrial && fraudCheck && !fraudCheck.isAllowed)}
+            disabled={isProcessing || (!skipTrial && fraudCheck !== null && !fraudCheck.isAllowed)}
             className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
           >
             {isProcessing ? (
