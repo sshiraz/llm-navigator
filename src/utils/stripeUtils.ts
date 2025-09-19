@@ -11,12 +11,12 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
 // Check if we're in live mode
-export const isLiveMode = stripePublishableKey?.startsWith('pk_live_');
+export const isLiveMode = false; // Force test mode for safety
 
 // Log a warning if using live keys
-if (isLiveMode) {
+if (stripePublishableKey?.startsWith('pk_live_')) {
   console.warn('⚠️ LIVE MODE ACTIVE - Using production Stripe keys. Real credit cards will be charged.');
-  PaymentLogger.log('warn', 'StripeUtils', '🔴 LIVE MODE ACTIVE - Using production Stripe keys');
+  PaymentLogger.log('warn', 'StripeUtils', '🔴 LIVE KEYS DETECTED - Forcing test mode for safety');
 }
 
 // Stripe configuration

@@ -296,7 +296,10 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
             <p className="mt-1 text-sm text-red-600">{cardError}</p>
           )}
           <p className="mt-1 text-xs text-gray-500">
-            Use test card: 4242 4242 4242 4242 with any future expiry date and any CVC
+            {isLiveMode 
+              ? 'Use a real credit card - LIVE MODE ACTIVE' 
+              : 'Use test card: 4242 4242 4242 4242 with any future expiry date and any CVC'
+            }
           </p>
         </div>
 

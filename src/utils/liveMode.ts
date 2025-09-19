@@ -2,7 +2,7 @@ import { PaymentLogger } from './paymentLogger';
 
 // Check if we're in live mode
 // Disabled live mode banner
-export const isLiveMode = false;
+export const isLiveMode = false; // Force test mode for safety
 
 // Log live mode status on initialization
 if (isLiveMode) {
