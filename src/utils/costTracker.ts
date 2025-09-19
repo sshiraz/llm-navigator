@@ -201,7 +201,7 @@ export class CostTracker {
     }
     
     // For demo accounts (free/trial) or admin users, always allow unlimited usage
-    if (userPlan === 'free' || userPlan === 'trial' || isAdmin) {
+    if (userPlan === 'free' || userPlan === 'trial' || isAdmin || userId === 'demo-user-123') {
       return {
         allowed: true,
         currentUsage: this.formatUsageLimits(userPlan, currentUsage)

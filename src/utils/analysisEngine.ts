@@ -114,8 +114,10 @@ export class AnalysisEngine {
 
   // Check if user should get real analysis
   static shouldUseRealAnalysis(user: User): boolean {
-    // Admin users and paid plans get real analysis
-    return ['starter', 'professional', 'enterprise'].includes(user.subscription) || user.isAdmin === true;
+    // Admin users, paid plans, and demo users get real analysis
+    return ['starter', 'professional', 'enterprise'].includes(user.subscription) || 
+           user.isAdmin === true || 
+           user.email === 'demo@example.com';
   }
 
   // Main analysis method that routes to simulation or real analysis

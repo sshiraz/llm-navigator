@@ -17,6 +17,11 @@ export const isUserAdmin = (user: User | null | undefined): boolean => {
     return true;
   }
   
+  // Check if user is demo user (give demo user admin privileges)
+  if (user.email === 'demo@example.com') {
+    return true;
+  }
+  
   // Check if user has admin email (fallback for hardcoded admin)
   if (user.email && user.email.toLowerCase() === 'info@convologix.com') {
     return true;
