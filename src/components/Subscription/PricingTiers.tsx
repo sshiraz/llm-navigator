@@ -51,6 +51,12 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
     }
   };
 
+  const handleCheckoutCancel = () => {
+    setShowCheckout(false);
+    setSelectedPlan(null);
+    setPlanAmount(0);
+  };
+
   // If showing trial signup or checkout, render those components
   if (showTrialSignup && selectedPlan) {
     return (
