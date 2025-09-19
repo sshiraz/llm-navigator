@@ -1,5 +1,6 @@
 import { loadStripe } from '@stripe/stripe-js';
 import { PaymentLogger } from './paymentLogger';
+import { getPlanAmount as getPlanAmountFromConfig } from './planConfig';
 
 // Environment variables
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
@@ -190,10 +191,7 @@ export const handlePaymentSuccess = async (userId: string, plan: string, payment
 };
 
 // Get plan amount
-export const getPlanAmount = (plan: string): number => {
-  const planConfig = STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS];
-  return planConfig?.amount || 0;
-};
+export const getPlanAmount = getPlanAmountFromConfig;
 
 // Get formatted plan price
 export const getPlanPrice = (plan: string): string => {

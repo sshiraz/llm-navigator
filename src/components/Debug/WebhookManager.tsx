@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Webhook, RefreshCw, CheckCircle, AlertTriangle, X, Zap, Key, Copy, Code, Terminal } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
 import { isLiveMode } from '../../utils/liveMode';
-import { isAdminUser } from '../../utils/authUtils';
+import { isCurrentUserAdmin } from '../../utils/userUtils';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
 
 export default function WebhookManager() {
@@ -18,7 +18,7 @@ export default function WebhookManager() {
   
   useEffect(() => {
     // Check if user is admin
-    setIsAdmin(isAdminUser());
+    setIsAdmin(isCurrentUserAdmin());
     
     if (isOpen) {
       // Generate the webhook URL

@@ -18,8 +18,7 @@ import PricingPage from './components/Pricing/PricingPage';
 import { Project, Analysis, User } from './types';
 import EnvironmentStatus from './components/UI/EnvironmentStatus';
 import { mockAnalyses } from './utils/mockData';
-import { createClient } from '@supabase/supabase-js';
-import { supabase } from './lib/supabase';
+import { isUserAdmin } from './utils/userUtils';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -32,11 +31,7 @@ function App() {
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
 
   // Check if user is admin
-  // const [isAdmin, setIsAdmin] = useState(false);
-  
-  // useEffect(() => {
-  //   setIsAdmin(isAdminUser());
-  // }, []);
+  const isAdmin = user && isUserAdmin(user);
 
   // Load current analysis from localStorage if available
   useEffect(() => {
@@ -97,62 +92,53 @@ function App() {
     if (sessionId && plan && userId) {
       // Handle successful checkout
       console.log('Checkout successful!', { sessionId, plan });
-      // You would typically verify the session and update the user's subscription here
 
-      // For demo purposes, update the user's subscription in localStorage
-      const storedUser = localStorage.getItem('currentUserId');
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
+      
+      // Update user subscription in localStorage
+      try {
+        const currentUserStr = localStorage.getItem('currentUser');
+        if (currentUserStr) {
+          const currentUser = JSON.parse(currentUserStr);
           const updatedUser = {
-            ...parsedUser,
+            ...currentUser,
             subscription: plan,
             paymentMethodAdded: true
           };
-          localStorage.setItem('currentUserId', JSON.stringify(updatedUser));
+          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
           setUser(updatedUser);
-        } catch (e) {
-          console.error('Failed to update stored user', e);
         }
+      } catch (error) {
+        console.error('Error updating user in localStorage:', error);
       }
     }
   }, []);
 
   // Load user from localStorage on initial load
   useEffect(() => {
-    const loadUser = async () => {
-      const storedUserId = localStorage.getItem('currentUserId');
-      if (storedUserId) {
-        // Fetch user from Supabase
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', storedUserId)
-          .single();
-        if (data) {
-          setUser(data);
-          if (activeSection === 'auth') {
-            setActiveSection('dashboard');
-          }
-        } else {
-          setUser(null);
-          localStorage.removeItem('currentUserId');
+    try {
+      const currentUserStr = localStorage.getItem('currentUser');
+      if (currentUserStr) {
+        const userData = JSON.parse(currentUserStr);
+        setUser(userData);
+        if (activeSection === 'auth') {
+          setActiveSection('dashboard');
         }
       }
-    };
-    loadUser();
+    } catch (error) {
+      console.error('Error loading user from localStorage:', error);
+    }
   }, []);
 
   const handleLogin = (userData: User) => {
     setUser(userData);
     setActiveSection('dashboard');
-    localStorage.setItem('currentUserId', userData.id);
+    localStorage.setItem('currentUser', JSON.stringify(userData));
   };
 
   const handleLogout = () => {
     setUser(null);
     window.location.hash = '';
-    localStorage.removeItem('currentUserId');
+    localStorage.removeItem('currentUser');
   };
 
   const handleProjectSelect = (project: Project) => {

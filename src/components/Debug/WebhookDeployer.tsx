@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Webhook, RefreshCw, CheckCircle, AlertTriangle, X, Zap, Key, Copy, Code } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
 import { getSupabaseProjectId } from '../../utils/webhookUtils';
-import { isAdminUser } from '../../utils/authUtils';
+import { isCurrentUserAdmin } from '../../utils/userUtils';
 
 export default function WebhookDeployer() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,7 +16,7 @@ export default function WebhookDeployer() {
   
   useEffect(() => {
     // Check if user is admin
-    setIsAdmin(isAdminUser());
+    setIsAdmin(isCurrentUserAdmin());
     
     if (isOpen) {
       // Get project ID

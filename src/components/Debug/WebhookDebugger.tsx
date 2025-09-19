@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle, Copy, RefreshCw, Webhook, Key, Lock, X } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
-import { isAdminUser } from '../../utils/authUtils';
+import { isCurrentUserAdmin } from '../../utils/userUtils';
 import { isLiveMode } from '../../utils/liveMode';
 import { testWebhookEndpoint, updateWebhookSecret, generateDeployCommand } from '../../utils/webhookUtils';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
@@ -17,7 +17,7 @@ export default function WebhookDebugger() {
   const [isAdmin, setIsAdmin] = useState(false);
   
   useEffect(() => {
-    setIsAdmin(isAdminUser());
+    setIsAdmin(isCurrentUserAdmin());
   }, []);
   
   const testWebhook = async () => {

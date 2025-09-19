@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Key, Lock, Copy, RefreshCw, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
-import { isAdminUser } from '../../utils/authUtils';
+import { isCurrentUserAdmin } from '../../utils/userUtils';
 
 export default function WebhookSecretUpdater() {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,7 +14,7 @@ export default function WebhookSecretUpdater() {
   const [isAdmin, setIsAdmin] = useState(false);
   
   React.useEffect(() => {
-    setIsAdmin(isAdminUser());
+    setIsAdmin(isCurrentUserAdmin());
   }, []);
   
   const updateSecret = async () => {

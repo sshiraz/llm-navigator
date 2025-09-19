@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Webhook, RefreshCw, CheckCircle, AlertTriangle, X, Zap, Key, Copy } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
-import { isAdminUser } from '../../utils/authUtils';
+import { isCurrentUserAdmin } from '../../utils/userUtils';
 import { supabase } from '../../lib/supabase';
 
 export default function AutomaticWebhookFixer() {
@@ -21,7 +21,7 @@ export default function AutomaticWebhookFixer() {
   const [isAdmin, setIsAdmin] = useState(false);
   
   useEffect(() => {
-    setIsAdmin(isAdminUser());
+    setIsAdmin(isCurrentUserAdmin());
   }, []);
   
   useEffect(() => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bug, Download, Trash2, RefreshCw, AlertTriangle, CheckCircle, Clock, Database, Webhook, CreditCard, Zap, X } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
-import { isAdminUser } from '../../utils/authUtils';
+import { isCurrentUserAdmin } from '../../utils/userUtils';
 import { checkDatabaseConnection, checkEdgeFunctions, testWebhookEndpoint, simulateWebhook } from '../../utils/webhookUtils';
 import StripeStatus from '../Payment/StripeStatus';
 import { isLiveMode } from '../../utils/liveMode';
@@ -17,7 +17,7 @@ export default function PaymentDebugger() {
   const [isAdmin, setIsAdmin] = useState(false);
   
   useEffect(() => {
-    setIsAdmin(isAdminUser());
+    setIsAdmin(isCurrentUserAdmin());
   }, []);
 
   // Disable certain features in live mode

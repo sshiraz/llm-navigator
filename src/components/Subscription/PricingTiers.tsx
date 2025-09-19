@@ -1,9 +1,11 @@
 import React from 'react';
-import { Check, Star, Zap, Crown } from 'lucide-react';
+import { Check, Gift, CreditCard, ArrowRight } from 'lucide-react';
+import { Elements } from '@stripe/react-stripe-js';
+import { stripePromise, STRIPE_CONFIG } from '../../utils/stripeUtils';
 import TrialSignup from '../Auth/TrialSignup';
 import CreditCardForm from '../Payment/CreditCardForm';
 import { isLiveMode } from '../../utils/liveMode';
-import { getPlanAmount } from '../../utils/stripeUtils';
+import { PLAN_CONFIGS, getPlanAmount } from '../../utils/planConfig';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
 
 interface PricingTiersProps {
@@ -17,66 +19,6 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
   const [skipTrial, setSkipTrial] = React.useState(false);
   const [showCheckout, setShowCheckout] = React.useState(false);
   const [planAmount, setPlanAmount] = React.useState(0);
-
-  const plans = [
-    {
-      id: 'starter',
-      name: 'Starter',
-      price: '$29',
-      period: '/month',
-      description: 'Perfect for small businesses getting started with AI search optimization',
-      icon: Star,
-      features: [
-        '10 AI analyses per month',
-        'Basic competitor insights',
-        'Standard optimization recommendations',
-        'Email support',
-        'Standard reporting'
-      ],
-      popular: false,
-      buttonText: 'Start Free Trial'
-    },
-    {
-      id: 'professional',
-      name: 'Professional',
-      price: '$99',
-      period: '/month',
-      description: 'Advanced features for businesses serious about AI search visibility',
-      icon: Zap,
-      features: [
-        '50 AI analyses per month',
-        'Advanced competitor strategy',
-        'Advanced optimization recommendations',
-        'Email support',
-        'Advanced reporting & analytics',
-        'Detailed performance metrics',
-        'Limited historical data retention (3 months)'
-      ],
-      popular: true,
-      buttonText: 'Upgrade to Pro'
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise',
-      price: '$299',
-      period: '/month',
-      description: 'Complete solution for large organizations with custom needs',
-      icon: Crown,
-      features: [
-        'Unlimited AI analyses',
-        'Advanced competitor strategy',
-        'White-label reporting & custom branding',
-        'Priority email support',
-        'Premium performance metrics',
-        'Unlimited projects',
-        'Unlimited users',
-        'Unlimited historical data retention',
-        'Access to all AI models including Claude 3 Opus'
-      ],
-      popular: false,
-      buttonText: 'Start Free Trial'
-    }
-  ];
 
   const handlePlanSelect = (planId: string, skipTrialOption = false) => {
     if (planId === currentPlan) return;
@@ -123,13 +65,21 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
   }
 
   if (showCheckout && selectedPlan) {
+    const amount = getPlanAmount(selectedPlan);
+
     return (
-      <CreditCardForm
-        plan={selectedPlan}
-        amount={planAmount}
-        onSuccess={handleCheckoutSuccess}
-        onCancel={() => setShowCheckout(false)}
-      />
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Elements stripe={stripePromise} options={STRIPE_CONFIG}>
+            <CreditCardForm
+              plan={selectedPlan}
+              amount={amount}
+              onSuccess={handleCheckoutSuccess}
+              onCancel={handleCheckoutCancel}
+            />
+          </Elements>
+        </div>
+      </div>
     );
   }
 
@@ -141,13 +91,24 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
           Choose Your AI Optimization Plan
         </h1>
+        
+        {/* Trial Notice */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 max-w-2xl mx-auto mb-8">
+          <div className="flex items-center justify-center space-x-3 mb-3">
+            <Gift className="w-6 h-6 text-blue-600" />
+            <h3 className="text-lg font-semibold text-blue-900">14-Day Free Trial</h3>
+          </div>
+          <p className="text-blue-800">
+            Try any plan free for 14 days. No credit card required. Cancel anytime.
+          </p>
+        </div>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
           Unlock the power of AI-driven SEO optimization with plans designed to scale with your business needs
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-        {plans.map((plan) => {
+        {PLAN_CONFIGS.map((plan) => {
           const IconComponent = plan.icon;
           const isCurrentPlan = currentPlan === plan.id;
           const isPopular = plan.popular;
@@ -220,27 +181,64 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
                   {isCurrentPlan ? 'Current Plan' : plan.buttonText}
                 </button>
                 
-                {!isCurrentPlan && plan.id !== 'enterprise' && (
-                <button
-                  onClick={() => handlePlanSelect(plan.id, true)}
-                  className="w-full py-2 px-6 rounded-xl font-medium text-sm transition-all duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
-                >
-                  Skip Trial - Buy Now
-                </button>
-                )}
-                
-                {!isCurrentPlan && plan.id === 'enterprise' && (
-                <button
-                  onClick={() => handlePlanSelect(plan.id, true)}
-                  className="w-full py-2 px-6 rounded-xl font-medium text-sm transition-all duration-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
-                >
-                  Skip Trial - Buy Now
-                </button>
+                {!isCurrentPlan && (
+                  <button
+                    onClick={() => handlePlanSelect(plan.id, true)}
+                    disabled={isCurrentPlan}
+                    className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Skip Trial - Buy Now
+                  </button>
                 )}
               </div>
             </div>
           );
         })}
+      </div>
+
+      {/* FAQ Section */}
+      <div className="bg-white rounded-2xl shadow-lg p-8 mb-16">
+        <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
+          Frequently Asked Questions
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              What is Answer Engine Optimization (AEO)?
+            </h3>
+            <p className="text-gray-600">
+              AEO is the practice of optimizing your content to appear in AI-powered search results from ChatGPT, Claude, Gemini, and other AI assistants.
+            </p>
+          </div>
+          
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              How does the free trial work?
+            </h3>
+            <p className="text-gray-600">
+              Our 14-day free trial gives you full access to all features with no credit card required.
+            </p>
+          </div>
+          
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              Can I change plans later?
+            </h3>
+            <p className="text-gray-600">
+              Absolutely! You can upgrade or downgrade your plan at any time.
+            </p>
+          </div>
+          
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              Do you offer refunds?
+            </h3>
+            <p className="text-gray-600">
+              Yes, we offer a 30-day money-back guarantee if you're not satisfied with our service.
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-8 text-center">
@@ -252,8 +250,7 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
         </p>
         <button 
           onClick={() => {
-            window.location.hash = '#contact';
-            window.location.reload();
+            window.location.hash = 'contact';
           }}
           className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl"
         >
@@ -262,4 +259,4 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
       </div>
     </div>
   );
-};
+}

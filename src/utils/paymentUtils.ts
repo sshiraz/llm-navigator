@@ -2,6 +2,137 @@ import { supabase } from '../lib/supabase';
 import { PaymentLogger } from './paymentLogger';
 import { isLiveMode } from './liveMode';
 
+/**
+ * Manually update a user's subscription after a successful payment
+ * Use this when the webhook fails but the payment succeeded
+ */
+export const fixSubscription = async (userId: string, plan: string = 'starter'): Promise<{
+  success: boolean;
+  message: string;
+  error?: any;
+}> => {
+  PaymentLogger.log('info', 'PaymentUtils', `Attempting manual subscription fix for user ${userId} to plan ${plan}`, { 
+    userId, 
+    plan,
+    timestamp: new Date().toISOString(),
+    isLiveMode
+  });
+  
+  try {
+    // First check if user exists
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    if (userError) {
+      PaymentLogger.log('error', 'PaymentUtils', `User not found: ${userId}`, userError);
+      return {
+        success: false,
+        message: `User with ID ${userId} not found`,
+        error: userError
+      };
+    }
+
+    // Log the current user state
+    PaymentLogger.log('info', 'PaymentUtils', `Current user state:`, {
+      id: user.id,
+      email: user.email,
+      currentSubscription: user.subscription,
+      paymentMethodAdded: user.payment_method_added
+    });
+    
+    // Check if subscription already matches the requested plan
+    if (user.subscription === plan && user.payment_method_added === true) {
+      PaymentLogger.log('info', 'PaymentUtils', `User ${userId} already has ${plan} plan, no update needed`);
+      return {
+        success: true,
+        message: `Subscription already set to ${plan}`
+      };
+    }
+    
+    // Update user subscription
+    const { data, error } = await supabase
+      .from('users')
+      .update({
+        subscription: plan,
+        payment_method_added: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .select();
+    
+    if (error) {
+      PaymentLogger.log('error', 'PaymentUtils', 'Failed to update subscription', error);
+      return {
+        success: false,
+        message: 'Failed to update subscription',
+        error
+      };
+    }
+    
+    PaymentLogger.log('info', 'PaymentUtils', `Successfully updated subscription for user ${userId} to ${plan}`, data);
+
+    // Also log a payment record to keep track of manual fixes
+    try {
+      const paymentData = {
+        user_id: userId,
+        stripe_payment_intent_id: `manual_fix_${Date.now()}`,
+        plan: plan,
+        amount: plan === 'starter' ? 2900 : plan === 'professional' ? 9900 : 29900,
+        currency: 'usd',
+        status: 'succeeded',
+        created_at: new Date().toISOString(),
+        live_mode: isLiveMode
+      };
+      
+      PaymentLogger.log('info', 'PaymentUtils', 'Creating payment record', paymentData);
+      
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .insert(paymentData);
+        
+      if (paymentError) {
+        PaymentLogger.log('warn', 'PaymentUtils', 'Failed to log payment record, but subscription was updated', paymentError);
+      }
+    } catch (paymentError) {
+      PaymentLogger.log('warn', 'PaymentUtils', 'Error logging payment record', paymentError);
+    }
+    
+    // Update user in localStorage if available
+    try {
+      const userStr = localStorage.getItem('currentUser');
+      if (userStr) {
+        const currentUser = JSON.parse(userStr);
+        if (currentUser.id === userId) {
+          const updatedUser = {
+            ...currentUser,
+            subscription: plan,
+            paymentMethodAdded: true
+          };
+          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+          PaymentLogger.log('info', 'PaymentUtils', 'Updated user in localStorage', { userId, plan });
+        }
+      }
+    } catch (e) {
+      console.error('Error updating localStorage:', e);
+    }
+    
+    return {
+      success: true,
+      message: `Subscription successfully updated to ${plan}`
+    };
+  } catch (error) {
+    PaymentLogger.log('error', 'PaymentUtils', 'Unexpected error during manual fix', error);
+    return {
+      success: false,
+      message: 'An unexpected error occurred',
+      error
+    };
+  }
+};
+
 // Check subscription status
 export const checkSubscriptionStatus = async (userId: string) => {
   try {

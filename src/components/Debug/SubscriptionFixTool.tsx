@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { UserCheck, AlertTriangle, CheckCircle, RefreshCw, X, Search, CreditCard } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
-import { isAdminUser } from '../../utils/authUtils';
+import { isCurrentUserAdmin } from '../../utils/userUtils';
 import { checkSubscriptionStatus, getLatestPayment, fixSubscription } from '../../utils/paymentUtils';
 import { isLiveMode } from '../../utils/liveMode';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
@@ -19,7 +19,7 @@ export default function SubscriptionFixTool() {
   const [isAdmin, setIsAdmin] = useState(false);
   
   React.useEffect(() => {
-    setIsAdmin(isAdminUser());
+    setIsAdmin(isCurrentUserAdmin());
   }, []);
   
   const checkSubscription = async () => {

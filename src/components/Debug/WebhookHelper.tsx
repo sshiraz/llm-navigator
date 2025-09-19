@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Webhook, RefreshCw, CheckCircle, AlertTriangle, X, Zap, Key, Copy, UserCheck } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
-import { isAdminUser } from '../../utils/authUtils';
+import { isCurrentUserAdmin } from '../../utils/userUtils';
 
 export default function WebhookHelper() {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,7 +14,7 @@ export default function WebhookHelper() {
   
   // Check if user is admin when component mounts
   useState(() => {
-    setIsAdmin(isAdminUser());
+    setIsAdmin(isCurrentUserAdmin());
   });
   
   const checkWebhookStatus = async () => {
