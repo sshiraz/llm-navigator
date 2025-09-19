@@ -30,6 +30,16 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="flex items-center space-x-3">
           <button 
             onClick={() => {
+              window.location.hash = '#pricing';
+              window.location.reload();
+            }}
+            className="flex items-center space-x-2 px-4 py-2 bg-white/10 backdrop-blur-sm text-white rounded-lg hover:bg-white/20 transition-all border border-white/20"
+          >
+            <span>Pricing</span>
+          </button>
+          
+          <button 
+            onClick={() => {
               window.location.hash = '#contact';
               window.location.reload();
             }}
@@ -372,6 +382,17 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           {/* Footer Links */}
           <div className="absolute bottom-4 left-0 right-0 text-center">
             <div className="text-blue-200 text-sm space-x-6">
+              <a 
+                href="#pricing"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.hash = '#pricing';
+                  window.location.reload();
+                }}
+                className="hover:text-white transition-colors"
+              >
+                Pricing
+              </a>
               <a 
                 href="#privacy"
                 onClick={(e) => {

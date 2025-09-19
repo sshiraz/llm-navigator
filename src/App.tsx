@@ -14,6 +14,7 @@ import TermsOfService from './components/Legal/TermsOfService';
 import CompetitorStrategy from './components/Reports/CompetitorStrategy';
 import LandingPage from './components/Landing/LandingPage';
 import AuthPage from './components/Auth/AuthPage';
+import PricingPage from './components/Pricing/PricingPage';
 import { Project, Analysis, User } from './types';
 import EnvironmentStatus from './components/UI/EnvironmentStatus';
 import { mockAnalyses } from './utils/mockData';
@@ -278,6 +279,8 @@ function App() {
           return <TermsOfService />;
         case 'admin-users':
           return <UserDashboard />;
+        case 'pricing':
+          return <PricingPage currentPlan={user?.subscription || 'free'} onUpgrade={handleUpgrade} />;
         default:
           return <LandingPage onGetStarted={handleGetStarted} />;
       }
@@ -312,7 +315,11 @@ function App() {
         ) : null;
 
       case 'pricing':
-        return <PricingTiers currentPlan={user?.subscription || 'free'} onUpgrade={handleUpgrade} />;
+        return user ? (
+          <PricingPage currentPlan={user.subscription} onUpgrade={handleUpgrade} />
+        ) : (
+          <PricingPage onUpgrade={handleUpgrade} />
+        );
 
       case 'competitor-strategy':
         return (
@@ -330,7 +337,7 @@ function App() {
   const isAdmin = user && user.email && user.email.toLowerCase() === 'info@convologix.com';
 
   // Show landing page or auth page without sidebar/header
-  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
+  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account' || activeSection === 'pricing') {
     return (
       <>
         {renderContent()}
