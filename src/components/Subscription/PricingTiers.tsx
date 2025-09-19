@@ -28,7 +28,6 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
     setSelectedPlan(planId);
     setSkipTrial(skipTrialOption);
     
-    // For other plans, show trial signup or checkout
     if (skipTrialOption) {
       // Set the plan amount based on the selected plan
       setPlanAmount(getPlanAmount(planId));

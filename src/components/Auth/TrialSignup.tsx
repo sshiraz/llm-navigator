@@ -59,38 +59,36 @@ export default function TrialSignup({ selectedPlan, skipTrial = false, onSuccess
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (skipTrial) {
-      // Go directly to checkout for skip trial
-      setShowCheckout(true);
-      return;
-    }
-    
     if (fraudCheck && !fraudCheck.isAllowed) {
       return; // Prevent submission if fraud check failed
     }
     
     setIsProcessing(true);
     
+    if (skipTrial) {
+      // Go directly to checkout for skip trial
+      setShowCheckout(true);
+      setIsProcessing(false);
+      return;
+    }
+    
     // Simulate trial account creation
     setTimeout(() => {
       console.log('Creating trial account:', { 
         ...formData,
-        id: Date.now().toString(), // Generate a temporary ID
         plan: selectedPlan, 
-        skipTrial,
-        requiresPayment 
+        skipTrial: false
       });
       
       // Store user data in localStorage
       const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      setUserId(userId);
       
-      const userData: UserType = {
+      const userData = {
         id: userId,
         email: formData.email,
         name: formData.name,
-        subscription: skipTrial ? selectedPlan : 'trial',
-        trialEndsAt: skipTrial ? undefined : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        subscription: 'trial',
+        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
         createdAt: new Date().toISOString(),
         avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2'
       };
