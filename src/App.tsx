@@ -320,8 +320,6 @@ function App() {
     }
   };
 
-  const isAdmin = user && user.email && user.email.toLowerCase() === 'info@convologix.com';
-
   // Show landing page or auth page without sidebar/header
   if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account' || activeSection === 'pricing') {
     return (
