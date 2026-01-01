@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Zap, CheckCircle, AlertCircle, Sparkles, DollarSign } from 'lucide-react';
 import { User, Analysis } from '../../types';
-import { AnalysisEngine } from '../../utils/analysisEngine'; 
+import { AnalysisEngine } from '../../utils/analysisEngine';
+import { AnalysisService } from '../../services/analysisService'; 
 
 interface AnalysisProgressProps {
   website: string;
@@ -35,10 +36,14 @@ export default function AnalysisProgress({ website, keywords, model, user, onCom
   ];
 
   useEffect(() => {
+    // Clear any cached analysis data before starting a new analysis
+    localStorage.removeItem('currentAnalysis');
+    console.log('Cleared cached analysis - starting fresh');
+
     // Calculate estimated cost
     const totalCost = steps.reduce((sum, step) => sum + step.cost, 0);
     setEstimatedCost(totalCost);
-    
+
     // Log selected model
     console.log(`Analysis using model: ${model}`);
 
@@ -50,25 +55,32 @@ export default function AnalysisProgress({ website, keywords, model, user, onCom
         setIsComplete(true);
         // Trigger actual analysis
         AnalysisEngine.analyzeWebsite(website, keywords, user, model)
-          .then((result) => {
-            // Store the analysis in localStorage for persistence
+          .then(async (result) => {
+            console.log('=== ANALYSIS COMPLETE ===');
+            console.log('Score:', result.score);
+            console.log('Metrics:', result.metrics);
+            console.log('isSimulated:', result.isSimulated);
+            console.log('Recommendations count:', result.recommendations?.length);
+
+            // Make sure the analysis has the user's ID
+            const analysisWithUserId = {
+              ...result,
+              userId: user.id
+            };
+
+            // Save analysis to Supabase (with localStorage fallback)
             try {
-              // Make sure the analysis has the user's ID
-              const analysisWithUserId = {
-                ...result,
-                userId: user.id
-              };
-              
-              localStorage.setItem('currentAnalysis', JSON.stringify(result));
-              
-              // Also update the analyses list in localStorage
-              const existingAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
-              const updatedAnalyses = [analysisWithUserId, ...existingAnalyses.filter((a: Analysis) => a.id !== result.id)];
-              localStorage.setItem('analyses', JSON.stringify(updatedAnalyses));
+              const saveResult = await AnalysisService.saveAnalysis(analysisWithUserId);
+              if (saveResult.success) {
+                console.log('Analysis saved to Supabase with score:', analysisWithUserId.score);
+              } else {
+                console.warn('Failed to save to Supabase, using localStorage fallback:', saveResult.error);
+              }
             } catch (err) {
-              console.error('Error storing analysis in localStorage:', err);
+              console.error('Error saving analysis:', err);
+              // Fallback already handled by AnalysisService
             }
-            onComplete(result);
+            onComplete(analysisWithUserId);
           })
           .catch((error) => {
             console.error('Analysis failed:', error);

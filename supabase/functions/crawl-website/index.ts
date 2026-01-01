@@ -1,0 +1,799 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { DOMParser, Element } from "https://deno.land/x/deno_dom@v0.1.38/deno-dom-wasm.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+// Configuration
+const MAX_PAGES = 6; // Max pages to crawl (homepage + 5 subpages)
+const CRAWL_TIMEOUT = 8000; // 8 seconds per page
+const IMPORTANT_PATHS = ['/blog', '/services', '/about', '/contact', '/pricing', '/features', '/products', '/faq', '/help'];
+
+interface Heading {
+  level: number;
+  text: string;
+  hasDirectAnswer: boolean;
+  followingContent: string;
+}
+
+interface SchemaMarkup {
+  type: string;
+  properties: Record<string, unknown>;
+}
+
+interface PageData {
+  url: string;
+  title: string;
+  metaDescription: string;
+  headings: Heading[];
+  schemaMarkup: SchemaMarkup[];
+  contentStats: {
+    wordCount: number;
+    paragraphCount: number;
+    avgSentenceLength: number;
+    readabilityScore: number;
+  };
+  technicalSignals: {
+    hasCanonical: boolean;
+    hasOpenGraph: boolean;
+    hasTwitterCard: boolean;
+    loadTime: number;
+    mobileViewport: boolean;
+    hasHttps: boolean;
+  };
+  blufAnalysis: {
+    score: number;
+    directAnswers: { heading: string; answer: string }[];
+    totalHeadings: number;
+    headingsWithDirectAnswers: number;
+  };
+  keywordAnalysis: {
+    titleContainsKeyword: boolean;
+    h1ContainsKeyword: boolean;
+    metaContainsKeyword: boolean;
+    keywordDensity: number;
+    keywordOccurrences: number;
+  };
+}
+
+interface CrawlResult {
+  success: boolean;
+  data?: PageData & {
+    // Multi-page data
+    pagesAnalyzed: number;
+    pages: {
+      url: string;
+      title: string;
+      wordCount: number;
+      headingsCount: number;
+      schemaCount: number;
+      issues: string[];
+    }[];
+    aggregatedStats: {
+      totalWords: number;
+      totalHeadings: number;
+      totalSchemas: number;
+      avgReadability: number;
+      pagesWithSchema: number;
+      pagesWithMeta: number;
+    };
+  };
+  error?: string;
+}
+
+// Calculate Flesch-Kincaid readability score
+function calculateReadability(text: string): number {
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  const words = text.split(/\s+/).filter(w => w.trim().length > 0);
+  const syllables = words.reduce((count, word) => count + countSyllables(word), 0);
+
+  if (sentences.length === 0 || words.length === 0) return 50;
+
+  const avgSentenceLength = words.length / sentences.length;
+  const avgSyllablesPerWord = syllables / words.length;
+
+  // Flesch Reading Ease formula
+  const score = 206.835 - (1.015 * avgSentenceLength) - (84.6 * avgSyllablesPerWord);
+
+  // Normalize to 0-100 scale
+  return Math.max(0, Math.min(100, score));
+}
+
+// Count syllables in a word (approximation)
+function countSyllables(word: string): number {
+  word = word.toLowerCase().replace(/[^a-z]/g, '');
+  if (word.length <= 3) return 1;
+
+  const vowels = 'aeiouy';
+  let count = 0;
+  let prevWasVowel = false;
+
+  for (const char of word) {
+    const isVowel = vowels.includes(char);
+    if (isVowel && !prevWasVowel) count++;
+    prevWasVowel = isVowel;
+  }
+
+  // Handle silent e
+  if (word.endsWith('e')) count--;
+
+  return Math.max(1, count);
+}
+
+// Check if text starts with a direct answer pattern
+function isDirectAnswer(text: string): boolean {
+  if (!text || text.trim().length < 20) return false;
+
+  const trimmed = text.trim();
+
+  // Patterns that indicate a direct answer
+  const directPatterns = [
+    /^[A-Z][^.!?]*\s+(is|are|was|were|means|refers to|describes|involves)\s+/i,
+    /^(The|A|An)\s+\w+\s+(is|are|means|involves)/i,
+    /^(Yes|No|Generally|Typically|Usually|Often|Sometimes),?\s+/i,
+    /^(To|In order to)\s+\w+,?\s+/i,
+    /^\d+[\s\w]*:/,  // Numbered list
+    /^(First|Second|Third|Finally|Lastly),?\s+/i,
+  ];
+
+  for (const pattern of directPatterns) {
+    if (pattern.test(trimmed)) return true;
+  }
+
+  // Check if first sentence is concise (under 150 chars) - good for BLUF
+  const firstSentence = trimmed.split(/[.!?]/)[0];
+  if (firstSentence && firstSentence.length < 150 && firstSentence.length > 30) {
+    return true;
+  }
+
+  return false;
+}
+
+// Extract text content following a heading
+function getFollowingContent(heading: Element, doc: Document): string {
+  let content = '';
+  let sibling = heading.nextElementSibling;
+  let charCount = 0;
+  const maxChars = 500;
+
+  while (sibling && charCount < maxChars) {
+    const tagName = sibling.tagName?.toLowerCase();
+
+    // Stop at next heading
+    if (tagName && /^h[1-6]$/.test(tagName)) break;
+
+    // Get text content from paragraphs, lists, etc.
+    if (['p', 'ul', 'ol', 'div', 'span', 'li'].includes(tagName || '')) {
+      const text = sibling.textContent?.trim() || '';
+      content += text + ' ';
+      charCount += text.length;
+    }
+
+    sibling = sibling.nextElementSibling;
+  }
+
+  return content.trim();
+}
+
+// Parse JSON-LD schema markup
+function extractSchemaMarkup(doc: Document): SchemaMarkup[] {
+  const schemas: SchemaMarkup[] = [];
+  const scripts = doc.querySelectorAll('script[type="application/ld+json"]');
+
+  scripts.forEach((script) => {
+    try {
+      const content = script.textContent;
+      if (!content) return;
+
+      const json = JSON.parse(content);
+
+      // Handle single schema or array
+      const items = Array.isArray(json) ? json : [json];
+
+      for (const item of items) {
+        if (item['@type']) {
+          schemas.push({
+            type: item['@type'],
+            properties: item,
+          });
+        }
+
+        // Handle @graph format
+        if (item['@graph'] && Array.isArray(item['@graph'])) {
+          for (const graphItem of item['@graph']) {
+            if (graphItem['@type']) {
+              schemas.push({
+                type: graphItem['@type'],
+                properties: graphItem,
+              });
+            }
+          }
+        }
+      }
+    } catch {
+      // Invalid JSON, skip
+    }
+  });
+
+  return schemas;
+}
+
+// Extract internal links from a page
+function extractInternalLinks(doc: Document, baseUrl: URL): string[] {
+  const links: Set<string> = new Set();
+  const anchors = doc.querySelectorAll('a[href]');
+
+  anchors.forEach((anchor) => {
+    const href = anchor.getAttribute('href');
+    if (!href) return;
+
+    try {
+      // Resolve relative URLs
+      const linkUrl = new URL(href, baseUrl.origin);
+
+      // Only include same-domain links
+      if (linkUrl.hostname !== baseUrl.hostname) return;
+
+      // Skip non-HTML resources
+      const path = linkUrl.pathname.toLowerCase();
+      if (path.match(/\.(pdf|jpg|jpeg|png|gif|svg|css|js|xml|json|zip|mp3|mp4|webp)$/)) return;
+
+      // Skip anchors and query strings for cleaner URLs
+      linkUrl.hash = '';
+      linkUrl.search = '';
+
+      // Normalize trailing slash
+      const normalizedPath = linkUrl.pathname.replace(/\/$/, '') || '/';
+      linkUrl.pathname = normalizedPath;
+
+      links.add(linkUrl.toString());
+    } catch {
+      // Invalid URL, skip
+    }
+  });
+
+  return Array.from(links);
+}
+
+// Prioritize important pages
+function prioritizeLinks(links: string[], baseUrl: URL): string[] {
+  const prioritized: string[] = [];
+  const others: string[] = [];
+
+  for (const link of links) {
+    try {
+      const url = new URL(link);
+      const path = url.pathname.toLowerCase();
+
+      // Check if it's an important path
+      const isImportant = IMPORTANT_PATHS.some(p =>
+        path === p || path.startsWith(p + '/') || path.startsWith(p + '-')
+      );
+
+      if (isImportant) {
+        prioritized.push(link);
+      } else if (path !== '/' && path.split('/').length <= 3) {
+        // Include shallow pages but not deeply nested ones
+        others.push(link);
+      }
+    } catch {
+      // Skip invalid URLs
+    }
+  }
+
+  // Return prioritized first, then others, limited to MAX_PAGES - 1 (excluding homepage)
+  return [...prioritized, ...others].slice(0, MAX_PAGES - 1);
+}
+
+// Analyze keyword presence
+function analyzeKeywords(
+  bodyText: string,
+  title: string,
+  metaDescription: string,
+  h1Text: string,
+  keywords: string[]
+): PageData['keywordAnalysis'] {
+  const lowerBody = bodyText.toLowerCase();
+  const lowerTitle = title.toLowerCase();
+  const lowerMeta = metaDescription.toLowerCase();
+  const lowerH1 = h1Text.toLowerCase();
+
+  let totalOccurrences = 0;
+  let titleMatch = false;
+  let h1Match = false;
+  let metaMatch = false;
+
+  for (const keyword of keywords) {
+    const lowerKeyword = keyword.toLowerCase().trim();
+    if (!lowerKeyword) continue;
+
+    if (lowerTitle.includes(lowerKeyword)) titleMatch = true;
+    if (lowerH1.includes(lowerKeyword)) h1Match = true;
+    if (lowerMeta.includes(lowerKeyword)) metaMatch = true;
+
+    // Count occurrences in body
+    const regex = new RegExp(lowerKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    const matches = lowerBody.match(regex);
+    if (matches) totalOccurrences += matches.length;
+  }
+
+  const wordCount = bodyText.split(/\s+/).length;
+  const density = wordCount > 0 ? (totalOccurrences / wordCount) * 100 : 0;
+
+  return {
+    titleContainsKeyword: titleMatch,
+    h1ContainsKeyword: h1Match,
+    metaContainsKeyword: metaMatch,
+    keywordDensity: Math.round(density * 100) / 100,
+    keywordOccurrences: totalOccurrences,
+  };
+}
+
+// Parse page data from an already-parsed document
+function parsePageData(doc: Document, url: string, keywords: string[], loadTime: number): PageData {
+  const targetUrl = new URL(url);
+
+  // Extract title
+  const titleEl = doc.querySelector('title');
+  const title = titleEl?.textContent?.trim() || '';
+
+  // Extract meta description
+  const metaDescEl = doc.querySelector('meta[name="description"]');
+  const metaDescription = metaDescEl?.getAttribute('content')?.trim() || '';
+
+  // Extract headings with BLUF analysis
+  const headings: Heading[] = [];
+  const headingEls = doc.querySelectorAll('h1, h2, h3, h4, h5, h6');
+
+  headingEls.forEach((el) => {
+    const element = el as Element;
+    const level = parseInt(element.tagName.charAt(1));
+    const text = element.textContent?.trim() || '';
+    const followingContent = getFollowingContent(element, doc);
+
+    headings.push({
+      level,
+      text,
+      hasDirectAnswer: isDirectAnswer(followingContent),
+      followingContent: followingContent.substring(0, 200),
+    });
+  });
+
+  // Get H1 text for keyword analysis
+  const h1El = doc.querySelector('h1');
+  const h1Text = h1El?.textContent?.trim() || '';
+
+  // Extract schema markup
+  const schemaMarkup = extractSchemaMarkup(doc);
+
+  // Get body text for analysis
+  const bodyEl = doc.querySelector('body');
+  const bodyText = bodyEl?.textContent?.replace(/\s+/g, ' ').trim() || '';
+
+  // Calculate content stats
+  const words = bodyText.split(/\s+/).filter(w => w.length > 0);
+  const sentences = bodyText.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  const paragraphs = doc.querySelectorAll('p');
+
+  const contentStats = {
+    wordCount: words.length,
+    paragraphCount: paragraphs.length,
+    avgSentenceLength: sentences.length > 0 ? Math.round(words.length / sentences.length) : 0,
+    readabilityScore: Math.round(calculateReadability(bodyText)),
+  };
+
+  // Technical signals
+  const technicalSignals = {
+    hasCanonical: !!doc.querySelector('link[rel="canonical"]'),
+    hasOpenGraph: !!doc.querySelector('meta[property^="og:"]'),
+    hasTwitterCard: !!doc.querySelector('meta[name^="twitter:"]'),
+    loadTime,
+    mobileViewport: !!doc.querySelector('meta[name="viewport"]'),
+    hasHttps: targetUrl.protocol === 'https:',
+  };
+
+  // BLUF Analysis
+  const headingsWithAnswers = headings.filter(h => h.hasDirectAnswer);
+  const directAnswers = headingsWithAnswers.map(h => ({
+    heading: h.text,
+    answer: h.followingContent,
+  }));
+
+  const blufScore = headings.length > 0
+    ? Math.round((headingsWithAnswers.length / headings.length) * 100)
+    : 0;
+
+  const blufAnalysis = {
+    score: blufScore,
+    directAnswers,
+    totalHeadings: headings.length,
+    headingsWithDirectAnswers: headingsWithAnswers.length,
+  };
+
+  // Keyword analysis
+  const keywordAnalysis = analyzeKeywords(
+    bodyText,
+    title,
+    metaDescription,
+    h1Text,
+    keywords
+  );
+
+  return {
+    url,
+    title,
+    metaDescription,
+    headings,
+    schemaMarkup,
+    contentStats,
+    technicalSignals,
+    blufAnalysis,
+    keywordAnalysis,
+  };
+}
+
+// Crawl a single page
+async function crawlPage(url: string, keywords: string[]): Promise<PageData | null> {
+  const startTime = Date.now();
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), CRAWL_TIMEOUT);
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; LLMNavigator/1.0; +https://llmnavigator.com/bot)',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      redirect: 'follow',
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.log(`Failed to fetch ${url}: ${response.status}`);
+      return null;
+    }
+
+    const html = await response.text();
+    const loadTime = Date.now() - startTime;
+
+    // Parse HTML
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    if (!doc) return null;
+
+    const targetUrl = new URL(url);
+
+    // Extract title
+    const titleEl = doc.querySelector('title');
+    const title = titleEl?.textContent?.trim() || '';
+
+    // Extract meta description
+    const metaDescEl = doc.querySelector('meta[name="description"]');
+    const metaDescription = metaDescEl?.getAttribute('content')?.trim() || '';
+
+    // Extract headings with BLUF analysis
+    const headings: Heading[] = [];
+    const headingEls = doc.querySelectorAll('h1, h2, h3, h4, h5, h6');
+
+    headingEls.forEach((el) => {
+      const element = el as Element;
+      const level = parseInt(element.tagName.charAt(1));
+      const text = element.textContent?.trim() || '';
+      const followingContent = getFollowingContent(element, doc);
+
+      headings.push({
+        level,
+        text,
+        hasDirectAnswer: isDirectAnswer(followingContent),
+        followingContent: followingContent.substring(0, 200),
+      });
+    });
+
+    // Get H1 text for keyword analysis
+    const h1El = doc.querySelector('h1');
+    const h1Text = h1El?.textContent?.trim() || '';
+
+    // Extract schema markup
+    const schemaMarkup = extractSchemaMarkup(doc);
+
+    // Get body text for analysis
+    const bodyEl = doc.querySelector('body');
+    const bodyText = bodyEl?.textContent?.replace(/\s+/g, ' ').trim() || '';
+
+    // Calculate content stats
+    const words = bodyText.split(/\s+/).filter(w => w.length > 0);
+    const sentences = bodyText.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    const paragraphs = doc.querySelectorAll('p');
+
+    const contentStats = {
+      wordCount: words.length,
+      paragraphCount: paragraphs.length,
+      avgSentenceLength: sentences.length > 0 ? Math.round(words.length / sentences.length) : 0,
+      readabilityScore: Math.round(calculateReadability(bodyText)),
+    };
+
+    // Technical signals
+    const technicalSignals = {
+      hasCanonical: !!doc.querySelector('link[rel="canonical"]'),
+      hasOpenGraph: !!doc.querySelector('meta[property^="og:"]'),
+      hasTwitterCard: !!doc.querySelector('meta[name^="twitter:"]'),
+      loadTime,
+      mobileViewport: !!doc.querySelector('meta[name="viewport"]'),
+      hasHttps: targetUrl.protocol === 'https:',
+    };
+
+    // BLUF Analysis
+    const headingsWithAnswers = headings.filter(h => h.hasDirectAnswer);
+    const directAnswers = headingsWithAnswers.map(h => ({
+      heading: h.text,
+      answer: h.followingContent,
+    }));
+
+    const blufScore = headings.length > 0
+      ? Math.round((headingsWithAnswers.length / headings.length) * 100)
+      : 0;
+
+    const blufAnalysis = {
+      score: blufScore,
+      directAnswers,
+      totalHeadings: headings.length,
+      headingsWithDirectAnswers: headingsWithAnswers.length,
+    };
+
+    // Keyword analysis
+    const keywordAnalysis = analyzeKeywords(
+      bodyText,
+      title,
+      metaDescription,
+      h1Text,
+      keywords
+    );
+
+    return {
+      url,
+      title,
+      metaDescription,
+      headings,
+      schemaMarkup,
+      contentStats,
+      technicalSignals,
+      blufAnalysis,
+      keywordAnalysis,
+    };
+  } catch (error) {
+    console.log(`Error crawling ${url}:`, error);
+    return null;
+  }
+}
+
+// Get issues for a page
+function getPageIssues(page: PageData): string[] {
+  const issues: string[] = [];
+
+  if (!page.title || page.title.length < 10) issues.push('Missing/short title');
+  if (!page.metaDescription) issues.push('No meta description');
+  if (page.schemaMarkup.length === 0) issues.push('No schema markup');
+  if (page.headings.filter(h => h.level === 1).length === 0) issues.push('No H1');
+  if (page.headings.filter(h => h.level === 1).length > 1) issues.push('Multiple H1s');
+  if (page.contentStats.wordCount < 300) issues.push('Low word count');
+  if (page.blufAnalysis.score < 30) issues.push('Poor BLUF score');
+
+  return issues;
+}
+
+serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    const { url, keywords = [] } = await req.json();
+
+    if (!url) {
+      return new Response(
+        JSON.stringify({ success: false, error: "URL is required" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
+    // Validate URL
+    let targetUrl: URL;
+    try {
+      targetUrl = new URL(url.startsWith('http') ? url : `https://${url}`);
+    } catch {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid URL format" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
+    console.log(`Starting multi-page crawl for ${targetUrl.origin}`);
+
+    // Normalize the homepage URL
+    const homepageUrl = targetUrl.origin + '/';
+    console.log(`Homepage URL: ${homepageUrl}`);
+
+    // Step 1: Fetch the homepage HTML once
+    let homepageHtml: string;
+    const homepageStartTime = Date.now();
+    try {
+      const response = await fetch(homepageUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; LLMNavigator/1.0; +https://llmnavigator.com/bot)',
+          'Accept': 'text/html,application/xhtml+xml',
+          'Accept-Language': 'en-US,en;q=0.9',
+        },
+        redirect: 'follow',
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.status}`);
+      }
+      homepageHtml = await response.text();
+      console.log(`Fetched homepage in ${Date.now() - homepageStartTime}ms, ${homepageHtml.length} chars`);
+    } catch (error) {
+      console.error('Failed to fetch homepage:', error);
+      return new Response(
+        JSON.stringify({ success: false, error: "Failed to fetch the homepage" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
+    // Parse homepage HTML
+    const homepageDoc = new DOMParser().parseFromString(homepageHtml, "text/html");
+    if (!homepageDoc) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Failed to parse homepage HTML" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
+    // Step 2: Extract page data from homepage
+    const homepage = parsePageData(homepageDoc, homepageUrl, keywords, Date.now() - homepageStartTime);
+
+    // Step 3: Extract and prioritize internal links
+    const allLinks = extractInternalLinks(homepageDoc, targetUrl);
+    console.log(`Found ${allLinks.length} internal links on homepage`);
+
+    // Filter out homepage and prioritize important pages
+    const homepageVariants = [
+      homepageUrl,
+      targetUrl.origin,
+      targetUrl.origin + '/',
+      homepageUrl.replace(/\/$/, ''),
+    ];
+    const filteredLinks = allLinks.filter(l => !homepageVariants.includes(l));
+    const prioritizedLinks = prioritizeLinks(filteredLinks, targetUrl);
+
+    console.log(`Prioritized ${prioritizedLinks.length} links for crawling: ${prioritizedLinks.join(', ')}`);
+
+    // Step 3: Crawl additional pages in parallel
+    const additionalPages: PageData[] = [];
+    const crawlPromises = prioritizedLinks.map(link => crawlPage(link, keywords));
+    const results = await Promise.allSettled(crawlPromises);
+
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value) {
+        additionalPages.push(result.value);
+      }
+    }
+
+    // Step 4: Combine all pages
+    const allPages = [homepage, ...additionalPages];
+    console.log(`Successfully crawled ${allPages.length} pages`);
+
+    // Step 5: Calculate aggregated stats
+    const aggregatedStats = {
+      totalWords: allPages.reduce((sum, p) => sum + p.contentStats.wordCount, 0),
+      totalHeadings: allPages.reduce((sum, p) => sum + p.headings.length, 0),
+      totalSchemas: allPages.reduce((sum, p) => sum + p.schemaMarkup.length, 0),
+      avgReadability: Math.round(
+        allPages.reduce((sum, p) => sum + p.contentStats.readabilityScore, 0) / allPages.length
+      ),
+      pagesWithSchema: allPages.filter(p => p.schemaMarkup.length > 0).length,
+      pagesWithMeta: allPages.filter(p => p.metaDescription.length > 0).length,
+    };
+
+    // Step 6: Aggregate schema markups from all pages (deduplicated by type)
+    const allSchemas: SchemaMarkup[] = [];
+    const seenTypes = new Set<string>();
+    for (const page of allPages) {
+      for (const schema of page.schemaMarkup) {
+        if (!seenTypes.has(schema.type)) {
+          seenTypes.add(schema.type);
+          allSchemas.push(schema);
+        }
+      }
+    }
+
+    // Step 7: Combine headings from all pages
+    const allHeadings = allPages.flatMap(p => p.headings);
+
+    // Step 8: Recalculate BLUF score across all pages
+    const totalHeadingsCount = allHeadings.length;
+    const totalHeadingsWithAnswers = allHeadings.filter(h => h.hasDirectAnswer).length;
+    const overallBlufScore = totalHeadingsCount > 0
+      ? Math.round((totalHeadingsWithAnswers / totalHeadingsCount) * 100)
+      : 0;
+
+    // Step 9: Aggregate keyword analysis
+    const aggregatedKeywords = {
+      titleContainsKeyword: allPages.some(p => p.keywordAnalysis.titleContainsKeyword),
+      h1ContainsKeyword: allPages.some(p => p.keywordAnalysis.h1ContainsKeyword),
+      metaContainsKeyword: allPages.some(p => p.keywordAnalysis.metaContainsKeyword),
+      keywordDensity: Math.round(
+        (allPages.reduce((sum, p) => sum + p.keywordAnalysis.keywordDensity, 0) / allPages.length) * 100
+      ) / 100,
+      keywordOccurrences: allPages.reduce((sum, p) => sum + p.keywordAnalysis.keywordOccurrences, 0),
+    };
+
+    // Build pages summary
+    const pagesSummary = allPages.map(p => ({
+      url: p.url,
+      title: p.title || 'Untitled',
+      wordCount: p.contentStats.wordCount,
+      headingsCount: p.headings.length,
+      schemaCount: p.schemaMarkup.length,
+      issues: getPageIssues(p),
+    }));
+
+    // Build final result (using homepage as base but with aggregated data)
+    const result: CrawlResult = {
+      success: true,
+      data: {
+        // Base data from homepage
+        url: homepage.url,
+        title: homepage.title,
+        metaDescription: homepage.metaDescription,
+        // Aggregated headings
+        headings: allHeadings.slice(0, 50), // Limit to first 50
+        // Aggregated schemas
+        schemaMarkup: allSchemas,
+        // Aggregated content stats
+        contentStats: {
+          wordCount: aggregatedStats.totalWords,
+          paragraphCount: allPages.reduce((sum, p) => sum + p.contentStats.paragraphCount, 0),
+          avgSentenceLength: Math.round(
+            allPages.reduce((sum, p) => sum + p.contentStats.avgSentenceLength, 0) / allPages.length
+          ),
+          readabilityScore: aggregatedStats.avgReadability,
+        },
+        // Use homepage technical signals
+        technicalSignals: homepage.technicalSignals,
+        // Aggregated BLUF analysis
+        blufAnalysis: {
+          score: overallBlufScore,
+          directAnswers: allPages.flatMap(p => p.blufAnalysis.directAnswers).slice(0, 10),
+          totalHeadings: totalHeadingsCount,
+          headingsWithDirectAnswers: totalHeadingsWithAnswers,
+        },
+        // Aggregated keyword analysis
+        keywordAnalysis: aggregatedKeywords,
+        // Multi-page specific data
+        pagesAnalyzed: allPages.length,
+        pages: pagesSummary,
+        aggregatedStats,
+      },
+    };
+
+    return new Response(
+      JSON.stringify(result),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+    );
+
+  } catch (error) {
+    console.error('Crawl error:', error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+    );
+  }
+});

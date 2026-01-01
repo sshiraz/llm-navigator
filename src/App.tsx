@@ -151,63 +151,10 @@ function App() {
     window.location.hash = '#new-analysis';
   };
 
-  const handleNewAnalysis = (website: string, keywords: string[]) => {
-    // This will be handled by the AnalysisEngine now
-    // The analysis creation logic is moved to AnalysisProgress component
-    const newAnalysis: Analysis = {
-      id: Date.now().toString(),
-      projectId: selectedProject?.id || '1',
-      userId: user?.id || 'anonymous',
-      website,
-      keywords,
-      score: Math.floor(Math.random() * 40) + 60, // 60-100
-      metrics: {
-        contentClarity: Math.floor(Math.random() * 40) + 60,
-        semanticRichness: Math.floor(Math.random() * 40) + 60,
-        structuredData: Math.floor(Math.random() * 40) + 60,
-        naturalLanguage: Math.floor(Math.random() * 40) + 60,
-        keywordRelevance: Math.floor(Math.random() * 40) + 60,
-      },
-      insights: 'Your content shows strong potential for AI-powered search optimization. Focus on improving structured data and semantic relationships to boost your LLM discoverability score.',
-      predictedRank: Math.floor(Math.random() * 5) + 1,
-      category: 'Top Result',
-      recommendations: [
-        {
-          id: '1',
-          title: 'Implement FAQ Schema',
-          description: 'Add FAQ structured data to help AI assistants better understand your content.',
-          priority: 'high',
-          difficulty: 'medium',
-          estimatedTime: '1-2 weeks',
-          expectedImpact: 12
-        },
-        {
-          id: '2',
-          title: 'Enhance Content Clarity',
-          description: 'Restructure content with clear headings and concise answers to common questions.',
-          priority: 'medium',
-          difficulty: 'easy',
-          estimatedTime: '3-5 days',
-          expectedImpact: 8
-        }
-      ],
-      createdAt: new Date().toISOString(),
-      isSimulated: user ? !['starter', 'professional', 'enterprise'].includes(user.subscription) : true
-    };
-
-    setCurrentAnalysis(newAnalysis);
-
-    // Store analyses in localStorage
-    try {
-      if (user) {
-        const existingAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
-        existingAnalyses.unshift(newAnalysis); // Add to beginning of array
-        localStorage.setItem('analyses', JSON.stringify(existingAnalyses));
-      }
-    } catch (error) {
-      console.error('Error storing analysis in localStorage:', error);
-    }
-
+  const handleNewAnalysis = (analysis: Analysis) => {
+    // Analysis is already saved to Supabase by AnalysisProgress component
+    // Just set it as current and navigate to results
+    setCurrentAnalysis(analysis);
     window.location.hash = 'analysis-results';
   };
 

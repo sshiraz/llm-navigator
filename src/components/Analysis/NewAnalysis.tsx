@@ -15,7 +15,7 @@ interface AnalysisState {
 }
 
 interface NewAnalysisProps {
-  onAnalyze: (website: string, keywords: string[]) => void;
+  onAnalyze: (analysis: Analysis) => void;
   user?: User;
 }
 
@@ -109,7 +109,7 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
   const handleAnalysisComplete = (analysis: Analysis) => {
     setIsAnalyzing(false);
     setCurrentAnalysis(null);
-    onAnalyze(analysis.website, analysis.keywords);
+    onAnalyze(analysis);
   };
   console.log('Current analysis state:', { isAnalyzing, currentAnalysis });
 

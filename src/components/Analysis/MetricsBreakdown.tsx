@@ -356,16 +356,230 @@ export default function MetricsBreakdown({ analysis, competitors = [] }: Metrics
                 </div>
               </div>
 
+              {/* Page Analysis - Shows crawl data */}
+              {selectedInsights.crawlData && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Site Crawl Results
+                    {selectedInsights.crawlData.pagesAnalyzed && selectedInsights.crawlData.pagesAnalyzed > 1 && (
+                      <span className="ml-2 text-sm font-normal text-blue-600">
+                        ({selectedInsights.crawlData.pagesAnalyzed} pages analyzed)
+                      </span>
+                    )}
+                  </h3>
+
+                  {/* Pages Analyzed - Multi-page crawl */}
+                  {selectedInsights.crawlData.pages && selectedInsights.crawlData.pages.length > 1 && (
+                    <div className="mb-4">
+                      <span className="text-xs font-medium text-gray-500 uppercase mb-2 block">
+                        Pages Analyzed ({selectedInsights.crawlData.pages.length})
+                      </span>
+                      <div className="bg-white border rounded-lg overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Page</th>
+                              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500">Words</th>
+                              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500">Headings</th>
+                              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500">Schema</th>
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">Issues</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {selectedInsights.crawlData.pages.map((page, idx) => (
+                              <tr key={idx} className={idx === 0 ? 'bg-blue-50' : 'hover:bg-gray-50'}>
+                                <td className="px-3 py-2">
+                                  <div className="flex items-center gap-2">
+                                    {idx === 0 && (
+                                      <span className="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">Home</span>
+                                    )}
+                                    <span className="text-gray-900 truncate max-w-[200px]" title={page.url}>
+                                      {page.title || new URL(page.url).pathname}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2 text-center text-gray-600">{page.wordCount}</td>
+                                <td className="px-3 py-2 text-center text-gray-600">{page.headingsCount}</td>
+                                <td className="px-3 py-2 text-center">
+                                  <span className={`px-1.5 py-0.5 rounded text-xs ${page.schemaCount > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                                    {page.schemaCount}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2">
+                                  {page.issues.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1">
+                                      {page.issues.slice(0, 2).map((issue, i) => (
+                                        <span key={i} className="px-1.5 py-0.5 bg-red-100 text-red-700 text-xs rounded truncate max-w-[100px]" title={issue}>
+                                          {issue}
+                                        </span>
+                                      ))}
+                                      {page.issues.length > 2 && (
+                                        <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+                                          +{page.issues.length - 2}
+                                        </span>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-green-600 text-xs">✓ No issues</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Page Info */}
+                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-xs font-medium text-gray-500 uppercase">Homepage URL</span>
+                        <p className="text-sm text-gray-900 truncate">{selectedInsights.crawlData.url}</p>
+                      </div>
+                      <div>
+                        <span className="text-xs font-medium text-gray-500 uppercase">Load Time</span>
+                        <p className="text-sm text-gray-900">{(selectedInsights.crawlData.technicalSignals.loadTime / 1000).toFixed(2)}s</p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <span className="text-xs font-medium text-gray-500 uppercase">Homepage Title</span>
+                        <p className="text-sm text-gray-900">{selectedInsights.crawlData.title || '❌ No title found'}</p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <span className="text-xs font-medium text-gray-500 uppercase">Meta Description</span>
+                        <p className="text-sm text-gray-900">{selectedInsights.crawlData.metaDescription || '❌ No meta description found'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Content Stats */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    <div className="bg-white border rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-gray-900">{selectedInsights.crawlData.contentStats.wordCount.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500">Total Words</div>
+                    </div>
+                    <div className="bg-white border rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-gray-900">{selectedInsights.crawlData.headings.length}</div>
+                      <div className="text-xs text-gray-500">Total Headings</div>
+                    </div>
+                    <div className="bg-white border rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-gray-900">{selectedInsights.crawlData.schemaTypes.length}</div>
+                      <div className="text-xs text-gray-500">Schema Types</div>
+                    </div>
+                    <div className="bg-white border rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-gray-900">{selectedInsights.crawlData.contentStats.readabilityScore}</div>
+                      <div className="text-xs text-gray-500">Avg Readability</div>
+                    </div>
+                  </div>
+
+                  {/* Schema Types Found */}
+                  {selectedInsights.crawlData.schemaTypes.length > 0 && (
+                    <div className="mb-4">
+                      <span className="text-xs font-medium text-gray-500 uppercase">Schema Types Found</span>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {selectedInsights.crawlData.schemaTypes.map((schema, idx) => (
+                          <span key={idx} className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                            {schema}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Technical Signals */}
+                  <div className="mb-4">
+                    <span className="text-xs font-medium text-gray-500 uppercase">Technical Signals</span>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      <span className={`px-2 py-1 text-xs rounded-full ${selectedInsights.crawlData.technicalSignals.hasHttps ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {selectedInsights.crawlData.technicalSignals.hasHttps ? '✓' : '✗'} HTTPS
+                      </span>
+                      <span className={`px-2 py-1 text-xs rounded-full ${selectedInsights.crawlData.technicalSignals.hasCanonical ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        {selectedInsights.crawlData.technicalSignals.hasCanonical ? '✓' : '✗'} Canonical
+                      </span>
+                      <span className={`px-2 py-1 text-xs rounded-full ${selectedInsights.crawlData.technicalSignals.mobileViewport ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {selectedInsights.crawlData.technicalSignals.mobileViewport ? '✓' : '✗'} Mobile Viewport
+                      </span>
+                      <span className={`px-2 py-1 text-xs rounded-full ${selectedInsights.crawlData.technicalSignals.hasOpenGraph ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        {selectedInsights.crawlData.technicalSignals.hasOpenGraph ? '✓' : '✗'} Open Graph
+                      </span>
+                      <span className={`px-2 py-1 text-xs rounded-full ${selectedInsights.crawlData.technicalSignals.hasTwitterCard ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        {selectedInsights.crawlData.technicalSignals.hasTwitterCard ? '✓' : '✗'} Twitter Card
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Issues Found */}
+                  {selectedInsights.crawlData.issues && selectedInsights.crawlData.issues.length > 0 && (
+                    <div className="mb-4">
+                      <span className="text-xs font-medium text-gray-500 uppercase mb-2 block">
+                        Issues Found ({selectedInsights.crawlData.issues.length})
+                      </span>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {selectedInsights.crawlData.issues.map((issue, idx) => (
+                          <div
+                            key={idx}
+                            className={`flex items-center gap-2 p-2 rounded text-sm ${
+                              issue.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
+                              issue.type === 'warning' ? 'bg-yellow-50 text-yellow-800 border border-yellow-200' :
+                              'bg-blue-50 text-blue-800 border border-blue-200'
+                            }`}
+                          >
+                            <span className="font-medium">
+                              {issue.type === 'error' ? '❌' : issue.type === 'warning' ? '⚠️' : 'ℹ️'}
+                            </span>
+                            <span>{issue.message}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Headings Found */}
+                  {selectedInsights.crawlData.headings.length > 0 && (
+                    <div>
+                      <span className="text-xs font-medium text-gray-500 uppercase mb-2 block">
+                        Headings Found ({selectedInsights.crawlData.headings.length})
+                      </span>
+                      <div className="bg-white border rounded-lg max-h-48 overflow-y-auto">
+                        {selectedInsights.crawlData.headings.slice(0, 15).map((heading, idx) => (
+                          <div key={idx} className="flex items-center gap-2 p-2 border-b last:border-b-0 text-sm">
+                            <span className={`px-2 py-0.5 rounded text-xs font-mono ${
+                              heading.level === 1 ? 'bg-purple-100 text-purple-800' :
+                              heading.level === 2 ? 'bg-blue-100 text-blue-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              H{heading.level}
+                            </span>
+                            <span className="text-gray-700 truncate flex-1">{heading.text}</span>
+                            {heading.hasDirectAnswer ? (
+                              <span className="text-green-600 text-xs">✓ BLUF</span>
+                            ) : (
+                              <span className="text-gray-400 text-xs">No direct answer</span>
+                            )}
+                          </div>
+                        ))}
+                        {selectedInsights.crawlData.headings.length > 15 && (
+                          <div className="p-2 text-center text-xs text-gray-500">
+                            +{selectedInsights.crawlData.headings.length - 15} more headings
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Recommendations */}
               {selectedInsights.recommendations && selectedInsights.recommendations.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Recommendations</h3>
-                  <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Actionable Recommendations</h3>
+                  <div className="space-y-4">
                     {selectedInsights.recommendations.map((rec, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-medium text-gray-900">{rec.title}</h4>
-                          <span className={`px-2 py-1 text-xs rounded-full ${
+                      <div key={index} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
+                        <div className="flex items-start justify-between mb-3">
+                          <h4 className="font-semibold text-gray-900 text-base">{rec.title}</h4>
+                          <span className={`px-3 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
                             rec.priority === 'high' ? 'bg-red-100 text-red-800' :
                             rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
                             'bg-emerald-100 text-emerald-800'
@@ -373,11 +587,23 @@ export default function MetricsBreakdown({ analysis, competitors = [] }: Metrics
                             {rec.priority} priority
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600 mb-2">{rec.description}</p>
-                        <div className="flex items-center space-x-4 text-xs text-gray-500">
-                          <span>Difficulty: {rec.difficulty}</span>
-                          <span>Time: {rec.estimatedTime}</span>
-                          <span>Impact: +{rec.expectedImpact} points</span>
+                        {/* Render description with proper formatting for code blocks and line breaks */}
+                        <div className="text-sm text-gray-700 mb-3 whitespace-pre-wrap font-mono bg-gray-50 p-3 rounded border text-xs leading-relaxed">
+                          {rec.description}
+                        </div>
+                        <div className="flex items-center space-x-4 text-xs text-gray-500 pt-2 border-t border-gray-100">
+                          <span className="flex items-center">
+                            <span className="w-2 h-2 rounded-full bg-blue-400 mr-1"></span>
+                            Difficulty: {rec.difficulty}
+                          </span>
+                          <span className="flex items-center">
+                            <span className="w-2 h-2 rounded-full bg-purple-400 mr-1"></span>
+                            Time: {rec.estimatedTime}
+                          </span>
+                          <span className="flex items-center">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 mr-1"></span>
+                            Impact: +{rec.expectedImpact} points
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -396,7 +622,11 @@ export default function MetricsBreakdown({ analysis, competitors = [] }: Metrics
                 </button>
                 <button
                   onClick={() => {
-                    const url = `https://${selectedInsights.website}`;
+                    // Handle URLs with or without protocol
+                    let url = selectedInsights.website;
+                    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                      url = `https://${url}`;
+                    }
                     window.open(url, '_blank');
                   }}
                   className="flex items-center space-x-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"

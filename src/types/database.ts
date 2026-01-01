@@ -99,11 +99,12 @@ export interface Database {
       analyses: {
         Row: {
           id: string;
-          project_id: string;
+          project_id?: string;
           user_id: string;
           website: string;
           keywords: string[];
           score: number;
+          model?: string;
           metrics: {
             contentClarity: number;
             semanticRichness: number;
@@ -130,15 +131,38 @@ export interface Database {
               embeddings: number;
             };
           };
+          crawl_data?: {
+            url: string;
+            title: string;
+            metaDescription: string;
+            headings: { level: number; text: string; hasDirectAnswer: boolean }[];
+            schemaTypes: string[];
+            contentStats: {
+              wordCount: number;
+              paragraphCount: number;
+              avgSentenceLength: number;
+              readabilityScore: number;
+            };
+            technicalSignals: {
+              hasCanonical: boolean;
+              hasOpenGraph: boolean;
+              hasTwitterCard: boolean;
+              mobileViewport: boolean;
+              hasHttps: boolean;
+              loadTime: number;
+            };
+            issues: { type: 'error' | 'warning' | 'info'; message: string }[];
+          };
           created_at: string;
         };
         Insert: {
           id?: string;
-          project_id: string;
+          project_id?: string;
           user_id: string;
           website: string;
           keywords: string[];
           score: number;
+          model?: string;
           metrics: {
             contentClarity: number;
             semanticRichness: number;
@@ -152,6 +176,7 @@ export interface Database {
           recommendations: any[];
           is_simulated?: boolean;
           cost_info?: any;
+          crawl_data?: any;
           created_at?: string;
         };
         Update: {
@@ -161,6 +186,7 @@ export interface Database {
           website?: string;
           keywords?: string[];
           score?: number;
+          model?: string;
           metrics?: any;
           insights?: string;
           predicted_rank?: number;
@@ -168,6 +194,7 @@ export interface Database {
           recommendations?: any[];
           is_simulated?: boolean;
           cost_info?: any;
+          crawl_data?: any;
         };
       };
       api_usage: {

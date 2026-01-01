@@ -66,6 +66,39 @@ export interface Analysis {
       embeddings: number;
     };
   };
+  // Crawl data for displaying page details
+  crawlData?: {
+    url: string;
+    title: string;
+    metaDescription: string;
+    headings: { level: number; text: string; hasDirectAnswer: boolean }[];
+    schemaTypes: string[];
+    contentStats: {
+      wordCount: number;
+      paragraphCount: number;
+      avgSentenceLength: number;
+      readabilityScore: number;
+    };
+    technicalSignals: {
+      hasCanonical: boolean;
+      hasOpenGraph: boolean;
+      hasTwitterCard: boolean;
+      mobileViewport: boolean;
+      hasHttps: boolean;
+      loadTime: number;
+    };
+    issues: { type: 'error' | 'warning' | 'info'; message: string }[];
+    // Multi-page crawl data
+    pagesAnalyzed?: number;
+    pages?: {
+      url: string;
+      title: string;
+      wordCount: number;
+      headingsCount: number;
+      schemaCount: number;
+      issues: string[];
+    }[];
+  };
 }
 
 export interface Recommendation {

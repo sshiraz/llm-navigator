@@ -3,7 +3,8 @@ import { ArrowLeft, ExternalLink, Clock, Zap, AlertCircle, CheckCircle, Download
 import { Analysis } from '../../types';
 import MetricsBreakdown from './MetricsBreakdown';
 import { mockAnalyses } from '../../utils/mockData';
-import { generatePDFReport } from '../../utils/pdfGenerator'; 
+import { generatePDFReport } from '../../utils/pdfGenerator';
+import { AnalysisService } from '../../services/analysisService'; 
 
 interface AnalysisResultsProps {
   analysis: Analysis;
@@ -131,16 +132,17 @@ export default function AnalysisResults({ analysis, onBack }: AnalysisResultsPro
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = () => {
-    // Get stored analyses from localStorage
+  const confirmDelete = async () => {
     try {
-      const storedAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
-      // Filter out the current analysis
-      const updatedAnalyses = storedAnalyses.filter((a: Analysis) => a.id !== analysis.id);
-      // Save back to localStorage
-      localStorage.setItem('analyses', JSON.stringify(updatedAnalyses));
-      
-      // Navigate back to dashboard or new analysis
+      // Delete from Supabase
+      const result = await AnalysisService.deleteAnalysis(analysis.id);
+      if (!result.success) {
+        console.error('Failed to delete from Supabase:', result.error);
+        alert('Failed to delete analysis. Please try again.');
+        return;
+      }
+
+      // Navigate back to dashboard
       window.location.hash = 'dashboard';
     } catch (error) {
       console.error('Error deleting analysis:', error);

@@ -4,7 +4,8 @@ import ProjectCard from './ProjectCard';
 import ScoreCard from './ScoreCard';
 import RecentAnalyses from './RecentAnalyses';
 import { mockProjects } from '../../utils/mockData';
-import { Project, Analysis } from '../../types';
+import { Project, Analysis, User } from '../../types';
+import { AnalysisService } from '../../services/analysisService';
 
 interface DashboardProps {
   onProjectSelect: (project: Project) => void;
@@ -13,10 +14,11 @@ interface DashboardProps {
 
 export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardProps) {
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
-  
+  const [isLoading, setIsLoading] = useState(true);
+
   // Get current user from localStorage
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  
+
   useEffect(() => {
     // Load current user from localStorage
     try {
@@ -27,24 +29,44 @@ export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardP
     } catch (error) {
       console.error('Error loading current user:', error);
     }
-    
-    // Load analyses from localStorage
-    try {
-      const storedAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
-      
-      // Filter analyses to only show those belonging to the current user
-      if (currentUser) {
-        const userAnalyses = storedAnalyses.filter((analysis: Analysis) => 
-          analysis.userId === currentUser.id
-        );
-        setAnalyses(userAnalyses);
-      } else {
+  }, []);
+
+  useEffect(() => {
+    // Load analyses from Supabase when user is available
+    async function loadAnalyses() {
+      if (!currentUser) {
         setAnalyses([]);
+        setIsLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error('Error loading analyses from localStorage:', error);
-      setAnalyses([]);
+
+      setIsLoading(true);
+      try {
+        // First, try to migrate any localStorage analyses to Supabase
+        const migrated = await AnalysisService.migrateFromLocalStorage(currentUser.id);
+        if (migrated > 0) {
+          console.log(`Migrated ${migrated} analyses to Supabase`);
+        }
+
+        // Then load from Supabase
+        const result = await AnalysisService.getUserAnalyses(currentUser.id);
+        if (result.success && result.data) {
+          setAnalyses(result.data);
+          console.log(`Loaded ${result.data.length} analyses from Supabase`);
+        } else {
+          setAnalyses([]);
+        }
+      } catch (error) {
+        console.error('Error loading analyses:', error);
+        // Fallback to localStorage
+        const localAnalyses = AnalysisService.getFromLocalStorage(currentUser.id);
+        setAnalyses(localAnalyses);
+      } finally {
+        setIsLoading(false);
+      }
     }
+
+    loadAnalyses();
   }, [currentUser]);
   
   const totalAnalyses = analyses.length;
@@ -55,14 +77,24 @@ export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardP
     ? Math.max(...analyses.map(a => a.score)) 
     : 0;
     
-  const handleDeleteAnalysis = (analysisId: string) => {
+  const handleDeleteAnalysis = async (analysisId: string) => {
     try {
-      const existingAnalyses = JSON.parse(localStorage.getItem('analyses') || '[]');
-      const updatedAnalyses = existingAnalyses.filter((a: Analysis) => a.id !== analysisId);
-      // Update state
+      // Optimistically update UI
       setAnalyses(analyses.filter(a => a.id !== analysisId));
-      // Save to localStorage
-      localStorage.setItem('analyses', JSON.stringify(updatedAnalyses));
+
+      // Delete from Supabase
+      const result = await AnalysisService.deleteAnalysis(analysisId);
+      if (!result.success) {
+        console.error('Failed to delete from Supabase:', result.error);
+        // Revert on failure
+        if (currentUser) {
+          const freshData = await AnalysisService.getUserAnalyses(currentUser.id);
+          if (freshData.data) {
+            setAnalyses(freshData.data);
+          }
+        }
+        alert('Failed to delete analysis. Please try again.');
+      }
     } catch (error) {
       console.error('Error deleting analysis:', error);
       alert('Failed to delete analysis. Please try again.');
