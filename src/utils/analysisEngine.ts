@@ -434,62 +434,49 @@ export class AnalysisEngine {
     return finalMetrics;
   }
 
-  // Generate insights from real crawl data
+  // Generate insights from real crawl data - in plain business language
   private static generateInsightsFromCrawl(crawlData: CrawlData, metrics: Analysis['metrics']): string {
     const insights: string[] = [];
     const { contentStats, blufAnalysis, schemaMarkup, technicalSignals, keywordAnalysis, title, metaDescription } = crawlData;
 
-    // Overall assessment
+    // Overall assessment in plain language
     const avgScore = Object.values(metrics).reduce((a, b) => a + b, 0) / 5;
     if (avgScore >= 75) {
-      insights.push(`Your website shows strong AI search optimization with an average score of ${Math.round(avgScore)}.`);
+      insights.push(`Good news! Your website is well-prepared for AI search. AI assistants can understand your business and are likely to recommend you.`);
     } else if (avgScore >= 50) {
-      insights.push(`Your website has moderate AI visibility with several areas for improvement.`);
+      insights.push(`Your website has a decent foundation, but there's room to improve. With a few changes, AI assistants will be more likely to recommend you.`);
     } else {
-      insights.push(`Your website needs significant optimization to be discovered by AI search engines.`);
+      insights.push(`Your website needs work before AI assistants will confidently recommend you. The good news: the fixes are straightforward.`);
     }
 
-    // Schema insights
+    // Schema insights in plain language
     if (schemaMarkup.length === 0) {
-      insights.push(`No structured data (schema.org) was found. This significantly limits AI assistants' ability to understand and cite your content.`);
+      insights.push(`Important: AI has no way to verify your business. Adding schema markup (like a digital business card) would help AI trust and recommend you.`);
     } else {
       const types = schemaMarkup.map(s => s.type).join(', ');
-      insights.push(`Found ${schemaMarkup.length} schema type(s): ${types}.`);
-
-      if (!schemaMarkup.find(s => s.type === 'FAQPage')) {
-        insights.push(`Consider adding FAQPage schema for better AI visibility in Q&A contexts.`);
-      }
+      insights.push(`Good: AI can identify you as a ${types.toLowerCase().replace('page', '')}.`);
     }
 
-    // BLUF analysis
+    // BLUF analysis in plain language
     if (blufAnalysis.score < 40) {
-      insights.push(`Only ${blufAnalysis.headingsWithDirectAnswers} of ${blufAnalysis.totalHeadings} sections provide direct answers. AI models prefer content that answers questions immediately after headings.`);
+      insights.push(`Your content buries the main points. AI reads the first sentence after each heading - make sure it contains your answer, not just an introduction.`);
     } else if (blufAnalysis.score >= 70) {
-      insights.push(`Good direct answer structure - ${blufAnalysis.headingsWithDirectAnswers} sections follow the BLUF (Bottom Line Up Front) pattern that AI models prefer.`);
+      insights.push(`Nice work! Your content puts answers first, which is exactly what AI looks for when deciding what to quote.`);
     }
 
-    // Technical signals
-    if (!technicalSignals.hasHttps) {
-      insights.push(`Warning: Site is not using HTTPS, which may reduce trust signals for AI systems.`);
-    }
+    // Technical signals in plain language
     if (!technicalSignals.mobileViewport) {
-      insights.push(`No mobile viewport detected. Mobile optimization is important for both user experience and AI crawling.`);
-    }
-    if (technicalSignals.loadTime > 3000) {
-      insights.push(`Page load time (${(technicalSignals.loadTime / 1000).toFixed(1)}s) is above optimal. Faster sites are crawled more efficiently.`);
+      insights.push(`Your site isn't optimized for phones. Since most people use AI on mobile, this could hurt your visibility.`);
     }
 
-    // Content insights
+    // Content insights in plain language
     if (contentStats.wordCount < 500) {
-      insights.push(`Content length (${contentStats.wordCount} words) may be too short for comprehensive topic coverage.`);
-    }
-    if (contentStats.readabilityScore < 50) {
-      insights.push(`Readability score is low. Consider simplifying language for better AI comprehension.`);
+      insights.push(`Your content is quite short (${contentStats.wordCount} words). AI prefers thorough information it can trust and cite.`);
     }
 
-    // Keyword insights
+    // Keyword insights in plain language
     if (!keywordAnalysis.titleContainsKeyword) {
-      insights.push(`Target keywords not found in the page title. This reduces relevance signals for AI search.`);
+      insights.push(`Your target keywords aren't in your page title. AI uses the title to understand what your page is about.`);
     }
 
     return insights.join(' ');
@@ -572,44 +559,28 @@ export class AnalysisEngine {
     return issues;
   }
 
-  // Generate specific recommendations from crawl data
+  // Generate specific recommendations from crawl data - in plain business language
   private static generateRecommendationsFromCrawl(crawlData: CrawlData, metrics: Analysis['metrics']): Analysis['recommendations'] {
     const recommendations: Analysis['recommendations'] = [];
     const { contentStats, blufAnalysis, schemaMarkup, technicalSignals, keywordAnalysis, headings, title, metaDescription } = crawlData;
 
     // Get schema types found
     const schemaTypes = schemaMarkup.map(s => s.type);
-    const highValueSchemas = ['FAQPage', 'HowTo', 'Article', 'Product', 'Organization', 'LocalBusiness', 'WebSite'];
-    const missingHighValueSchemas = highValueSchemas.filter(s => !schemaTypes.includes(s));
 
-    // Schema recommendations - be specific about what's found and missing
+    // 1. TRUST SIGNALS - Help AI verify who you are
     if (schemaMarkup.length === 0) {
       recommendations.push({
         id: 'schema-1',
-        title: 'Add Schema.org Structured Data',
-        description: `⚠️ NO SCHEMA FOUND. Your page has zero structured data, making it harder for AI systems to understand your content. Add this JSON-LD to your <head>:\n\n<script type="application/ld+json">\n{"@context":"https://schema.org","@type":"Organization","name":"Your Company","url":"${crawlData.url}"}\n</script>`,
+        title: 'Help AI Know Who You Are',
+        description: `Right now, AI has no way to verify your business exists. Think of schema markup as your business ID card for AI.\n\nWhat to do: Ask your web developer to add "Organization schema" to your website. This tells AI your business name, website, and what you do.\n\nIf you use WordPress, install the "Yoast SEO" or "Rank Math" plugin - they add this automatically.`,
         priority: 'high',
         difficulty: 'medium',
-        estimatedTime: '2-4 hours',
+        estimatedTime: '1 hour',
         expectedImpact: 25,
       });
-    } else {
-      // Show what schemas are found and suggest additions
-      const foundSchemas = schemaTypes.join(', ');
-      if (missingHighValueSchemas.length > 0 && !schemaTypes.includes('FAQPage')) {
-        recommendations.push({
-          id: 'schema-enhance',
-          title: 'Enhance Schema Coverage',
-          description: `✓ Found: ${foundSchemas}. Consider adding: ${missingHighValueSchemas.slice(0, 3).join(', ')}. FAQPage schema is particularly valuable for AI search visibility.`,
-          priority: 'medium',
-          difficulty: 'easy',
-          estimatedTime: '1-2 hours',
-          expectedImpact: 10,
-        });
-      }
     }
 
-    // FAQ schema recommendation with specific headings to convert
+    // 2. FAQ SCHEMA - Big opportunity if they have question headings
     const questionHeadings = headings.filter(h =>
       h.text.includes('?') ||
       h.text.toLowerCase().startsWith('how') ||
@@ -620,170 +591,157 @@ export class AnalysisEngine {
     );
 
     if (questionHeadings.length >= 2 && !schemaTypes.includes('FAQPage')) {
-      const questionsToConvert = questionHeadings.slice(0, 4).map(h => `• "${h.text}"`).join('\n');
-      const sampleQuestion = questionHeadings[0];
-      const sampleAnswer = sampleQuestion.followingContent?.substring(0, 100) || 'Your answer here...';
-
+      const questionExamples = questionHeadings.slice(0, 3).map(h => `"${h.text}"`).join(', ');
       recommendations.push({
         id: 'schema-faq',
-        title: `Convert ${questionHeadings.length} Questions to FAQPage Schema`,
-        description: `Found ${questionHeadings.length} question-style headings that should be FAQPage schema:\n\n${questionsToConvert}\n\nAdd this to your page:\n<script type="application/ld+json">\n{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"${sampleQuestion.text}","acceptedAnswer":{"@type":"Answer","text":"${sampleAnswer}..."}}]}\n</script>`,
+        title: 'Turn Your FAQs Into AI-Ready Content',
+        description: `Great news! You have ${questionHeadings.length} questions on your site (like ${questionExamples}). These are exactly what people ask AI assistants.\n\nWhat to do: Add "FAQ schema" to mark these as official Q&As. This makes AI much more likely to use YOUR answers when people ask these questions.\n\nMost website builders (Squarespace, Wix, WordPress) have FAQ blocks that do this automatically.`,
         priority: 'high',
         difficulty: 'easy',
-        estimatedTime: '1-2 hours',
+        estimatedTime: '30 minutes',
         expectedImpact: 20,
       });
     }
 
-    // BLUF recommendations with specific examples
+    // 3. DIRECT ANSWERS - Put the answer first
     if (blufAnalysis.score < 60) {
-      const headingsWithoutAnswers = headings.filter(h => !h.hasDirectAnswer).slice(0, 3);
-      const examples = headingsWithoutAnswers.map(h => `• "${h.text}" → Add a direct 1-2 sentence answer immediately after`).join('\n');
-
+      const sectionsNeedingWork = blufAnalysis.totalHeadings - blufAnalysis.headingsWithDirectAnswers;
       recommendations.push({
         id: 'bluf-1',
-        title: `Add Direct Answers to ${blufAnalysis.totalHeadings - blufAnalysis.headingsWithDirectAnswers} Sections`,
-        description: `BLUF Score: ${blufAnalysis.score}/100. Only ${blufAnalysis.headingsWithDirectAnswers} of ${blufAnalysis.totalHeadings} sections start with a direct answer. AI models extract the first sentence after headings - make it count!\n\nFix these sections:\n${examples}\n\nPattern: [Heading] → [Direct answer in 1-2 sentences] → [Detailed explanation]`,
+        title: 'Put Your Answers First (Not Last)',
+        description: `${sectionsNeedingWork} of your ${blufAnalysis.totalHeadings} sections bury the main point. AI reads the first sentence after each heading - if the answer isn't there, it moves on.\n\nWhat to do: For each section, put a 1-2 sentence answer right after the heading, THEN explain the details.\n\nBefore: "There are many factors to consider when choosing..."\nAfter: "The best choice is X because Y. Here's why..."`,
         priority: 'high',
         difficulty: 'medium',
-        estimatedTime: '2-4 hours',
+        estimatedTime: '2 hours',
         expectedImpact: 18,
       });
     }
 
-    // Keyword recommendations with actual title shown
+    // 4. KEYWORDS IN TITLE
     if (!keywordAnalysis.titleContainsKeyword) {
       recommendations.push({
         id: 'keyword-title',
-        title: 'Add Target Keywords to Page Title',
-        description: `Current title: "${title || 'No title found'}"\n\nYour target keywords are missing from the title. The title tag is a critical signal for AI search. Suggested format:\n"[Primary Keyword] - [Secondary Keyword] | ${title?.split('|')[1]?.trim() || 'Brand Name'}"`,
+        title: 'Add Your Main Topic to the Page Title',
+        description: `Your page title is: "${title || '(no title found)'}"\n\nThe problem: Your target keywords aren't in the title. This is like naming your bakery "Bob's Place" instead of "Bob's Bakery" - AI won't know what you do.\n\nWhat to do: Rewrite your title to include your main keyword. Keep it under 60 characters.\n\nExample: "[What You Do] - [Benefit] | [Your Brand]"`,
         priority: 'high',
         difficulty: 'easy',
-        estimatedTime: '15 minutes',
+        estimatedTime: '10 minutes',
         expectedImpact: 15,
       });
     }
 
-    // Meta description with actual content shown
+    // 5. META DESCRIPTION
     if (!metaDescription || metaDescription.length < 50) {
       recommendations.push({
         id: 'meta-desc',
-        title: 'Add Compelling Meta Description',
-        description: `${!metaDescription ? '⚠️ NO META DESCRIPTION FOUND' : `Current: "${metaDescription.substring(0, 80)}..."`}\n\nAdd a 150-160 character meta description that:\n• Includes your target keywords naturally\n• Answers "what will the user learn/get?"\n• Uses active voice and a call-to-action`,
+        title: 'Write a Summary AI Can Use',
+        description: `${!metaDescription ? 'Your page has no meta description.' : 'Your meta description is too short.'} This is the "elevator pitch" that tells AI what your page is about.\n\nWhat to do: Write a 150-160 character description that:\n• Says exactly what visitors will learn or get\n• Includes your main keyword naturally\n• Sounds like something a human would say\n\nExample: "Learn how to [solve problem] with our [solution]. [Benefit] for [who it's for]."`,
         priority: 'high',
         difficulty: 'easy',
-        estimatedTime: '15 minutes',
+        estimatedTime: '10 minutes',
         expectedImpact: 12,
       });
     } else if (!keywordAnalysis.metaContainsKeyword) {
       recommendations.push({
         id: 'keyword-meta',
-        title: 'Optimize Meta Description for Keywords',
-        description: `Current: "${metaDescription.substring(0, 100)}..."\n\nYour target keywords aren't in the meta description. Rewrite to naturally include them while maintaining readability.`,
-        priority: 'medium',
-        difficulty: 'easy',
-        estimatedTime: '15 minutes',
-        expectedImpact: 8,
-      });
-    }
-
-    // Technical recommendations with code snippets
-    if (!technicalSignals.hasCanonical) {
-      recommendations.push({
-        id: 'tech-canonical',
-        title: 'Add Canonical URL Tag',
-        description: `No canonical URL found. Add to your <head>:\n\n<link rel="canonical" href="${crawlData.url}" />\n\nThis prevents duplicate content issues and consolidates ranking signals.`,
+        title: 'Include Your Keywords in the Description',
+        description: `Your current description: "${metaDescription.substring(0, 80)}..."\n\nThe problem: Your target keywords aren't in this description. AI uses this to understand what your page is about.\n\nWhat to do: Rewrite to naturally include your main keywords. Don't stuff them in awkwardly - make it read naturally.`,
         priority: 'medium',
         difficulty: 'easy',
         estimatedTime: '10 minutes',
-        expectedImpact: 5,
-      });
-    }
-
-    if (!technicalSignals.hasOpenGraph) {
-      recommendations.push({
-        id: 'tech-og',
-        title: 'Add Open Graph Meta Tags',
-        description: `No Open Graph tags found. Add to your <head>:\n\n<meta property="og:title" content="${title}" />\n<meta property="og:description" content="${metaDescription?.substring(0, 100) || 'Your description'}" />\n<meta property="og:type" content="website" />\n<meta property="og:url" content="${crawlData.url}" />`,
-        priority: 'medium',
-        difficulty: 'easy',
-        estimatedTime: '30 minutes',
         expectedImpact: 8,
       });
     }
 
+    // 6. MOBILE FRIENDLY
     if (!technicalSignals.mobileViewport) {
       recommendations.push({
         id: 'tech-mobile',
-        title: 'Add Mobile Viewport Meta Tag',
-        description: `⚠️ CRITICAL: No mobile viewport detected. Your site may not render properly on mobile devices.\n\nAdd to <head>:\n<meta name="viewport" content="width=device-width, initial-scale=1">`,
+        title: 'Make Your Site Work on Phones',
+        description: `Your site isn't set up for mobile devices. This is a big problem - most people use AI assistants on their phones, and AI won't recommend sites that don't work on mobile.\n\nWhat to do: If you have a web developer, ask them to add "mobile viewport meta tag." If you use a website builder, check your mobile preview settings.\n\nThis is usually a 5-minute fix that makes a big difference.`,
         priority: 'high',
         difficulty: 'easy',
-        estimatedTime: '5 minutes',
+        estimatedTime: '10 minutes',
         expectedImpact: 15,
       });
     }
 
-    // Content recommendations with specifics
+    // 7. THIN CONTENT
     if (contentStats.wordCount < 800) {
+      const wordsNeeded = Math.max(0, 1000 - contentStats.wordCount);
       recommendations.push({
         id: 'content-length',
-        title: `Expand Content (Currently ${contentStats.wordCount} words)`,
-        description: `Your page has ${contentStats.wordCount} words across ${contentStats.paragraphCount} paragraphs. For comprehensive topic coverage that AI models prefer:\n\n• Target: 1,500-2,500 words\n• Add: ${Math.max(0, 1500 - contentStats.wordCount)} more words\n• Include: Examples, case studies, FAQs, and detailed explanations`,
+        title: 'Add More Helpful Information',
+        description: `Your page has ${contentStats.wordCount} words. AI prefers thorough content (1,000+ words) because it can give better answers.\n\nWhat to do: Add ${wordsNeeded}+ more words by answering questions your customers commonly ask:\n• What problem does this solve?\n• How does it work?\n• Who is it best for?\n• What makes you different?\n• What are common mistakes to avoid?`,
         priority: 'medium',
         difficulty: 'medium',
-        estimatedTime: '3-5 hours',
+        estimatedTime: '2-3 hours',
         expectedImpact: 12,
       });
     }
 
+    // 8. HARD TO READ
     if (contentStats.readabilityScore < 50) {
       recommendations.push({
         id: 'content-readability',
-        title: `Improve Readability (Score: ${contentStats.readabilityScore}/100)`,
-        description: `Your content's readability score is ${contentStats.readabilityScore}/100 (aim for 60+).\n\nCurrent avg sentence length: ${contentStats.avgSentenceLength} words (optimal: 15-20)\n\nTo improve:\n• Break long sentences into shorter ones\n• Use simpler words where possible\n• Add more paragraph breaks\n• Use bullet points for lists`,
+        title: 'Simplify Your Writing',
+        description: `Your content is harder to read than it should be (readability score: ${contentStats.readabilityScore}/100). If AI struggles to understand your writing, it won't quote you.\n\nWhat to do:\n• Break long sentences into shorter ones (aim for 15-20 words)\n• Replace jargon with everyday words\n• Use bullet points for lists\n• Add paragraph breaks more often\n\nTip: Read your content out loud. If you run out of breath, the sentence is too long.`,
         priority: 'medium',
         difficulty: 'medium',
-        estimatedTime: '2-3 hours',
+        estimatedTime: '1-2 hours',
         expectedImpact: 10,
       });
     }
 
-    // Heading structure recommendations
+    // 9. MISSING H1
     const h1Count = headings.filter(h => h.level === 1).length;
     const h2Count = headings.filter(h => h.level === 2).length;
 
     if (h1Count === 0) {
       recommendations.push({
         id: 'heading-h1',
-        title: 'Add H1 Heading',
-        description: `⚠️ NO H1 FOUND. Every page needs exactly one H1 tag containing your primary keyword. Add:\n\n<h1>[Your Primary Keyword] - [Compelling Benefit]</h1>`,
+        title: 'Add a Main Headline',
+        description: `Your page is missing a main headline (H1). This is like a book without a title - AI doesn't know what the page is about.\n\nWhat to do: Add one H1 heading at the top of your page that clearly states what the page is about. Include your main keyword.\n\nExample: "The Complete Guide to [Your Topic]" or "[Your Service] for [Your Audience]"`,
         priority: 'high',
         difficulty: 'easy',
-        estimatedTime: '10 minutes',
+        estimatedTime: '5 minutes',
         expectedImpact: 15,
       });
     } else if (h1Count > 1) {
       recommendations.push({
         id: 'heading-h1-multiple',
-        title: `Fix Multiple H1 Tags (Found ${h1Count})`,
-        description: `Found ${h1Count} H1 tags - there should be exactly one. Multiple H1s confuse search engines and AI about your page's main topic. Keep the most relevant one and convert others to H2.`,
+        title: 'Use Only One Main Headline',
+        description: `Your page has ${h1Count} main headlines (H1s). This confuses AI about what your page is really about - it's like a book with multiple titles.\n\nWhat to do: Keep the most important H1 and change the others to H2 subheadings. There should be exactly one H1 per page.`,
         priority: 'high',
         difficulty: 'easy',
-        estimatedTime: '15 minutes',
+        estimatedTime: '10 minutes',
         expectedImpact: 10,
       });
     }
 
+    // 10. FEW SUBHEADINGS
     if (h2Count < 3 && contentStats.wordCount > 500) {
       recommendations.push({
         id: 'heading-structure',
-        title: 'Add More Subheadings (H2s)',
-        description: `Only ${h2Count} H2 headings for ${contentStats.wordCount} words. Add H2 subheadings every 200-300 words to:\n• Break up content for easier scanning\n• Help AI understand content structure\n• Target long-tail keywords\n\nSuggested sections: Benefits, How It Works, FAQ, Getting Started`,
+        title: 'Break Up Your Content with Subheadings',
+        description: `You have ${contentStats.wordCount} words but only ${h2Count} subheadings. This makes your content hard to scan and harder for AI to understand.\n\nWhat to do: Add a subheading (H2) every 200-300 words. Good subheadings:\n• Tell readers what the next section covers\n• Can be understood without reading everything else\n• Often work as questions people might ask`,
         priority: 'medium',
         difficulty: 'easy',
-        estimatedTime: '30 minutes',
+        estimatedTime: '20 minutes',
         expectedImpact: 8,
+      });
+    }
+
+    // 11. OPEN GRAPH (lower priority)
+    if (!technicalSignals.hasOpenGraph && recommendations.length < 6) {
+      recommendations.push({
+        id: 'tech-og',
+        title: 'Improve How Your Links Look When Shared',
+        description: `When someone shares your link, it shows a generic preview. Open Graph tags control how your page looks when shared on social media or in chat apps.\n\nWhat to do: Most website builders have a "Social sharing" or "SEO" section where you can set a title, description, and image for link previews. This takes 5 minutes and makes your links look more professional.`,
+        priority: 'medium',
+        difficulty: 'easy',
+        estimatedTime: '15 minutes',
+        expectedImpact: 5,
       });
     }
 
@@ -795,8 +753,8 @@ export class AnalysisEngine {
       return b.expectedImpact - a.expectedImpact;
     });
 
-    // Return top 7 recommendations
-    return recommendations.slice(0, 7);
+    // Return top 6 recommendations
+    return recommendations.slice(0, 6);
   }
 
   private static calculateOverallScore(metrics: any): number {
@@ -806,45 +764,44 @@ export class AnalysisEngine {
     );
   }
 
-  // Shared utility methods
+  // Shared utility methods - plain language for business owners
   private static generateSimulatedInsights(website: string, score: number): string {
-    const templates = [
-      `Your website ${website} shows ${score >= 70 ? 'strong' : 'moderate'} potential for AI search optimization.`,
-      `Analysis reveals ${score >= 80 ? 'excellent' : score >= 60 ? 'good' : 'significant'} opportunities for improvement.`,
-      `Focus on ${score < 60 ? 'fundamental SEO improvements and' : ''} structured data implementation to boost AI visibility.`,
-      `This simulated analysis demonstrates our methodology - upgrade for real-time website crawling and AI-powered insights.`
-    ];
-    
-    return templates.join(' ');
+    if (score >= 70) {
+      return `This demo shows how we'd analyze ${website}. Your estimated score of ${score} suggests good AI visibility potential. Upgrade to get real data from your actual website, including specific issues and fixes.`;
+    } else if (score >= 50) {
+      return `This demo shows how we'd analyze ${website}. Your estimated score of ${score} suggests room for improvement. Upgrade to see exactly what's holding your site back and get step-by-step fixes.`;
+    } else {
+      return `This demo shows how we'd analyze ${website}. Your estimated score of ${score} suggests your site needs work to show up in AI answers. Upgrade to get a detailed roadmap for improvement.`;
+    }
   }
 
   private static generateSimulatedRecommendations(metrics: any): any[] {
     const allRecommendations = [
       {
         id: '1',
-        title: 'Implement FAQ Schema',
-        description: 'Add FAQ structured data to help AI assistants better understand your content.',
+        title: 'Help AI Verify Your Business',
+        description: 'Add schema markup so AI assistants can confirm your business exists and what you do. This is like giving AI your business card.',
         priority: 'high',
         difficulty: 'medium',
-        estimatedTime: '1-2 weeks',
+        estimatedTime: '1 hour',
         expectedImpact: 12
       },
       {
         id: '2',
-        title: 'Enhance Content Clarity',
-        description: 'Restructure content with clear headings and concise answers to common questions.',
+        title: 'Put Your Answers First',
+        description: 'AI reads the first sentence after each heading. Make sure your main point is there, not buried in the middle of a paragraph.',
         priority: 'medium',
         difficulty: 'easy',
-        estimatedTime: '3-5 days',
+        estimatedTime: '2 hours',
         expectedImpact: 8
       },
       {
         id: '3',
-        title: 'Optimize for Conversational Queries',
-        description: 'Rewrite content to better match how people ask questions to AI assistants.',
+        title: 'Answer Questions People Actually Ask',
+        description: 'Add an FAQ section with real questions your customers ask. These are the same questions people ask AI assistants.',
         priority: 'medium',
         difficulty: 'easy',
-        estimatedTime: '1-2 weeks',
+        estimatedTime: '1 hour',
         expectedImpact: 10
       }
     ];

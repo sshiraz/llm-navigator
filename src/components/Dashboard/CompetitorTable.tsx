@@ -9,11 +9,10 @@ interface CompetitorTableProps {
 export default function CompetitorTable({ analyses }: CompetitorTableProps) {
   const sortedAnalyses = [...analyses].sort((a, b) => b.score - a.score);
 
-  const getRankBadge = (rank: number) => {
-    if (rank === 1) return { color: 'bg-yellow-100 text-yellow-800', label: 'Featured' };
-    if (rank <= 3) return { color: 'bg-emerald-100 text-emerald-800', label: 'Top Result' };
-    if (rank <= 5) return { color: 'bg-blue-100 text-blue-800', label: 'Visible' };
-    return { color: 'bg-gray-100 text-gray-800', label: 'Buried' };
+  const getConfidenceBadge = (score: number) => {
+    if (score >= 75) return { color: 'bg-emerald-100 text-emerald-800', label: 'High' };
+    if (score >= 50) return { color: 'bg-amber-100 text-amber-800', label: 'Medium' };
+    return { color: 'bg-red-100 text-red-800', label: 'Low' };
   };
 
   const getScoreColor = (score: number) => {
@@ -40,7 +39,7 @@ export default function CompetitorTable({ analyses }: CompetitorTableProps) {
                 LLM Score
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Predicted Rank
+                AI Confidence
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Category
@@ -55,9 +54,9 @@ export default function CompetitorTable({ analyses }: CompetitorTableProps) {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {sortedAnalyses.map((analysis, index) => {
-              const badge = getRankBadge(analysis.predictedRank);
+              const confidence = getConfidenceBadge(analysis.score);
               const isUserSite = analysis.website === 'techstart.com';
-              
+
               return (
                 <tr key={analysis.id} className={isUserSite ? 'bg-blue-50' : 'hover:bg-gray-50'}>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -88,15 +87,13 @@ export default function CompetitorTable({ analyses }: CompetitorTableProps) {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <span className="text-lg font-semibold text-gray-900">
-                        #{analysis.predictedRank}
-                      </span>
-                    </div>
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${confidence.color}`}>
+                      {confidence.label}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>
-                      {badge.label}
+                    <span className="text-sm text-gray-900">
+                      {analysis.category}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

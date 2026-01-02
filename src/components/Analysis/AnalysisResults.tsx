@@ -220,8 +220,10 @@ export default function AnalysisResults({ analysis, onBack }: AnalysisResultsPro
             </div>
             <div className="flex items-center justify-center space-x-8">
               <div className="text-center">
-                <div className="text-lg font-semibold text-gray-900">Predicted Rank</div>
-                <div className="text-2xl font-bold text-blue-600">#{analysis.predictedRank}</div>
+                <div className="text-lg font-semibold text-gray-900">AI Confidence</div>
+                <div className={`text-2xl font-bold ${analysis.score >= 75 ? 'text-emerald-600' : analysis.score >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
+                  {analysis.score >= 75 ? 'High' : analysis.score >= 50 ? 'Medium' : 'Low'}
+                </div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-semibold text-gray-900">Category</div>

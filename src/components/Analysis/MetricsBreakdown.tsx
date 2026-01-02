@@ -18,32 +18,32 @@ const metricsInfo: MetricInfo[] = [
   {
     key: 'contentClarity',
     label: 'Clarity',
-    description: 'Content Clarity',
-    tooltip: 'How clear and well-structured your content is for AI understanding. Measures readability, logical flow, and answer-focused formatting that helps LLMs extract key information.'
+    description: 'Brand Clarity',
+    tooltip: 'Can AI quickly understand who you are and what you do? This measures how clearly your business is described, how consistent your messaging is, and whether you answer questions directly.'
   },
   {
     key: 'semanticRichness',
-    label: 'Richness',
-    description: 'Semantic Richness',
-    tooltip: 'The depth and breadth of semantic relationships in your content. Evaluates topic coverage, related concepts, and contextual connections that improve AI comprehension.'
+    label: 'Depth',
+    description: 'Content Depth',
+    tooltip: 'Is your content thorough enough to be trusted? AI prefers comprehensive information. This measures word count, topic coverage, and whether you explain things fully rather than superficially.'
   },
   {
     key: 'structuredData',
-    label: 'Structure',
-    description: 'Structured Data',
-    tooltip: 'Implementation of schema markup and structured data formats. Helps AI systems understand your content hierarchy, relationships, and key data points more effectively.'
+    label: 'Trust',
+    description: 'Trust Signals',
+    tooltip: 'Can AI verify your business exists? Schema markup (like Organization, FAQ, Product) helps AI confirm who you are. Without it, AI may not feel confident recommending you.'
   },
   {
     key: 'naturalLanguage',
-    label: 'Language',
-    description: 'Natural Language',
-    tooltip: 'How naturally your content reads and aligns with conversational queries. Measures question-answer format optimization and natural language patterns.'
+    label: 'Quotable',
+    description: 'Quotability',
+    tooltip: 'Can AI safely quote your content? Clear, well-written sentences that are easy to read make it more likely AI will use your exact words in its answers.'
   },
   {
     key: 'keywordRelevance',
-    label: 'Relevance',
-    description: 'Keyword Relevance',
-    tooltip: 'How well your content matches target keywords and search intent. Evaluates semantic keyword usage and topical authority for your target terms.'
+    label: 'Match',
+    description: 'Topic Match',
+    tooltip: 'Does your content match what people search for? This measures whether your target keywords appear in the right places (title, headings, content) so AI knows you\'re relevant.'
   }
 ];
 
@@ -77,50 +77,50 @@ export default function MetricsBreakdown({ analysis, competitors = [] }: Metrics
 
   const generateDetailedInsights = (analysisItem: Analysis) => {
     const insights = [];
-    
-    // Content Clarity insights
+
+    // Brand Clarity insights
     if (analysisItem.metrics.contentClarity >= 80) {
-      insights.push("✅ Excellent content structure with clear headings and logical flow that AI models can easily parse and understand.");
+      insights.push("✅ Brand Clarity: AI can easily understand what your business does. Your content is well-organized with clear headings and direct answers.");
     } else if (analysisItem.metrics.contentClarity >= 60) {
-      insights.push("⚠️ Good content clarity but could benefit from better heading structure and more concise answer formats.");
+      insights.push("⚠️ Brand Clarity: Your message is coming through, but could be clearer. Try putting your main point at the start of each section, not buried in paragraphs.");
     } else {
-      insights.push("❌ Content clarity needs improvement. Consider restructuring with clear H1-H6 hierarchy and FAQ-style formatting.");
+      insights.push("❌ Brand Clarity: AI may struggle to understand your business. Add a clear one-sentence description on every page explaining exactly what you offer.");
     }
 
-    // Semantic Richness insights
+    // Content Depth insights
     if (analysisItem.metrics.semanticRichness >= 80) {
-      insights.push("✅ Rich semantic content with comprehensive topic coverage and strong contextual relationships.");
+      insights.push("✅ Content Depth: Your content is thorough and comprehensive. AI has enough information to confidently recommend you.");
     } else if (analysisItem.metrics.semanticRichness >= 60) {
-      insights.push("⚠️ Moderate semantic richness. Expand content to cover related topics and concepts more thoroughly.");
+      insights.push("⚠️ Content Depth: You have a good start, but your pages could use more detail. Consider adding examples, FAQs, or step-by-step explanations.");
     } else {
-      insights.push("❌ Limited semantic depth. Add more comprehensive content covering related topics, synonyms, and contextual information.");
+      insights.push("❌ Content Depth: Your pages are too thin. AI prefers detailed content (800+ words per page) that fully answers visitor questions.");
     }
 
-    // Structured Data insights
+    // Trust Signals insights
     if (analysisItem.metrics.structuredData >= 80) {
-      insights.push("✅ Excellent structured data implementation with comprehensive schema markup helping AI understand content context.");
+      insights.push("✅ Trust Signals: Great job with schema markup! AI can verify your business information and feels confident recommending you.");
     } else if (analysisItem.metrics.structuredData >= 60) {
-      insights.push("⚠️ Basic structured data present but could be expanded with more schema types (FAQ, HowTo, Product, etc.).");
+      insights.push("⚠️ Trust Signals: You have some schema markup, but adding more (FAQ, Product, LocalBusiness) would help AI trust you more.");
     } else {
-      insights.push("❌ Missing or minimal structured data. Implement schema markup for Organization, FAQ, Product, and other relevant types.");
+      insights.push("❌ Trust Signals: No schema markup found. This is like having no ID card - AI can't verify who you are. Add Organization schema at minimum.");
     }
 
-    // Natural Language insights
+    // Quotability insights
     if (analysisItem.metrics.naturalLanguage >= 80) {
-      insights.push("✅ Content reads naturally and aligns well with conversational AI queries and voice search patterns.");
+      insights.push("✅ Quotability: Your writing is clear and easy to read. AI can confidently quote your content in its answers.");
     } else if (analysisItem.metrics.naturalLanguage >= 60) {
-      insights.push("⚠️ Generally natural language but could be optimized for more conversational query patterns.");
+      insights.push("⚠️ Quotability: Your writing is okay, but some sentences are too long or complex. Shorter sentences (15-20 words) get quoted more.");
     } else {
-      insights.push("❌ Content feels too formal or technical. Rewrite in a more conversational tone that matches how people ask AI assistants questions.");
+      insights.push("❌ Quotability: Your content is hard to read. Simplify your language - if a sentence needs to be read twice, it's too complicated.");
     }
 
-    // Keyword Relevance insights
+    // Topic Match insights
     if (analysisItem.metrics.keywordRelevance >= 80) {
-      insights.push("✅ Strong keyword relevance with natural integration and good semantic keyword usage throughout content.");
+      insights.push("✅ Topic Match: Your content clearly matches what people search for. Your keywords are in all the right places.");
     } else if (analysisItem.metrics.keywordRelevance >= 60) {
-      insights.push("⚠️ Decent keyword usage but could improve semantic variations and long-tail keyword coverage.");
+      insights.push("⚠️ Topic Match: You're on topic, but your main keywords should appear in your page title, H1 heading, and first paragraph.");
     } else {
-      insights.push("❌ Weak keyword relevance. Better integrate target keywords naturally and add semantic variations and related terms.");
+      insights.push("❌ Topic Match: Your target keywords are missing from important places. Add them to your title, main heading, and meta description.");
     }
 
     return insights;
@@ -302,7 +302,7 @@ export default function MetricsBreakdown({ analysis, competitors = [] }: Metrics
                   </div>
                   <div className="flex-1">
                     <div className="text-sm text-gray-600 mb-2">Keywords: {selectedInsights.keywords.join(', ')}</div>
-                    <div className="text-sm text-gray-600">Predicted Rank: #{selectedInsights.predictedRank}</div>
+                    <div className="text-sm text-gray-600">AI Confidence: <span className={selectedInsights.score >= 75 ? 'text-emerald-600 font-medium' : selectedInsights.score >= 50 ? 'text-amber-600 font-medium' : 'text-red-600 font-medium'}>{selectedInsights.score >= 75 ? 'High' : selectedInsights.score >= 50 ? 'Medium' : 'Low'}</span></div>
                   </div>
                 </div>
               </div>

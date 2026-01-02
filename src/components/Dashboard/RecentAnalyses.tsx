@@ -16,11 +16,10 @@ export default function RecentAnalyses({ analyses, onDelete }: RecentAnalysesPro
     return 'text-red-600 bg-red-50';
   };
 
-  const getRankBadge = (rank: number) => {
-    if (rank === 1) return { color: 'bg-yellow-100 text-yellow-800', label: 'Featured' };
-    if (rank <= 3) return { color: 'bg-emerald-100 text-emerald-800', label: 'Top Result' };
-    if (rank <= 5) return { color: 'bg-blue-100 text-blue-800', label: 'Visible' };
-    return { color: 'bg-gray-100 text-gray-800', label: 'Buried' };
+  const getConfidenceBadge = (score: number) => {
+    if (score >= 75) return { color: 'bg-emerald-100 text-emerald-800', label: 'High', description: 'Likely to be cited' };
+    if (score >= 50) return { color: 'bg-amber-100 text-amber-800', label: 'Medium', description: 'May be cited' };
+    return { color: 'bg-red-100 text-red-800', label: 'Low', description: 'Unlikely to be cited' };
   };
 
   const handleDelete = (analysisId: string) => {
@@ -52,7 +51,7 @@ export default function RecentAnalyses({ analyses, onDelete }: RecentAnalysesPro
                 LLM Score
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Predicted Rank
+                AI Confidence
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Keywords
@@ -67,8 +66,8 @@ export default function RecentAnalyses({ analyses, onDelete }: RecentAnalysesPro
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {analyses.map((analysis) => {
-              const badge = getRankBadge(analysis.predictedRank);
-              
+              const confidence = getConfidenceBadge(analysis.score);
+
               return (
                 <tr key={analysis.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -86,11 +85,8 @@ export default function RecentAnalyses({ analyses, onDelete }: RecentAnalysesPro
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
-                      <span className="text-lg font-semibold text-gray-900">
-                        #{analysis.predictedRank}
-                      </span>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${badge.color}`}>
-                        {badge.label}
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${confidence.color}`}>
+                        {confidence.label}
                       </span>
                     </div>
                   </td>
