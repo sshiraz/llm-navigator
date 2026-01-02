@@ -174,3 +174,77 @@ export interface UsageLimits {
 }
 
 export type AnalysisProvider = 'openai' | 'anthropic' | 'perplexity' | 'local';
+
+// ============================================
+// AEO (Answer Engine Optimization) Types
+// ============================================
+
+export interface Prompt {
+  id: string;
+  text: string;  // e.g., "best restaurants in San Jose"
+  category?: 'informational' | 'commercial' | 'navigational' | 'transactional';
+}
+
+export interface CompetitorCitation {
+  domain: string;
+  url?: string;
+  context: string;  // The text mentioning this competitor
+  position: number; // Order in response (1st, 2nd, etc.)
+}
+
+export interface CitationResult {
+  promptId: string;
+  prompt: string;
+  provider: AnalysisProvider;
+  modelUsed: string;
+  response: string;
+  isCited: boolean;
+  citationContext?: string;  // The exact text mentioning user's site
+  competitorsCited: CompetitorCitation[];
+  timestamp: string;
+  tokensUsed: number;
+  cost: number;
+}
+
+export interface AEORecommendation {
+  id: string;
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  difficulty: 'easy' | 'medium' | 'hard';
+  estimatedTime: string;
+  expectedImpact: string;  // e.g., "Increase citation rate by ~15%"
+  relatedPrompts: string[];  // Which prompts this would help with
+}
+
+export interface AEOAnalysis {
+  id: string;
+  userId: string;
+  projectId?: string;
+  website: string;
+  brandName?: string;
+  prompts: Prompt[];
+  citationResults: CitationResult[];
+  overallCitationRate: number;  // Percentage of prompts where user was cited
+  providersUsed: AnalysisProvider[];
+  // Content analysis from crawl
+  contentAnalysis: {
+    blufScore: number;
+    schemaScore: number;
+    readabilityScore: number;
+    contentDepth: number;
+  };
+  // Keep existing crawl data for WHY analysis
+  crawlData?: Analysis['crawlData'];
+  recommendations: AEORecommendation[];
+  createdAt: string;
+  isSimulated: boolean;
+  costInfo: {
+    totalCost: number;
+    breakdown: {
+      crawling: number;
+      citationChecks: number;
+      total: number;
+    };
+  };
+}

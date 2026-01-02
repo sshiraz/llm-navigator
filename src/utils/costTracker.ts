@@ -42,7 +42,7 @@ export class CostTracker {
     gpt35_input: 0.0015,
     gpt35_output: 0.002,
     embeddings: 0.0001,
-    
+
     // Anthropic API costs (per 1K tokens)
     claude3_opus_input: 0.015,
     claude3_opus_output: 0.075,
@@ -50,21 +50,27 @@ export class CostTracker {
     claude3_sonnet_output: 0.015,
     claude3_haiku_input: 0.00025,
     claude3_haiku_output: 0.00125,
-    
+
     // Perplexity API costs (per 1K tokens)
     perplexity_online_input: 0.002,
     perplexity_online_output: 0.01,
     perplexity_offline_input: 0.001,
     perplexity_offline_output: 0.005,
-    
+
     // Third-party service costs
     crawling_per_page: 0.001,
     proxy_per_request: 0.0005,
-    
+
     // Estimated costs per analysis
     analysis_base: 0.20,
     competitor_analysis: 0.05,
-    pdf_generation: 0.001
+    pdf_generation: 0.001,
+
+    // AEO Citation check costs (per query)
+    citation_perplexity: 0.005,
+    citation_openai: 0.03,
+    citation_anthropic: 0.02,
+    aeo_analysis_base: 0.25 // Base cost for AEO analysis (5 prompts × 3 providers)
   };
 
   private static readonly PLAN_LIMITS = {

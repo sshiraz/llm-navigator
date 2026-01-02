@@ -175,8 +175,14 @@ export default function AnalysisResults({ analysis, onBack }: AnalysisResultsPro
                 <ExternalLink className="w-4 h-4 text-gray-400" />
               </div>
               <div className="flex items-center space-x-2">
-                <span className="text-gray-600">Keywords:</span>
-                <span className="font-medium text-gray-900">{analysis.keywords.join(', ')}</span>
+                <span className="text-gray-600">
+                  {analysis.category === 'Answer Engine Optimization' ? 'Prompts:' : 'Keywords:'}
+                </span>
+                <span className="font-medium text-gray-900">
+                  {analysis.category === 'Answer Engine Optimization'
+                    ? `${analysis.keywords.length} prompt${analysis.keywords.length > 1 ? 's' : ''} tested`
+                    : analysis.keywords.join(', ')}
+                </span>
               </div>
             </div>
           </div>
@@ -210,17 +216,26 @@ export default function AnalysisResults({ analysis, onBack }: AnalysisResultsPro
 
       {/* Report Content - This will be captured for PDF */}
       <div ref={reportRef} className="space-y-8">
-        {/* Overall Score */}
+        {/* Overall Score - Different display for AEO vs standard analysis */}
         <div className={`rounded-xl border-2 p-8 ${getScoreBackground(analysis.score)}`}>
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Overall LLM Navigator Score</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {analysis.category === 'Answer Engine Optimization' ? 'AI Citation Rate' : 'Overall LLM Navigator Score'}
+            </h2>
             <div className={`text-6xl font-bold mb-4 ${getScoreColor(analysis.score)}`}>
               {analysis.score}
-              <span className="text-2xl text-gray-500">/100</span>
+              <span className="text-2xl text-gray-500">{analysis.category === 'Answer Engine Optimization' ? '%' : '/100'}</span>
             </div>
+            {analysis.category === 'Answer Engine Optimization' && (
+              <p className="text-gray-600 mb-4">
+                Your website was cited in {analysis.score}% of AI responses for your search prompts
+              </p>
+            )}
             <div className="flex items-center justify-center space-x-8">
               <div className="text-center">
-                <div className="text-lg font-semibold text-gray-900">AI Confidence</div>
+                <div className="text-lg font-semibold text-gray-900">
+                  {analysis.category === 'Answer Engine Optimization' ? 'Visibility' : 'AI Confidence'}
+                </div>
                 <div className={`text-2xl font-bold ${analysis.score >= 75 ? 'text-emerald-600' : analysis.score >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
                   {analysis.score >= 75 ? 'High' : analysis.score >= 50 ? 'Medium' : 'Low'}
                 </div>
@@ -229,7 +244,13 @@ export default function AnalysisResults({ analysis, onBack }: AnalysisResultsPro
                 <div className="text-lg font-semibold text-gray-900">Category</div>
                 <div className="text-xl font-medium text-indigo-600">{analysis.category}</div>
               </div>
-              {analysis.model && (
+              {analysis.category === 'Answer Engine Optimization' && (
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-gray-900">Prompts Tested</div>
+                  <div className="text-xl font-medium text-purple-600">{analysis.keywords.length}</div>
+                </div>
+              )}
+              {analysis.model && analysis.category !== 'Answer Engine Optimization' && (
               <div className="text-center">
                 <div className="text-lg font-semibold text-gray-900">AI Model</div>
                 <div className="text-xl font-medium text-purple-600">
