@@ -72,7 +72,7 @@ export class CostTracker {
     trial: { analyses: 999999, budget: 999999 }, // Unlimited for demo
     starter: { analyses: 10, budget: 2.00 },
     professional: { analyses: 50, budget: 10.00 },
-    enterprise: { analyses: 200, budget: 40.00 }
+    enterprise: { analyses: 1000, budget: 200.00 }
   };
 
   // Track API usage for an analysis

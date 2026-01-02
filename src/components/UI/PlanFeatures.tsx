@@ -55,7 +55,7 @@ export default function PlanFeatures({ plan, className = '' }: PlanFeaturesProps
           <>
             <div className="flex items-center space-x-2">
               <CheckCircle className="w-4 h-4 text-emerald-500" />
-              <span>Unlimited analyses</span>
+              <span>1,000 analyses per month</span>
             </div>
             <div className="flex items-center space-x-2">
               <CheckCircle className="w-4 h-4 text-emerald-500" />

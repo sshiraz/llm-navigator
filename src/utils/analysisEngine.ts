@@ -844,8 +844,8 @@ export class AnalysisCostTracker {
   static getMonthlyBudget(plan: string): number {
     const budgets = {
       starter: 10 * this.costs.total,      // 10 analyses
-      professional: 50 * this.costs.total, // 50 analyses  
-      enterprise: 200 * this.costs.total   // 200 analyses (unlimited with reasonable limit)
+      professional: 50 * this.costs.total, // 50 analyses
+      enterprise: 1000 * this.costs.total  // 1000 analyses
     };
     
     return budgets[plan as keyof typeof budgets] || 0;

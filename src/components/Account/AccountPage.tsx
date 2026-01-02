@@ -424,7 +424,7 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-start space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
-                    <span className="text-gray-700">Unlimited AI analyses</span>
+                    <span className="text-gray-700">1,000 AI analyses per month</span>
                   </div>
                   <div className="flex items-start space-x-2">
                     <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
