@@ -73,7 +73,7 @@ export default function CompetitorTable({ analyses }: CompetitorTableProps) {
                           )}
                         </div>
                         <div className="text-sm text-gray-500">
-                          Keywords: {analysis.keywords.join(', ')}
+                          {analysis.category === 'Answer Engine Optimization' ? 'Query' : 'Keywords'}: {analysis.keywords.join(', ')}
                         </div>
                       </div>
                     </div>

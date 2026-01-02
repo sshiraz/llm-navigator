@@ -149,7 +149,7 @@ export default function MetricsBreakdown({ analysis, competitors = [] }: Metrics
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">
-                  Website & Keywords
+                  {analysis.category === 'Answer Engine Optimization' ? 'Website & Queries' : 'Website & Keywords'}
                 </th>
                 <th className="px-4 py-4 text-center text-sm font-medium text-gray-700">
                   Overall
@@ -203,7 +203,7 @@ export default function MetricsBreakdown({ analysis, competitors = [] }: Metrics
                           )}
                         </div>
                         <div className="text-xs text-blue-600">
-                          Keywords: {analysisItem.keywords.join(', ')}
+                          {analysisItem.category === 'Answer Engine Optimization' ? 'Query' : 'Keywords'}: {analysisItem.keywords.join(', ')}
                         </div>
                       </div>
                     </td>
@@ -301,7 +301,7 @@ export default function MetricsBreakdown({ analysis, competitors = [] }: Metrics
                     <div className="text-sm text-gray-500">Overall Score</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm text-gray-600 mb-2">Keywords: {selectedInsights.keywords.join(', ')}</div>
+                    <div className="text-sm text-gray-600 mb-2">{selectedInsights.category === 'Answer Engine Optimization' ? 'Query' : 'Keywords'}: {selectedInsights.keywords.join(', ')}</div>
                     <div className="text-sm text-gray-600">AI Confidence: <span className={selectedInsights.score >= 75 ? 'text-emerald-600 font-medium' : selectedInsights.score >= 50 ? 'text-amber-600 font-medium' : 'text-red-600 font-medium'}>{selectedInsights.score >= 75 ? 'High' : selectedInsights.score >= 50 ? 'Medium' : 'Low'}</span></div>
                   </div>
                 </div>

@@ -76,7 +76,7 @@ export default function AnalysisResults({ analysis, onBack }: AnalysisResultsPro
               <div class="header">
                 <h1>Detailed Analysis Insights</h1>
                 <h2>${targetAnalysis.website}</h2>
-                <p><strong>Keywords:</strong> ${targetAnalysis.keywords.join(', ')}</p>
+                <p><strong>${targetAnalysis.category === 'Answer Engine Optimization' ? 'Query' : 'Keywords'}:</strong> ${targetAnalysis.keywords.join(', ')}</p>
                 <p><strong>Overall Score:</strong> <span class="score">${targetAnalysis.score}/100</span></p>
               </div>
               
@@ -240,10 +240,17 @@ export default function AnalysisResults({ analysis, onBack }: AnalysisResultsPro
                   {analysis.score >= 75 ? 'High' : analysis.score >= 50 ? 'Medium' : 'Low'}
                 </div>
               </div>
-              <div className="text-center">
-                <div className="text-lg font-semibold text-gray-900">Category</div>
-                <div className="text-xl font-medium text-indigo-600">{analysis.category}</div>
-              </div>
+              {analysis.category === 'Answer Engine Optimization' ? (
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-gray-900">Providers Checked</div>
+                  <div className="text-base font-medium text-indigo-600">Perplexity, ChatGPT, Claude</div>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-gray-900">Category</div>
+                  <div className="text-xl font-medium text-indigo-600">{analysis.category}</div>
+                </div>
+              )}
               {analysis.category === 'Answer Engine Optimization' && (
                 <div className="text-center">
                   <div className="text-lg font-semibold text-gray-900">Prompts Tested</div>
