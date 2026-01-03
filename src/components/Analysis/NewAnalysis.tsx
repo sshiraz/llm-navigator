@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Globe, MessageSquare, Sparkles, ArrowRight, Lightbulb, Zap, AlertCircle, Plus, X, Building2, CheckCircle } from 'lucide-react';
+import { Globe, MessageSquare, Sparkles, ArrowRight, Lightbulb, Zap, AlertCircle, Plus, X, Building2, CheckCircle, History } from 'lucide-react';
 import AnalysisProgress from './AnalysisProgress';
 import UsageLimitsBanner from './UsageLimitsBanner';
 import { User, Analysis, AnalysisProvider } from '../../types';
@@ -32,6 +32,7 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentAnalysis, setCurrentAnalysis] = useState<AnalysisState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hasLastAnalysis, setHasLastAnalysis] = useState(false);
 
   const { usageLimits, isLoading: limitsLoading } = useUsageMonitoring(
     user?.id || '',
@@ -129,6 +130,17 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     console.log('Starting AEO analysis for:', website.trim(), validPrompts);
   };
 
+  // Function to check if there's a last analysis available
+  const checkForLastAnalysis = () => {
+    try {
+      const lastAnalysis = localStorage.getItem('currentAnalysis');
+      setHasLastAnalysis(!!lastAnalysis);
+    } catch (error) {
+      console.error('Error checking for last analysis:', error);
+      setHasLastAnalysis(false);
+    }
+  };
+
   // Load last analysis parameters from localStorage
   useEffect(() => {
     try {
@@ -158,14 +170,40 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
           setSelectedProviders(parsed);
         }
       }
+
+      // Check if there's a last analysis to view
+      checkForLastAnalysis();
     } catch (error) {
       console.error('Error loading saved analysis parameters:', error);
     }
   }, []);
 
+  // Re-check for last analysis when component becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkForLastAnalysis();
+      }
+    };
+
+    // Check on focus as well (for single-page navigation)
+    const handleFocus = () => {
+      checkForLastAnalysis();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
   const handleAnalysisComplete = (analysis: Analysis) => {
     setIsAnalyzing(false);
     setCurrentAnalysis(null);
+    setHasLastAnalysis(true); // Analysis is now available to view
     onAnalyze(analysis);
   };
 
@@ -218,6 +256,15 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
           Enter prompts that your potential customers might ask AI assistants.
           We'll check if you're getting cited by ChatGPT, Claude, and Perplexity.
         </p>
+        {(hasLastAnalysis || localStorage.getItem('currentAnalysis')) && (
+          <button
+            onClick={() => window.location.hash = 'analysis-results'}
+            className="mt-4 inline-flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+          >
+            <History className="w-4 h-4" />
+            <span>View Last Analysis</span>
+          </button>
+        )}
       </div>
 
       {/* Usage Limits Banner */}

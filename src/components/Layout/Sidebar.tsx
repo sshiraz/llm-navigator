@@ -38,11 +38,17 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
     { id: 'admin-users', label: 'User Management', icon: UserCog }
   ];
 
+  // Navigate by updating hash (keeps URL and state in sync)
+  const navigateTo = (section: string) => {
+    window.location.hash = section;
+    onSectionChange(section); // Also update state immediately for responsiveness
+  };
+
   return (
     <div className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col">
       <div className="p-6 border-b border-gray-200">
-        <button 
-          onClick={() => onSectionChange('landing')}
+        <button
+          onClick={() => navigateTo('landing')}
           className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
         >
           <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
@@ -63,7 +69,7 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
           return (
             <button
               key={item.id}
-              onClick={() => onSectionChange(item.id)}
+              onClick={() => navigateTo(item.id)}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
                 isActive
                   ? 'bg-blue-600 text-white shadow-lg'
@@ -92,7 +98,7 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
               return (
                 <button
                   key={item.id}
-                  onClick={() => onSectionChange(item.id)}
+                  onClick={() => navigateTo(item.id)}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
                     isActive
                       ? 'bg-blue-600 text-white shadow-lg'

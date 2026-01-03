@@ -40,8 +40,7 @@ function App() {
       const storedAnalysis = localStorage.getItem('currentAnalysis');
       if (storedAnalysis && activeSection === 'analysis-results') {
         setCurrentAnalysis(JSON.parse(storedAnalysis));
-        // Clear it after loading to prevent stale data
-        localStorage.removeItem('currentAnalysis');
+        // Don't clear - keep it for "View Last Analysis" button
       }
     } catch (error) {
       console.error('Error loading current analysis from localStorage:', error);
@@ -74,13 +73,13 @@ function App() {
     // Add event listener for hash changes
     window.addEventListener('hashchange', handleHashChange);
 
+    // Run once on initial load to handle direct URL access
+    handleHashChange();
+
     // Clean up event listener
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
     };
-
-    // Run once on initial load to handle direct URL access
-    handleHashChange();
   }, []);
 
   // Check URL parameters for checkout success
@@ -154,7 +153,12 @@ function App() {
 
   const handleNewAnalysis = (analysis: Analysis) => {
     // Analysis is already saved to Supabase by AnalysisProgress component
-    // Just set it as current and navigate to results
+    // Save to localStorage for "View Last Analysis" button and navigation
+    try {
+      localStorage.setItem('currentAnalysis', JSON.stringify(analysis));
+    } catch (error) {
+      console.error('Error saving analysis to localStorage:', error);
+    }
     setCurrentAnalysis(analysis);
     window.location.hash = 'analysis-results';
   };
@@ -267,10 +271,13 @@ function App() {
         );
 
       case 'competitor-strategy':
+        // Use current analysis if available, otherwise use mock data
+        const analysisForStrategy = currentAnalysis || mockAnalyses[0];
+        const competitorAnalysesForStrategy = mockAnalyses.filter(a => a.id !== analysisForStrategy.id);
         return (
           <CompetitorStrategy
-            userAnalysis={mockAnalyses.find((a: Analysis) => a.userId === user?.id) || mockAnalyses[0]}
-            competitorAnalyses={mockAnalyses.filter((a: Analysis) => a.userId !== user?.id)}
+            analysis={analysisForStrategy}
+            competitors={competitorAnalysesForStrategy}
           />
         );
 
