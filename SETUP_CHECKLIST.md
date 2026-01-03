@@ -1,22 +1,27 @@
-# 🎯 LLM Navigator - Complete Setup Checklist
+# LLM Navigator - Complete Setup Checklist
 
-## 📋 Current Status Analysis
+> Last updated: 2026-01-03
 
-Your LLM Navigator application is **95% complete**! Here's what we need to finish:
+## Current Status
 
-### ✅ Already Complete:
-- ✅ React application with beautiful UI
+Your LLM Navigator application is **fully functional** with AEO!
+
+### Already Complete:
+- ✅ React application with AEO UI
 - ✅ Supabase database schema
 - ✅ Stripe integration components
 - ✅ Authentication system
 - ✅ Payment processing logic
-- ✅ Edge Functions code written
+- ✅ Edge Functions (crawl-website, check-citations, stripe-webhook)
+- ✅ AI provider integrations (Perplexity, OpenAI, Anthropic)
+- ✅ Analysis History with trends
 
-### ❌ Missing Configuration:
-- ❌ Environment variables setup
-- ❌ Edge Functions deployment
-- ❌ Stripe products creation
-- ❌ Webhook configuration
+### Configuration Needed for New Deployments:
+- Environment variables setup
+- Edge Functions deployment
+- Stripe products creation
+- Webhook configuration
+- AI provider API keys
 
 ## 🚀 Step-by-Step Completion Guide
 
@@ -92,9 +97,15 @@ supabase secrets set STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
 supabase secrets set SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impna2R6YW9hamJ6bXV1YWpwbmR2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTUyMzc1OSwiZXhwIjoyMDY3MDk5NzU5fQ.DOYDCrZJrV895yP6Qev4y8cRN1b0PUNK-JMvlwTFCBo
 
 # Deploy Edge Functions
-supabase functions deploy create-payment-intent
+supabase functions deploy crawl-website --no-verify-jwt
+supabase functions deploy check-citations --no-verify-jwt
 supabase functions deploy create-subscription
 supabase functions deploy stripe-webhook
+
+# Set AI provider API keys (for check-citations)
+supabase secrets set OPENAI_API_KEY=sk-xxx
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-xxx
+supabase secrets set PERPLEXITY_API_KEY=pplx-xxx
 ```
 
 ### Step 5: Set Up Stripe Webhook

@@ -1,13 +1,15 @@
-# 🎮 Test Your LLM Navigator App - Everything Works!
+# Test Your LLM Navigator App
 
-## 🎉 Great News!
+> Last updated: 2026-01-03
 
-Your environment variables show everything is configured:
-- ✅ Supabase URL & Key
-- ✅ Stripe Publishable Key  
-- ✅ All 3 Stripe Price IDs
+## Current Status
 
-This means **95% of your app is fully functional** right now!
+Your LLM Navigator app is **fully functional** with AEO (Answer Engine Optimization):
+- ✅ Supabase URL & Key configured
+- ✅ Stripe Publishable Key configured
+- ✅ All 3 Stripe Price IDs configured
+- ✅ AI Provider keys (Perplexity, OpenAI, Anthropic) configured
+- ✅ check-citations edge function deployed
 
 ## 🚀 Let's Test It Step by Step
 
@@ -22,22 +24,26 @@ This means **95% of your app is fully functional** right now!
    - Company: (optional)
    - Website: (optional)
 
-### Step 2: Run Your First Analysis
+### Step 2: Run Your First AEO Analysis
 
 1. **After signing in**, you'll see the Dashboard
 2. **Click "New Analysis"** (big blue button)
 3. **Enter a website**: `https://example.com`
-4. **Enter keywords**: `marketing, business, services`
-5. **Click "Start Demo Analysis"**
+4. **Enter prompts** (natural language questions users might ask AI):
+   - "What is the best example website?"
+   - "Tell me about example.com"
+5. **Enter brand name** (optional): `Example`
+6. **Select AI providers**: Perplexity, OpenAI, Anthropic
+7. **Click "Check My Citations"**
 
-### Step 3: Watch the Magic Happen
+### Step 3: Watch the AEO Analysis
 
 You'll see:
-- ✅ Realistic progress indicators
-- ✅ Professional analysis steps
-- ✅ Detailed scoring breakdown
-- ✅ AI-generated insights
-- ✅ Actionable recommendations
+- ✅ Citation checking progress across providers
+- ✅ AI Citation Rate (are you being cited?)
+- ✅ Which providers cite you
+- ✅ Competitors who ARE getting cited
+- ✅ AEO-specific recommendations
 
 ### Step 4: Generate a PDF Report
 
@@ -51,58 +57,57 @@ You'll see:
 2. **See your actual Stripe plans** with real prices
 3. **Try "Start Free Trial"** (won't charge - it's demo mode)
 
-## 🎯 What Works Right Now
+## What Works Right Now
 
-### ✅ Fully Functional Features:
+### Fully Functional Features:
+- **AEO Citation Checking** - Query AI providers for citations
+- **Multi-Provider Support** - Perplexity, OpenAI, Anthropic
+- **Analysis History** - Track all past analyses with trends
 - **User Registration & Login** - Complete auth system
-- **Unlimited Demo Analyses** - Test as much as you want
 - **Professional UI** - Production-ready interface
 - **PDF Report Generation** - Branded, downloadable reports
 - **Project Management** - Create and manage projects
-- **Competitor Analysis** - Compare against industry leaders
+- **Competitor Tracking** - See who IS getting cited
 - **Pricing Tiers** - All plans configured with real prices
-- **Trial System** - 14-day trial simulation
+- **Trial System** - 14-day trial with simulated data
 
-### 🔄 What Needs Edge Functions:
-- **Real Payment Processing** - Actual Stripe charges
-- **Webhook Handling** - Payment success notifications
-- **Subscription Management** - Recurring billing
+### Trial Mode vs Paid Mode
 
-## 🎮 Demo Mode vs Real Mode
-
-**Demo Mode (Current):**
-- Simulated but realistic analysis results
+**Trial Mode:**
+- Simulated but realistic citation results
 - All UI features work perfectly
 - No actual API costs
 - Perfect for testing and demos
 
-**Real Mode (After Edge Functions):**
-- Live website crawling
-- AI-powered content analysis
-- Real payment processing
+**Paid Mode (Starter/Professional/Enterprise):**
+- Real API calls to Perplexity, OpenAI, Anthropic
+- Actual citation checking
+- Real payment processing via Stripe
 - Production-ready
 
-## 🚀 Try These Test Scenarios
+## Try These Test Scenarios
 
 ### Scenario 1: Marketing Agency Demo
 1. **Create account** as "Marketing Agency Owner"
-2. **Analyze competitor**: `hubspot.com` with keywords `marketing automation`
-3. **Generate PDF report** for client presentation
-4. **Check pricing** for agency plan
+2. **Analyze competitor**: `hubspot.com`
+3. **Enter prompt**: "What is the best marketing automation platform?"
+4. **Check**: Is HubSpot getting cited? What competitors are mentioned?
+5. **Generate PDF report** for client presentation
 
-### Scenario 2: Small Business Owner
+### Scenario 2: Local Business Owner
 1. **Create account** as "Small Business"
-2. **Analyze your site**: Enter any website
-3. **Review recommendations** for improvements
-4. **Test trial signup** process
+2. **Analyze your site**: Enter your website URL
+3. **Enter prompts**: Questions customers might ask AI about your industry
+4. **Review**: Are you being cited? Who is?
+5. **Check History** to track progress over time
 
-### Scenario 3: Enterprise Evaluation
-1. **Create account** as "Enterprise User"
-2. **Test multiple analyses** (unlimited in demo)
-3. **Explore competitor strategy** features
-4. **Review enterprise pricing**
+### Scenario 3: SEO Professional
+1. **Create account** as "SEO Pro"
+2. **Test multiple analyses** with different prompts
+3. **Compare providers**: Which AI cites your client more?
+4. **Use History** to show improvement trends to clients
 
-## 🎯 What You'll See
+## What You'll See
 
 ### Dashboard Features:
 - **Project overview** with metrics
@@ -110,11 +115,16 @@ You'll see:
 - **Quick action buttons**
 - **Usage statistics**
 
-### Analysis Features:
-- **5-metric scoring** system
-- **Competitor comparison** charts
-- **Actionable recommendations** with priorities
-- **Professional insights** text
+### AEO Analysis Features:
+- **Citation Rate** - % of queries where you're cited
+- **Per-Provider Results** - Perplexity, OpenAI, Anthropic
+- **Competitor Citations** - Who IS getting cited
+- **AEO Recommendations** - How to improve citations
+
+### History Features:
+- **All past analyses** with filtering
+- **Website trends** - up/down/stable indicators
+- **Stats overview** - total analyses, avg citation rate
 
 ### Reporting Features:
 - **PDF generation** with your branding
@@ -122,20 +132,16 @@ You'll see:
 - **Executive summary** format
 - **Shareable reports**
 
-## 🎉 Your App is Production-Ready!
+## Your App is Production-Ready
 
-The only thing missing is Edge Functions for payment processing. Everything else works perfectly:
+- ✅ **AEO Feature Complete** - Citation checking works
+- ✅ **Beautiful UI** - Production-ready design
+- ✅ **Complete workflows** - End-to-end functionality
+- ✅ **History Tracking** - Track progress over time
 
-- ✅ **Beautiful UI** - Apple-level design
-- ✅ **Complete workflows** - End-to-end functionality  
-- ✅ **Professional features** - Enterprise-grade capabilities
-- ✅ **Realistic data** - Meaningful demo content
+## Next Steps
 
-## 🚀 Next Steps After Testing
-
-1. **Test thoroughly** - Try all features
-2. **Show to stakeholders** - Get feedback on UI/UX
-3. **Deploy Edge Functions** - When ready for payments
+1. **Test thoroughly** - Try all AEO features
+2. **Check History** - Verify analyses are being saved
+3. **Test Stripe** - Verify payment flow works
 4. **Go live** - Launch to real users
-
-Your LLM Navigator is ready to impress! 🌟

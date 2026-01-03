@@ -53,13 +53,16 @@ LLM Navigator is a SaaS platform that analyzes websites for **AI search discover
 
 ## Key Files You Need to Know
 
-### Analysis Flow (Core Feature)
+### Analysis Flow (Core Feature - AEO)
 ```
-src/components/Analysis/NewAnalysis.tsx    → User input form
+src/components/Analysis/NewAnalysis.tsx      → User input form (prompts, not keywords)
 src/components/Analysis/AnalysisProgress.tsx → Loading/progress UI
-src/utils/analysisEngine.ts                → MAIN LOGIC - routes to real/simulated analysis
-supabase/functions/crawl-website/index.ts  → Real website crawling (Deno)
-src/types/crawl.ts                         → Types for crawl results
+src/components/Analysis/AnalysisResults.tsx  → Citation results display
+src/components/History/AnalysisHistory.tsx   → Historical analysis tracking
+src/utils/analysisEngine.ts                  → MAIN LOGIC - routes to real/simulated AEO
+supabase/functions/crawl-website/index.ts    → Real website crawling (Deno)
+supabase/functions/check-citations/index.ts  → Queries AI providers for citations
+src/types/crawl.ts                           → Types for crawl results
 ```
 
 ### Payment Flow
@@ -154,20 +157,25 @@ Edge functions should always return proper JSON errors, never throw unhandled.
 ## Current State & Known Issues
 
 ### Working
-- ✅ Real website crawling via edge function
+- ✅ AEO (Answer Engine Optimization) - prompt-based citation checking
+- ✅ Real API queries to Perplexity, OpenAI, Anthropic via check-citations edge function
+- ✅ Real website crawling via crawl-website edge function
 - ✅ Schema.org detection
 - ✅ BLUF (Bottom Line Up Front) analysis
 - ✅ Simulated analysis for trial users
 - ✅ Stripe integration (test mode)
+- ✅ Analysis history with trends tracking
+- ✅ Provider selection (choose which AI to query)
 
 ### Needs Work
-- ⚠️ Analysis results stored in localStorage (should migrate to Supabase)
-- ⚠️ LLM citation checking not yet implemented (future feature)
+- ⚠️ Some analysis results stored in localStorage (should fully migrate to Supabase)
+- ⚠️ Rate limiting not implemented (returns unlimited)
 - ⚠️ Competitor comparison uses mock data
 
 ### Technical Debt
 - Multiple payment-related debug components in `src/components/Debug/`
 - Some services have Supabase methods that aren't actively used
+- 35+ documentation files with significant overlap (see DOCUMENTATION_INDEX.md)
 
 ## Testing a Change
 
@@ -188,6 +196,34 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
 - **Frontend:** Netlify (auto-deploys from main branch)
 - **Edge Functions:** `npx supabase functions deploy <function-name>`
 
+## Pre-Change Checklist (REQUIRED)
+
+Before making ANY code changes, AI assistants MUST verify:
+
+```
+CLAUDE.md Compliance Check:
+├── 1. Existing code: Check src/utils/ and src/services/ for similar functions
+├── 2. Files affected: [list all files that will be modified]
+├── 3. Pattern compliance:
+│   ├── Components → UI only
+│   ├── Services → Database operations only
+│   └── Utils → Business logic only
+├── 4. Simulated/Real: Will this work for both trial and paid users?
+├── 5. Types updated: Check src/types/index.ts or src/types/crawl.ts
+├── 6. Dependencies: Check package.json before adding new packages
+└── 7. Edge functions: Proper error handling, no unhandled throws
+```
+
+**Example compliance note to include with changes:**
+```
+CLAUDE.md Check:
+- Existing code: None found for [feature]
+- Files affected: src/utils/foo.ts, src/components/Bar.tsx
+- Pattern: Utils (business logic) ✓
+- Simulated/Real: Works for both ✓
+- Types: Updated src/types/index.ts ✓
+```
+
 ## Questions to Ask Before Making Changes
 
 1. Does this feature already exist somewhere?
@@ -195,3 +231,13 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
 3. Does this follow the service/util/component pattern?
 4. Will this work for both trial (simulated) and paid (real) users?
 5. Have I updated the types if adding new data structures?
+
+## Related Documentation
+
+| Document | Purpose |
+|----------|---------|
+| `MASTER_FEATURE_LIST.md` | Complete feature inventory by category (security, scalability, etc.) |
+| `ARCHITECTURE.md` | Tech stack, project structure, data flow |
+| `ROADMAP.md` | Completed and upcoming features |
+| `SECURITY_SCALABILITY_CHECKLIST.md` | Security/scalability status and action items |
+| `DOCUMENTATION_INDEX.md` | Index of all documentation files |
