@@ -12,6 +12,7 @@ import ContactPage from './components/Contact/ContactPage';
 import PrivacyPolicy from './components/Legal/PrivacyPolicy';
 import TermsOfService from './components/Legal/TermsOfService';
 import CompetitorStrategy from './components/Reports/CompetitorStrategy';
+import AnalysisHistory from './components/History/AnalysisHistory';
 import LandingPage from './components/Landing/LandingPage';
 import AuthPage from './components/Auth/AuthPage';
 import PricingPage from './components/Pricing/PricingPage';
@@ -220,7 +221,7 @@ function App() {
     }
 
     // Protected routes that require login
-    if (!user && ['dashboard', 'new-analysis', 'analysis-results', 'project-detail', 'pricing', 'competitor-strategy'].includes(activeSection)) {
+    if (!user && ['dashboard', 'new-analysis', 'analysis-results', 'project-detail', 'pricing', 'competitor-strategy', 'history'].includes(activeSection)) {
       return <AuthPage onLogin={handleLogin} />;
     }
 
@@ -230,6 +231,17 @@ function App() {
 
       case 'new-analysis':
         return <NewAnalysis onAnalyze={handleNewAnalysis} user={user} />;
+
+      case 'history':
+        return user ? (
+          <AnalysisHistory
+            user={user}
+            onViewAnalysis={(analysis) => {
+              setCurrentAnalysis(analysis);
+              window.location.hash = 'analysis-results';
+            }}
+          />
+        ) : null;
 
       case 'analysis-results':
         return currentAnalysis ? (

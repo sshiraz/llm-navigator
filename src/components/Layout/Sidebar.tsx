@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Home, Plus, Target, Search, DollarSign, Users, LogOut, Mail, UserCog } from 'lucide-react';
+import { Home, Plus, Target, Search, DollarSign, Users, LogOut, Mail, UserCog, History } from 'lucide-react';
 
 interface SidebarProps {
   activeSection: string;
@@ -26,6 +26,7 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'new-analysis', label: 'New Analysis', icon: Plus },
+    { id: 'history', label: 'History', icon: History },
     { id: 'projects', label: 'Projects', icon: Target },
     { id: 'competitor-strategy', label: 'Competitor Strategy', icon: Users },
     { id: 'pricing', label: 'Pricing', icon: DollarSign },
