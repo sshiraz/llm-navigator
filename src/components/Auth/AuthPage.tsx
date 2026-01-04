@@ -125,8 +125,8 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
             email: formData.email,
             name: formData.name || 'New User',
             avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-            subscription: 'enterprise' as User['subscription'],
-            paymentMethodAdded: true,
+            subscription: 'trial' as User['subscription'],
+            paymentMethodAdded: false,
             createdAt: new Date().toISOString()
           };
           

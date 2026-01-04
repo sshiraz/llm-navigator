@@ -165,7 +165,35 @@ function App() {
 
   const handleUpgrade = (plan: string) => {
     console.log('Upgrading to plan:', plan);
-    // Handle upgrade logic here
+
+    if (!user) return;
+
+    // Update user subscription
+    const updatedUser = {
+      ...user,
+      subscription: plan as User['subscription'],
+      paymentMethodAdded: true
+    };
+
+    // Update state
+    setUser(updatedUser);
+
+    // Update localStorage
+    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+    // Also update in users list
+    try {
+      const usersList = JSON.parse(localStorage.getItem('users') || '[]');
+      const updatedUsersList = usersList.map((u: User) =>
+        u.id === user.id ? { ...u, subscription: plan, paymentMethodAdded: true } : u
+      );
+      localStorage.setItem('users', JSON.stringify(updatedUsersList));
+    } catch (error) {
+      console.error('Error updating users list:', error);
+    }
+
+    // Navigate to dashboard
+    window.location.hash = 'dashboard';
   };
 
   const handleGetStarted = () => {

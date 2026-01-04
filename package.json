@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:payment": "npx tsx scripts/test-payment-flow.ts",
+    "stripe:listen": "stripe listen --forward-to http://localhost:54321/functions/v1/stripe-webhook"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^3.7.0",
@@ -26,6 +28,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "stripe": "^14.21.0",
+    "tsx": "^4.7.0",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.1",
     "@testing-library/user-event": "^14.5.2",

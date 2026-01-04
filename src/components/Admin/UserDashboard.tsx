@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Filter, Download, RefreshCw, CreditCard, Clock, CheckCircle, XCircle, ArrowLeft, Shield, Save, X } from 'lucide-react';
+import { Users, Search, Filter, Download, RefreshCw, CreditCard, Clock, CheckCircle, XCircle, ArrowLeft, Shield, Save, X, Trash2 } from 'lucide-react';
 import { User } from '../../types';
 
 export default function UserDashboard() {
@@ -239,6 +239,42 @@ export default function UserDashboard() {
     } catch (error) {
       console.error('Error updating user:', error);
       alert('Failed to update user. Please try again.');
+    }
+  };
+
+  const handleDeleteUser = (userToDelete: User) => {
+    // Don't allow deleting the admin account
+    if (userToDelete.email === 'info@convologix.com') {
+      alert('Cannot delete the admin account.');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${userToDelete.name || userToDelete.email}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      // Remove from users list in localStorage
+      const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+      const updatedUsers = storedUsers.filter((user: User) => user.id !== userToDelete.id);
+      localStorage.setItem('users', JSON.stringify(updatedUsers));
+
+      // If this was the current user, log them out
+      const currentUserStr = localStorage.getItem('currentUser');
+      if (currentUserStr) {
+        const currentUser = JSON.parse(currentUserStr);
+        if (currentUser.id === userToDelete.id) {
+          localStorage.removeItem('currentUser');
+          window.location.hash = '#auth';
+          return;
+        }
+      }
+
+      // Refresh user list
+      loadUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Failed to delete user. Please try again.');
     }
   };
 
@@ -523,12 +559,21 @@ export default function UserDashboard() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <button
-                          onClick={() => handleEditUser(user)}
-                          className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-                        >
-                          Edit
-                        </button>
+                        <div className="flex items-center justify-end space-x-3">
+                          <button
+                            onClick={() => handleEditUser(user)}
+                            className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user)}
+                            className="text-red-600 hover:text-red-800 font-medium text-sm flex items-center space-x-1"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
