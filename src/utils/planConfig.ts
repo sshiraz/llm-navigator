@@ -62,7 +62,7 @@ export const PLAN_CONFIGS: PlanConfig[] = [
     description: 'Complete solution for large organizations with custom needs',
     icon: Crown,
     features: [
-      '1,000 AI analyses per month',
+      '400 AI analyses per month',
       'Unlimited projects & users',
       'All AI models (GPT-4, Claude 3 Opus, Perplexity)',
       'Custom branding & white-labeling',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Gift, CreditCard, ArrowRight } from 'lucide-react';
+import { Check, Gift, CreditCard, ArrowRight, ArrowLeft, Home } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { stripePromise, STRIPE_CONFIG } from '../../utils/stripeUtils';
 import TrialSignup from '../Auth/TrialSignup';
@@ -89,10 +89,21 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Back to Home Button */}
+      <div className="mb-8">
+        <button
+          onClick={() => window.location.hash = 'landing'}
+          className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Home</span>
+        </button>
+      </div>
+
       <div className="text-center mb-12">
         {isLiveMode && <LiveModeIndicator variant="warning" className="mb-8 mx-auto max-w-3xl" />}
-      
+
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
           Choose Your AI Optimization Plan
         </h1>
@@ -105,6 +116,9 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
           </div>
           <p className="text-blue-800">
             Try any plan free for 14 days. No credit card required. Cancel anytime.
+          </p>
+          <p className="text-blue-600 text-sm mt-2">
+            Note: Trial uses simulated data. Paid plans include real AI citation tracking.
           </p>
         </div>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -222,7 +236,7 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
               How does the free trial work?
             </h3>
             <p className="text-gray-600">
-              Our 14-day free trial gives you full access to all features with no credit card required.
+              Our 14-day free trial lets you explore all features with no credit card required. Trial analyses use simulated data to demonstrate the platform. Upgrade to a paid plan for real AI citation tracking with live queries to ChatGPT, Claude, and Perplexity.
             </p>
           </div>
           

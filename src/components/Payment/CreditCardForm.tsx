@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import { CreditCard, Calendar, Lock, User, CheckCircle, AlertCircle } from 'lucide-react';
+import { CreditCard, User, CheckCircle } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
 import { Elements } from '@stripe/react-stripe-js';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { STRIPE_CONFIG, stripePromise } from '../../utils/stripeUtils';
+import { STRIPE_CONFIG, stripePromise, createPaymentIntent } from '../../utils/stripeUtils';
 import { isLiveMode } from '../../utils/liveMode';
-import { createPaymentIntent } from '../../utils/stripeUtils';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
 import SecurePaymentNotice from '../UI/SecurePaymentNotice';
-import PlanFeatures from '../UI/PlanFeatures';
 
 interface CreditCardFormProps {
   plan: string;
@@ -20,10 +18,7 @@ interface CreditCardFormProps {
 function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCardFormProps) {
   const stripe = useStripe();
   const elements = useElements();
-  const [cardNumber, setCardNumber] = useState('');
   const [cardName, setCardName] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvc, setCvc] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSuccess, setIsSuccess] = useState(false);
@@ -35,25 +30,6 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
       PaymentLogger.log('warn', 'CreditCardForm', '🔴 LIVE MODE - Real payments will be processed', { plan, amount });
     }
   }, [plan, amount]);
-
-  const formatCardNumber = (value: string) => {
-    // Remove all non-digits
-    const digits = value.replace(/\D/g, '');
-    // Add space after every 4 digits
-    const formatted = digits.replace(/(\d{4})(?=\d)/g, '$1 ');
-    // Limit to 19 characters (16 digits + 3 spaces)
-    return formatted.substring(0, 19);
-  };
-
-  const formatExpiry = (value: string) => {
-    // Remove all non-digits
-    const digits = value.replace(/\D/g, '');
-    // Format as MM/YY
-    if (digits.length > 2) {
-      return `${digits.substring(0, 2)}/${digits.substring(2, 4)}`;
-    }
-    return digits;
-  };
 
   const validateForm = async () => {
     const newErrors: Record<string, string> = {};

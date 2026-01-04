@@ -1233,7 +1233,7 @@ export class AnalysisCostTracker {
     const budgets = {
       starter: 10 * this.costs.total,      // 10 analyses
       professional: 50 * this.costs.total, // 50 analyses
-      enterprise: 1000 * this.costs.total  // 1000 analyses
+      enterprise: 400 * this.costs.total   // 400 analyses
     };
     
     return budgets[plan as keyof typeof budgets] || 0;

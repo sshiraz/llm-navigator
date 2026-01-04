@@ -155,7 +155,7 @@ export default function AutomaticWebhookFixer() {
         steps.push({
           id: 'set-service-key',
           name: 'Set Service Role Key',
-          command: `npx supabase secrets set SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impna2R6YW9hamJ6bXV1YWpwbmR2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTUyMzc1OSwiZXhwIjoyMDY3MDk5NzU5fQ.DOYDCrZJrV895yP6Qev4y8cRN1b0PUNK-JMvlwTFCBo`,
+          command: `npx supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here`,
           status: 'pending'
         });
       }

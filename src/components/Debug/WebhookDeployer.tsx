@@ -162,7 +162,7 @@ export default function WebhookDeployer() {
                 npx supabase secrets set STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
               </div>
               <div className="bg-gray-900 text-green-400 rounded p-2 font-mono text-xs">
-                npx supabase secrets set SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impna2R6YW9hamJ6bXV1YWpwbmR2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTUyMzc1OSwiZXhwIjoyMDY3MDk5NzU5fQ.DOYDCrZJrV895yP6Qev4y8cRN1b0PUNK-JMvlwTFCBo
+                npx supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
               </div>
               <div className="bg-gray-900 text-green-400 rounded p-2 font-mono text-xs">
                 npx supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret

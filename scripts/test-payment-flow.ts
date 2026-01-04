@@ -15,18 +15,18 @@
 
 import Stripe from 'stripe';
 
-// Configuration - Update these values
+// Configuration - All values from environment variables
 const CONFIG = {
   // Stripe Test Key (starts with sk_test_)
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
 
-  // Supabase Edge Function URL
-  SUPABASE_URL: process.env.VITE_SUPABASE_URL || 'https://jgkdzaoajbzmuuajpndv.supabase.co',
+  // Supabase Edge Function URL (from environment)
+  SUPABASE_URL: process.env.VITE_SUPABASE_URL || '',
 
-  // Supabase Anon Key (required for edge function calls)
-  SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impna2R6YW9hamJ6bXV1YWpwbmR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1MjM3NTksImV4cCI6MjA2NzA5OTc1OX0.DZfwDHZE67gmEuka2HMt-LI0WaG_0kKVROCktiuJN04',
+  // Supabase Anon Key (from environment)
+  SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY || '',
 
-  // Test Price IDs (create these in Stripe Dashboard)
+  // Test Price IDs (from environment or placeholders)
   PRICES: {
     starter: process.env.VITE_STRIPE_STARTER_PRICE_ID || 'price_starter_test',
     professional: process.env.VITE_STRIPE_PROFESSIONAL_PRICE_ID || 'price_professional_test',
@@ -72,12 +72,22 @@ async function main() {
   // Check configuration
   if (!CONFIG.STRIPE_SECRET_KEY) {
     log('STRIPE_SECRET_KEY not set. Set it in your environment or .env file', 'error');
-    log('Example: STRIPE_SECRET_KEY=sk_test_xxx npx ts-node scripts/test-payment-flow.ts', 'info');
+    log('Example: STRIPE_SECRET_KEY=sk_test_xxx npm run test:payment', 'info');
     process.exit(1);
   }
 
   if (!CONFIG.STRIPE_SECRET_KEY.startsWith('sk_test_')) {
     log('WARNING: This does not appear to be a test key! Aborting for safety.', 'error');
+    process.exit(1);
+  }
+
+  if (!CONFIG.SUPABASE_URL) {
+    log('VITE_SUPABASE_URL not set. Set it in your environment or .env file', 'error');
+    process.exit(1);
+  }
+
+  if (!CONFIG.SUPABASE_ANON_KEY) {
+    log('VITE_SUPABASE_ANON_KEY not set. Set it in your environment or .env file', 'error');
     process.exit(1);
   }
 

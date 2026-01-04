@@ -272,7 +272,7 @@ export default function ContactPage() {
             <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">How does the free trial work?</h3>
               <p className="text-gray-600">
-                Our 14-day free trial gives you full access to all features with no credit card required. You can run unlimited demo analyses and test all features before deciding on a subscription plan.
+                Our 14-day free trial lets you explore all features with no credit card required. Trial analyses use simulated data to demonstrate the platform. Upgrade to a paid plan for real AI citation tracking with live queries to ChatGPT, Claude, and Perplexity.
               </p>
             </div>
             

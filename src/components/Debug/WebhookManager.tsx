@@ -38,7 +38,7 @@ export default function WebhookManager() {
       'npx supabase secrets set STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key',
       '',
       '# 2. Set Supabase service role key',
-      'npx supabase secrets set SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impna2R6YW9hamJ6bXV1YWpwbmR2Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTUyMzc1OSwiZXhwIjoyMDY3MDk5NzU5fQ.DOYDCrZJrV895yP6Qev4y8cRN1b0PUNK-JMvlwTFCBo',
+      'npx supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here',
       '',
       '# 3. Set webhook secret',
       'npx supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret',

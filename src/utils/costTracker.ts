@@ -78,7 +78,7 @@ export class CostTracker {
     trial: { analyses: 999999, budget: 999999 }, // Unlimited for demo
     starter: { analyses: 10, budget: 6.00 },      // ~$0.50/analysis with headroom
     professional: { analyses: 50, budget: 35.00 }, // ~$0.50/analysis with headroom
-    enterprise: { analyses: 1000, budget: 600.00 } // ~$0.50/analysis with headroom
+    enterprise: { analyses: 400, budget: 250.00 } // ~$0.50/analysis with headroom
   };
 
   // Track API usage for an analysis
