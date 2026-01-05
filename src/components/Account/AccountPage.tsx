@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ArrowLeft, User, Mail, Building, Globe, Save, X, CheckCircle, AlertTriangle, CreditCard, Calendar } from 'lucide-react';
+import { ArrowLeft, User, Mail, Building, Globe, Save, X, CheckCircle, AlertTriangle, CreditCard, Calendar, XCircle, AlertOctagon } from 'lucide-react';
 import { User as UserType } from '../../types';
 import { getTrialStatus } from '../../utils/mockData';
+import { supabase } from '../../lib/supabase';
 
 interface AccountPageProps {
   user: UserType;
@@ -20,8 +21,65 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelStatus, setCancelStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [cancelMessage, setCancelMessage] = useState('');
+
   const trialStatus = getTrialStatus(user);
+  const isPaidPlan = ['starter', 'professional', 'enterprise'].includes(user.subscription);
+
+  const handleCancelSubscription = async () => {
+    setIsCancelling(true);
+    setCancelStatus('idle');
+    setCancelMessage('');
+
+    try {
+      const { data, error } = await supabase.functions.invoke('cancel-subscription', {
+        body: {
+          userId: user.id,
+          subscriptionId: user.stripeSubscriptionId
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.success) {
+        setCancelStatus('success');
+        if (data.cancelAtPeriodEnd) {
+          setCancelMessage(`Your subscription will end on ${new Date(data.subscriptionEndsAt).toLocaleDateString()}`);
+          // Update the local user state
+          onUpdateProfile({
+            cancelAtPeriodEnd: true,
+            subscriptionEndsAt: data.subscriptionEndsAt
+          });
+        } else {
+          setCancelMessage('Your subscription has been cancelled.');
+          onUpdateProfile({
+            subscription: 'trial' as UserType['subscription'],
+            cancelAtPeriodEnd: false,
+            subscriptionEndsAt: undefined
+          });
+        }
+
+        // Close modal after 3 seconds
+        setTimeout(() => {
+          setShowCancelModal(false);
+          setCancelStatus('idle');
+        }, 3000);
+      } else {
+        throw new Error(data.error || 'Failed to cancel subscription');
+      }
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+      setCancelStatus('error');
+      setCancelMessage(error instanceof Error ? error.message : 'Failed to cancel subscription. Please try again.');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -184,11 +242,29 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
               </div>
             )}
             
-            {user.subscription !== 'free' && user.subscription !== 'trial' && (
+            {isPaidPlan && !user.cancelAtPeriodEnd && (
               <div className="mt-3">
-                <button className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                  Manage Subscription
+                <button
+                  onClick={() => setShowCancelModal(true)}
+                  className="w-full px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors"
+                >
+                  Cancel Subscription
                 </button>
+              </div>
+            )}
+
+            {user.cancelAtPeriodEnd && user.subscriptionEndsAt && (
+              <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <div className="flex items-start space-x-2">
+                  <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-yellow-900">Subscription Ending</p>
+                    <p className="text-xs text-yellow-800 mt-1">
+                      Your subscription will end on {new Date(user.subscriptionEndsAt).toLocaleDateString()}.
+                      You'll retain access until then.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -495,6 +571,93 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
           </div>
         </div>
       </div>
+
+      {/* Cancel Subscription Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            {cancelStatus === 'success' ? (
+              <div className="text-center">
+                <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Subscription Cancelled</h3>
+                <p className="text-gray-600">{cancelMessage}</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                    <AlertOctagon className="w-5 h-5 text-red-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900">Cancel Subscription</h3>
+                </div>
+
+                <p className="text-gray-600 mb-4">
+                  Are you sure you want to cancel your <span className="font-medium">{user.subscription}</span> subscription?
+                </p>
+
+                <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                  <h4 className="font-medium text-gray-900 mb-2">What happens when you cancel:</h4>
+                  <ul className="text-sm text-gray-600 space-y-2">
+                    <li className="flex items-start space-x-2">
+                      <span className="text-gray-400">•</span>
+                      <span>You'll keep access until the end of your billing period</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className="text-gray-400">•</span>
+                      <span>Your account will revert to trial mode (simulated data only)</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className="text-gray-400">•</span>
+                      <span>Your projects and data will be preserved</span>
+                    </li>
+                    <li className="flex items-start space-x-2">
+                      <span className="text-gray-400">•</span>
+                      <span>You can resubscribe anytime</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {cancelStatus === 'error' && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <XCircle className="w-4 h-4 text-red-600" />
+                      <p className="text-sm text-red-800">{cancelMessage}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => {
+                      setShowCancelModal(false);
+                      setCancelStatus('idle');
+                      setCancelMessage('');
+                    }}
+                    disabled={isCancelling}
+                    className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    Keep Subscription
+                  </button>
+                  <button
+                    onClick={handleCancelSubscription}
+                    disabled={isCancelling}
+                    className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center"
+                  >
+                    {isCancelling ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Cancelling...
+                      </>
+                    ) : (
+                      'Cancel Subscription'
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

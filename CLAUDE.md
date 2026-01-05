@@ -5,9 +5,9 @@
 
 ## What This Project Is
 
-LLM Navigator is a SaaS platform that analyzes websites for **AI search discoverability** - how well content is optimized to be cited by AI assistants like ChatGPT, Claude, and Perplexity.
+LLM Navigator is a SaaS platform for **Answer Engine Optimization (AEO)** - helping websites get cited by AI assistants like ChatGPT, Claude, and Perplexity.
 
-**Core Value Proposition:** Help websites get discovered when users ask AI assistants questions.
+**Core Value Proposition:** Enter natural language prompts, check if your website gets cited by AI assistants, see who your competitors are, and get recommendations to improve.
 
 ## Tech Stack
 
@@ -19,6 +19,15 @@ LLM Navigator is a SaaS platform that analyzes websites for **AI search discover
 | Backend | Supabase Edge Functions (Deno) |
 | Payments | Stripe |
 | Deployment | Netlify |
+
+## Subscription Plans
+
+| Plan | Price | Analyses/Month | Features |
+|------|-------|----------------|----------|
+| Trial | Free | Unlimited (simulated) | 14 days, simulated data only |
+| Starter | $29/mo | 10 | Real AI queries, email support |
+| Professional | $99/mo | 50 | + Competitor strategy, priority support |
+| Enterprise | $299/mo | 400 | + White-label, all AI models |
 
 ## Architecture Overview
 
@@ -39,46 +48,57 @@ LLM Navigator is a SaaS platform that analyzes websites for **AI search discover
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                   SUPABASE EDGE FUNCTIONS                        │
-│  supabase/functions/crawl-website/ - Real website crawling       │
-│  supabase/functions/stripe-webhook/ - Payment webhooks           │
-│  supabase/functions/create-subscription/ - Subscription creation │
+│  cancel-subscription/    - Cancel Stripe subscription            │
+│  check-citations/        - Query AI providers for citations      │
+│  crawl-website/          - Real website crawling                 │
+│  create-payment-intent/  - Create Stripe payment intent          │
+│  create-subscription/    - Create Stripe subscription            │
+│  stripe-webhook/         - Handle Stripe webhook events          │
+│  webhook-helper/         - Webhook utilities                     │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                     SUPABASE DATABASE                            │
-│  users, projects, analyses, api_usage, fraud_checks              │
+│  users, projects, analyses, api_usage, payments, payment_logs    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ## Key Files You Need to Know
 
-### Analysis Flow (Core Feature - AEO)
+### Analysis Flow (Core Feature)
 ```
-src/components/Analysis/NewAnalysis.tsx      → User input form (prompts, not keywords)
+src/components/Analysis/NewAnalysis.tsx      → User input (prompts + website)
 src/components/Analysis/AnalysisProgress.tsx → Loading/progress UI
 src/components/Analysis/AnalysisResults.tsx  → Citation results display
-src/components/History/AnalysisHistory.tsx   → Historical analysis tracking
-src/utils/analysisEngine.ts                  → MAIN LOGIC - routes to real/simulated AEO
+src/utils/analysisEngine.ts                  → MAIN LOGIC - routes to real/simulated
 supabase/functions/crawl-website/index.ts    → Real website crawling (Deno)
 supabase/functions/check-citations/index.ts  → Queries AI providers for citations
-src/types/crawl.ts                           → Types for crawl results
 ```
 
 ### Payment Flow
 ```
-src/components/Subscription/PricingTiers.tsx → Plan selection
+src/components/Subscription/PricingTiers.tsx → Plan selection + checkout
+src/components/Payment/CreditCardForm.tsx    → Stripe Elements payment form
+src/components/Account/AccountPage.tsx       → Subscription management + cancellation
 src/utils/stripeUtils.ts                     → Stripe API calls
 supabase/functions/create-subscription/      → Creates Stripe subscription
+supabase/functions/cancel-subscription/      → Cancels subscription at period end
 supabase/functions/stripe-webhook/           → Handles payment events
-src/services/paymentService.ts               → Payment database operations
+```
+
+### User Management
+```
+src/components/Auth/AuthPage.tsx             → Login/signup
+src/components/Account/AccountPage.tsx       → Profile + subscription management
+src/components/Admin/UserDashboard.tsx       → Admin user management
 ```
 
 ### Data Storage
 ```
 src/lib/supabase.ts          → Supabase client initialization
 src/services/*Service.ts     → Database CRUD operations
-localStorage                 → Currently used for analysis results (migration needed)
+src/utils/costTracker.ts     → Plan limits and usage tracking
 ```
 
 ## Critical Patterns & Conventions
@@ -87,7 +107,7 @@ localStorage                 → Currently used for analysis results (migration 
 ```typescript
 // In analysisEngine.ts
 if (user.subscription in ['starter', 'professional', 'enterprise'] || user.isAdmin) {
-  // REAL analysis - calls edge function, returns actual data
+  // REAL analysis - calls edge functions, queries actual AI providers
 } else {
   // SIMULATED analysis - returns plausible fake data for trial users
 }
@@ -111,8 +131,16 @@ serve(async (req) => {
 
 ### 3. Type Definitions
 - All types in `src/types/index.ts` and `src/types/crawl.ts`
-- Database types in `src/types/database.ts`
-- Always add new types to appropriate file, don't create new type files without reason
+- User type includes subscription management fields:
+  ```typescript
+  interface User {
+    subscription: 'free' | 'trial' | 'starter' | 'professional' | 'enterprise';
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
+    cancelAtPeriodEnd?: boolean;
+    subscriptionEndsAt?: string;
+  }
+  ```
 
 ### 4. Service Layer Pattern
 ```typescript
@@ -124,11 +152,43 @@ serve(async (req) => {
 AnalysisService.createAnalysis(data)
 
 // GOOD: Util handles business logic
-AnalysisEngine.analyzeWebsite(url, keywords, user)
+AnalysisEngine.analyzeWebsite(url, prompts, user)
 
 // BAD: Component directly calls Supabase
 supabase.from('analyses').insert(...)  // Don't do this in components
 ```
+
+## Current Features (Working)
+
+### Core AEO Features
+- ✅ Prompt-based citation checking (enter prompts, see if you're cited)
+- ✅ Real AI queries to Perplexity, OpenAI, Anthropic (paid users)
+- ✅ Simulated analysis for trial users
+- ✅ Website crawling with content analysis
+- ✅ Schema.org detection
+- ✅ BLUF (Bottom Line Up Front) scoring
+- ✅ Competitor citation analysis
+- ✅ AEO recommendations
+
+### Subscription & Payments
+- ✅ Stripe checkout (test and live mode)
+- ✅ Subscription creation and management
+- ✅ Cancel subscription at period end
+- ✅ Webhook handling for payment events
+- ✅ Usage tracking and plan limits
+- ✅ PCI-DSS compliant (Stripe Elements)
+
+### User Management
+- ✅ User authentication (Supabase Auth)
+- ✅ Profile management
+- ✅ Admin dashboard with user management
+- ✅ Delete user functionality
+
+### UI/UX
+- ✅ Responsive design
+- ✅ Live mode indicator
+- ✅ Analysis history
+- ✅ Export to PDF
 
 ## What NOT To Do
 
@@ -138,7 +198,7 @@ Before creating a new utility function, check:
 - `src/services/` - Is there already a service for this entity?
 
 ### ❌ Don't Add Random Dependencies
-Check `package.json` before adding new packages. We likely already have what you need.
+Check `package.json` before adding new packages.
 
 ### ❌ Don't Mix Concerns
 - Components: UI rendering only
@@ -148,81 +208,67 @@ Check `package.json` before adding new packages. We likely already have what you
 ### ❌ Don't Ignore the Simulated/Real Split
 Trial users get simulated data. Paid users get real data. This is intentional for cost control.
 
-### ❌ Don't Hardcode Supabase URLs
-Always use: `import.meta.env.VITE_SUPABASE_URL`
+### ❌ Don't Hardcode Secrets
+- Use `import.meta.env.VITE_*` for frontend variables
+- Use Supabase secrets for edge functions
 
 ### ❌ Don't Skip Error Handling in Edge Functions
 Edge functions should always return proper JSON errors, never throw unhandled.
 
-## Current State & Known Issues
-
-### Working
-- ✅ AEO (Answer Engine Optimization) - prompt-based citation checking
-- ✅ Real API queries to Perplexity, OpenAI, Anthropic via check-citations edge function
-- ✅ Real website crawling via crawl-website edge function
-- ✅ Schema.org detection
-- ✅ BLUF (Bottom Line Up Front) analysis
-- ✅ Simulated analysis for trial users
-- ✅ Stripe integration (test mode)
-- ✅ Analysis history with trends tracking
-- ✅ Provider selection (choose which AI to query)
-
-### Needs Work
-- ⚠️ Some analysis results stored in localStorage (should fully migrate to Supabase)
-- ⚠️ Rate limiting not implemented (returns unlimited)
-- ⚠️ Competitor comparison uses mock data
-
-### Technical Debt
-- Multiple payment-related debug components in `src/components/Debug/`
-- Some services have Supabase methods that aren't actively used
-- 35+ documentation files with significant overlap (see DOCUMENTATION_INDEX.md)
-
-## Testing a Change
-
-1. **Build check:** `npm run build` - Must pass with no errors
-2. **Type check:** Build will catch type errors
-3. **Manual test:** Run `npm run dev` and test the affected feature
-
 ## Environment Variables
 
-```
+### Frontend (.env)
+```bash
 VITE_SUPABASE_URL=https://xxx.supabase.co
-VITE_SUPABASE_ANON_KEY=xxx
+VITE_SUPABASE_ANON_KEY=eyJ...  # Legacy JWT format
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
+VITE_STRIPE_STARTER_PRICE_ID=price_xxx
+VITE_STRIPE_PROFESSIONAL_PRICE_ID=price_xxx
+VITE_STRIPE_ENTERPRISE_PRICE_ID=price_xxx
+```
+
+### Supabase Edge Function Secrets
+```bash
+STRIPE_SECRET_KEY=sk_test_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx
+SUPABASE_SERVICE_ROLE_KEY=xxx
+OPENAI_API_KEY=xxx          # For citation checking
+ANTHROPIC_API_KEY=xxx       # For citation checking
+PERPLEXITY_API_KEY=xxx      # For citation checking
 ```
 
 ## Deployment
 
-- **Frontend:** Netlify (auto-deploys from main branch)
-- **Edge Functions:** `npx supabase functions deploy <function-name>`
+### Frontend
+- **Platform:** Netlify (auto-deploys from main branch)
+- **Build:** `npm run build`
 
-## Pre-Change Checklist (REQUIRED)
-
-Before making ANY code changes, AI assistants MUST verify:
-
-```
-CLAUDE.md Compliance Check:
-├── 1. Existing code: Check src/utils/ and src/services/ for similar functions
-├── 2. Files affected: [list all files that will be modified]
-├── 3. Pattern compliance:
-│   ├── Components → UI only
-│   ├── Services → Database operations only
-│   └── Utils → Business logic only
-├── 4. Simulated/Real: Will this work for both trial and paid users?
-├── 5. Types updated: Check src/types/index.ts or src/types/crawl.ts
-├── 6. Dependencies: Check package.json before adding new packages
-└── 7. Edge functions: Proper error handling, no unhandled throws
+### Edge Functions
+```bash
+npx supabase functions deploy cancel-subscription
+npx supabase functions deploy check-citations
+npx supabase functions deploy crawl-website
+npx supabase functions deploy create-payment-intent
+npx supabase functions deploy create-subscription
+npx supabase functions deploy stripe-webhook
 ```
 
-**Example compliance note to include with changes:**
+## Testing
+
+### Build Check
+```bash
+npm run build  # Must pass with no errors
 ```
-CLAUDE.md Check:
-- Existing code: None found for [feature]
-- Files affected: src/utils/foo.ts, src/components/Bar.tsx
-- Pattern: Utils (business logic) ✓
-- Simulated/Real: Works for both ✓
-- Types: Updated src/types/index.ts ✓
+
+### Payment Flow Test
+```bash
+npm run test:payment
 ```
+
+### Test Cards (Stripe Test Mode)
+- Success: `4242 4242 4242 4242`
+- Decline: `4000 0000 0000 0002`
+- 3D Secure: `4000 0025 0000 3155`
 
 ## Questions to Ask Before Making Changes
 
@@ -231,13 +277,3 @@ CLAUDE.md Check:
 3. Does this follow the service/util/component pattern?
 4. Will this work for both trial (simulated) and paid (real) users?
 5. Have I updated the types if adding new data structures?
-
-## Related Documentation
-
-| Document | Purpose |
-|----------|---------|
-| `MASTER_FEATURE_LIST.md` | Complete feature inventory by category (security, scalability, etc.) |
-| `ARCHITECTURE.md` | Tech stack, project structure, data flow |
-| `ROADMAP.md` | Completed and upcoming features |
-| `SECURITY_SCALABILITY_CHECKLIST.md` | Security/scalability status and action items |
-| `DOCUMENTATION_INDEX.md` | Index of all documentation files |

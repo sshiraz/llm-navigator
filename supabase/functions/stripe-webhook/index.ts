@@ -433,13 +433,17 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session, 
   }
 
   try {
-    // Update user subscription
+    // Update user subscription and store Stripe IDs
     console.log("💾 Updating user subscription from checkout session...");
     const { data: updatedUser, error: userError } = await supabase
       .from('users')
       .update({
         subscription: plan,
         payment_method_added: true,
+        stripe_customer_id: session.customer,
+        stripe_subscription_id: session.subscription,
+        cancel_at_period_end: false,
+        subscription_ends_at: null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", userId)
@@ -838,13 +842,13 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, supab
 
 async function handleSubscriptionCancellation(subscription: Stripe.Subscription, supabase: any) {
   console.log("🗑️ Processing subscription cancellation:", subscription.id);
-  
+
   // Check if this is a live mode subscription
   const isLiveMode = subscription.livemode === true;
   if (isLiveMode) {
     console.log("🔴 LIVE MODE SUBSCRIPTION CANCELLATION - Processing real cancellation");
   }
-  
+
   const userId = subscription.metadata.userId;
 
   if (!userId) {
@@ -853,10 +857,14 @@ async function handleSubscriptionCancellation(subscription: Stripe.Subscription,
   }
 
   try {
+    // Revert to 'trial' instead of 'free' - trial gives simulated data access
     const { error } = await supabase
       .from('users')
       .update({
-        subscription: 'free',
+        subscription: 'trial',
+        cancel_at_period_end: false,
+        subscription_ends_at: null,
+        stripe_subscription_id: null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", userId);
@@ -865,7 +873,7 @@ async function handleSubscriptionCancellation(subscription: Stripe.Subscription,
       console.error("❌ Error cancelling subscription:", error);
       throw error;
     }
-    
+
     // Log the subscription cancellation in payment_logs table
     try {
       await supabase.from('payment_logs').insert({
@@ -881,7 +889,7 @@ async function handleSubscriptionCancellation(subscription: Stripe.Subscription,
       console.warn("⚠️ Failed to log subscription cancellation:", logError);
     }
 
-    console.log(`✅ Successfully cancelled subscription for user ${userId}`);
+    console.log(`✅ Successfully cancelled subscription for user ${userId}, reverted to trial`);
   } catch (error) {
     console.error("💥 Error in handleSubscriptionCancellation:", error);
     throw error;
