@@ -10,6 +10,11 @@ export interface User {
   deviceFingerprint?: string;
   ipAddress?: string;
   paymentMethodAdded?: boolean;
+  // Subscription management
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  cancelAtPeriodEnd?: boolean;
+  subscriptionEndsAt?: string;
 }
 
 export interface Project {
