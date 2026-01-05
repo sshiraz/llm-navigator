@@ -143,11 +143,17 @@ export class AnalysisEngine {
     }
 
     // Check rate limits
-    const rateCheck = await CostTracker.checkRateLimit(user.id);
+    const rateCheck = await CostTracker.checkRateLimit(user.id, user.subscription);
     if (!rateCheck.allowed) {
-      const resetTime = rateCheck.resetTime ? new Date(rateCheck.resetTime).toLocaleTimeString() : 'soon';
-      throw new Error(`Rate limit exceeded. Try again at ${resetTime}`);
+      if (user.isAdmin === true) {
+        console.log('Admin user bypassing rate limits');
+      } else {
+        throw new Error(rateCheck.reason || 'Rate limit exceeded. Please try again later.');
+      }
     }
+
+    // Record this request for rate limiting
+    CostTracker.recordRequest(user.id);
 
     // Determine if we should use real analysis
     const useRealAnalysis = this.shouldUseRealAnalysis(user);
@@ -199,8 +205,17 @@ export class AnalysisEngine {
     // Check usage limits first
     const usageCheck = await CostTracker.checkUsageLimits(user.id, user.subscription);
     if (!usageCheck.allowed && user.isAdmin !== true) {
-      throw new Error(usageCheck.resetTime ? `Rate limit exceeded. Try again at ${new Date(usageCheck.resetTime).toLocaleTimeString()}` : 'Rate limit exceeded');
+      throw new Error(usageCheck.reason || 'Usage limit exceeded');
     }
+
+    // Check rate limits
+    const rateCheck = await CostTracker.checkRateLimit(user.id, user.subscription);
+    if (!rateCheck.allowed && user.isAdmin !== true) {
+      throw new Error(rateCheck.reason || 'Rate limit exceeded. Please try again later.');
+    }
+
+    // Record this request for rate limiting
+    CostTracker.recordRequest(user.id);
 
     // Determine if we should use real analysis
     const useRealAnalysis = this.shouldUseRealAnalysis(user);

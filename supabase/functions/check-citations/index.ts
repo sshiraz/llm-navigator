@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { withRateLimit, RATE_LIMITS } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -362,6 +363,13 @@ serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  // Apply rate limiting (expensive endpoint - AI queries)
+  const rateLimit = withRateLimit(req, corsHeaders, RATE_LIMITS.expensive);
+  if (!rateLimit.allowed) {
+    console.log('Rate limit exceeded for check-citations');
+    return rateLimit.response!;
+  }
+
   try {
     const body: CheckCitationsRequest = await req.json();
     const { prompts, website, brandName, providers } = body;
@@ -463,7 +471,7 @@ serve(async (req) => {
           }
         }
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      { headers: { ...corsHeaders, ...rateLimit.headers, "Content-Type": "application/json" }, status: 200 }
     );
 
   } catch (error) {

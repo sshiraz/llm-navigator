@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { DOMParser, Element } from "https://deno.land/x/deno_dom@v0.1.38/deno-dom-wasm.ts";
+import { withRateLimit, RATE_LIMITS } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -590,6 +591,13 @@ serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  // Apply rate limiting (standard endpoint)
+  const rateLimit = withRateLimit(req, corsHeaders, RATE_LIMITS.standard);
+  if (!rateLimit.allowed) {
+    console.log('Rate limit exceeded for crawl-website');
+    return rateLimit.response!;
   }
 
   try {

@@ -81,6 +81,17 @@ export class CostTracker {
     enterprise: { analyses: 400, budget: 250.00 } // ~$0.50/analysis with headroom
   };
 
+  // Rate limits per plan (requests per window)
+  private static readonly RATE_LIMITS = {
+    free: { perMinute: 5, perHour: 20 },
+    trial: { perMinute: 10, perHour: 50 },
+    starter: { perMinute: 10, perHour: 60 },
+    professional: { perMinute: 20, perHour: 120 },
+    enterprise: { perMinute: 50, perHour: 300 }
+  };
+
+  private static readonly RATE_LIMIT_STORAGE_KEY = 'rate_limit_requests';
+
   // Track API usage for an analysis
   static async trackAnalysisUsage(
     userId: string,
@@ -348,16 +359,171 @@ export class CostTracker {
   }
 
   // Rate limiting to prevent abuse
-  static async checkRateLimit(userId: string): Promise<{
+  static async checkRateLimit(userId: string, userPlan?: string): Promise<{
     allowed: boolean;
     resetTime?: number;
     remaining?: number;
+    reason?: string;
   }> {
-    console.log('Checking rate limit for user:', userId);
-    // For demo accounts, always allow unlimited rate
+    console.log('Checking rate limit for user:', userId, 'plan:', userPlan);
+
+    // Get plan from parameter or localStorage
+    let plan = userPlan;
+    if (!plan) {
+      try {
+        const userStr = localStorage.getItem('currentUser');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          plan = user.subscription || 'free';
+          // Admin users have unlimited rate
+          if (user.isAdmin === true) {
+            return { allowed: true, remaining: 999 };
+          }
+        }
+      } catch (error) {
+        console.error('Error getting user plan:', error);
+        plan = 'free';
+      }
+    }
+
+    const limits = this.RATE_LIMITS[plan as keyof typeof this.RATE_LIMITS] || this.RATE_LIMITS.free;
+    const now = Date.now();
+    const oneMinuteAgo = now - 60 * 1000;
+    const oneHourAgo = now - 60 * 60 * 1000;
+
+    // Get stored requests
+    let requests: number[] = [];
+    try {
+      const stored = localStorage.getItem(this.RATE_LIMIT_STORAGE_KEY);
+      if (stored) {
+        requests = JSON.parse(stored);
+      }
+    } catch (error) {
+      console.error('Error reading rate limit data:', error);
+      requests = [];
+    }
+
+    // Clean up old requests (older than 1 hour)
+    requests = requests.filter(timestamp => timestamp > oneHourAgo);
+
+    // Count requests in each window
+    const requestsLastMinute = requests.filter(timestamp => timestamp > oneMinuteAgo).length;
+    const requestsLastHour = requests.length;
+
+    console.log('Rate limit check:', {
+      plan,
+      requestsLastMinute,
+      requestsLastHour,
+      limitsPerMinute: limits.perMinute,
+      limitsPerHour: limits.perHour
+    });
+
+    // Check per-minute limit
+    if (requestsLastMinute >= limits.perMinute) {
+      const oldestInMinute = requests.filter(t => t > oneMinuteAgo).sort()[0];
+      const resetTime = oldestInMinute + 60 * 1000;
+      const waitSeconds = Math.ceil((resetTime - now) / 1000);
+
+      return {
+        allowed: false,
+        resetTime,
+        remaining: 0,
+        reason: `Rate limit exceeded. Please wait ${waitSeconds} seconds before trying again.`
+      };
+    }
+
+    // Check per-hour limit
+    if (requestsLastHour >= limits.perHour) {
+      const oldestInHour = requests.sort()[0];
+      const resetTime = oldestInHour + 60 * 60 * 1000;
+      const waitMinutes = Math.ceil((resetTime - now) / (60 * 1000));
+
+      return {
+        allowed: false,
+        resetTime,
+        remaining: 0,
+        reason: `Hourly rate limit exceeded. Please wait ${waitMinutes} minutes or upgrade your plan.`
+      };
+    }
+
+    // Calculate remaining requests (use the more restrictive limit)
+    const remainingMinute = limits.perMinute - requestsLastMinute;
+    const remainingHour = limits.perHour - requestsLastHour;
+    const remaining = Math.min(remainingMinute, remainingHour);
+
     return {
       allowed: true,
-      remaining: 999
+      remaining
+    };
+  }
+
+  // Record a request for rate limiting
+  static recordRequest(userId: string): void {
+    console.log('Recording request for rate limiting, user:', userId);
+    const now = Date.now();
+    const oneHourAgo = now - 60 * 60 * 1000;
+
+    let requests: number[] = [];
+    try {
+      const stored = localStorage.getItem(this.RATE_LIMIT_STORAGE_KEY);
+      if (stored) {
+        requests = JSON.parse(stored);
+      }
+    } catch (error) {
+      console.error('Error reading rate limit data:', error);
+      requests = [];
+    }
+
+    // Clean up old requests and add new one
+    requests = requests.filter(timestamp => timestamp > oneHourAgo);
+    requests.push(now);
+
+    try {
+      localStorage.setItem(this.RATE_LIMIT_STORAGE_KEY, JSON.stringify(requests));
+    } catch (error) {
+      console.error('Error storing rate limit data:', error);
+    }
+  }
+
+  // Get current rate limit status for display
+  static getRateLimitStatus(userPlan?: string): {
+    perMinute: { used: number; limit: number };
+    perHour: { used: number; limit: number };
+  } {
+    let plan = userPlan;
+    if (!plan) {
+      try {
+        const userStr = localStorage.getItem('currentUser');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          plan = user.subscription || 'free';
+        }
+      } catch {
+        plan = 'free';
+      }
+    }
+
+    const limits = this.RATE_LIMITS[plan as keyof typeof this.RATE_LIMITS] || this.RATE_LIMITS.free;
+    const now = Date.now();
+    const oneMinuteAgo = now - 60 * 1000;
+    const oneHourAgo = now - 60 * 60 * 1000;
+
+    let requests: number[] = [];
+    try {
+      const stored = localStorage.getItem(this.RATE_LIMIT_STORAGE_KEY);
+      if (stored) {
+        requests = JSON.parse(stored);
+      }
+    } catch {
+      requests = [];
+    }
+
+    const requestsLastMinute = requests.filter(timestamp => timestamp > oneMinuteAgo).length;
+    const requestsLastHour = requests.filter(timestamp => timestamp > oneHourAgo).length;
+
+    return {
+      perMinute: { used: requestsLastMinute, limit: limits.perMinute },
+      perHour: { used: requestsLastHour, limit: limits.perHour }
     };
   }
 
