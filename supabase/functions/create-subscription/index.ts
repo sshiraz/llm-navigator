@@ -1,16 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.21.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, handleCorsPreflightWithValidation, validateOrigin } from "../_shared/cors.ts";
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const corsHeaders = getCorsHeaders(req);
+
+  // Handle CORS preflight
+  const preflightResponse = handleCorsPreflightWithValidation(req);
+  if (preflightResponse) return preflightResponse;
+
+  // Validate origin
+  const originError = validateOrigin(req);
+  if (originError) return originError;
 
   try {
     const { userId, email, plan, priceId, paymentMethodId } = await req.json();

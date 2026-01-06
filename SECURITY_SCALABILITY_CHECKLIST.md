@@ -1,13 +1,13 @@
 # Security & Scalability Checklist
 
-> Last updated: 2026-01-03
+> Last updated: 2026-01-05
 > This document tracks the security and scalability state of LLM Navigator
 
 ---
 
 ## Security State: 🟡 MODERATE
 
-**Score: 15/25 items implemented (60%)**
+**Score: 17/25 items implemented (68%)**
 
 ### Authentication & Authorization
 
@@ -40,9 +40,9 @@
 | ✅ | X-Frame-Options: DENY | High | Prevents clickjacking |
 | ✅ | X-XSS-Protection header | Medium | Browser XSS filter |
 | ✅ | X-Content-Type-Options: nosniff | Medium | Prevents MIME sniffing |
-| ⚠️ | CORS configuration | High | Currently `*` - too permissive |
+| ✅ | CORS configuration | High | Restricted to whitelisted domains (2026-01-05) |
 | ✅ | HSTS (HTTP Strict Transport Security) | High | Added 2026-01-03 in `netlify.toml` |
-| ❌ | Rate limiting | Critical | `checkRateLimit()` returns unlimited |
+| ✅ | Rate limiting | Critical | Client-side + Edge Function rate limiting (2026-01-05) |
 | ❌ | API key rotation policy | Medium | No documented rotation schedule |
 
 ### Payment Security (Stripe)
@@ -155,15 +155,16 @@
 
 ### Critical (Do First)
 
-1. **Implement Rate Limiting**
-   - File: `src/utils/costTracker.ts` line 351-362
-   - Current: Returns `allowed: true` always
-   - Action: Add Redis-based or in-memory rate limiting
+1. ~~**Implement Rate Limiting**~~ ✅ DONE (2026-01-05)
+   - Client-side: `src/utils/costTracker.ts` - sliding window per user/plan
+   - Server-side: `supabase/functions/_shared/rateLimiter.ts` - IP-based
+   - Applied to: `check-citations`, `crawl-website` Edge Functions
 
-2. **Restrict CORS**
-   - File: `supabase/functions/*/index.ts`
-   - Current: `Access-Control-Allow-Origin: *`
-   - Action: Whitelist specific domains
+2. ~~**Restrict CORS**~~ ✅ DONE (2026-01-05)
+   - Created: `supabase/functions/_shared/cors.ts`
+   - Whitelisted domains: `lucent-elf-359aef.netlify.app`, `localhost:5173`, `localhost:3000`
+   - Applied to: All Edge Functions (`check-citations`, `crawl-website`, `cancel-subscription`, `create-subscription`, `create-payment-intent`, `webhook-helper`)
+   - Note: `stripe-webhook` uses extended CORS headers but doesn't validate origin (Stripe sends webhooks without origin)
 
 ### High Priority
 

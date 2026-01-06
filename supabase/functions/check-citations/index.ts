@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { withRateLimit, RATE_LIMITS } from "../_shared/rateLimiter.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, handleCorsPreflightWithValidation, validateOrigin } from "../_shared/cors.ts";
 
 // Types
 interface CompetitorCitation {
@@ -358,10 +354,15 @@ async function processPrompt(
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   // Handle CORS preflight
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const preflightResponse = handleCorsPreflightWithValidation(req);
+  if (preflightResponse) return preflightResponse;
+
+  // Validate origin
+  const originError = validateOrigin(req);
+  if (originError) return originError;
 
   // Apply rate limiting (expensive endpoint - AI queries)
   const rateLimit = withRateLimit(req, corsHeaders, RATE_LIMITS.expensive);

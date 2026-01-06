@@ -3,7 +3,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { v4 as uuidv4 } from "https://esm.sh/uuid@11.0.0";
 
-// Improved CORS headers with all possible stripe signature header variations (works for both test and live mode)
+// CORS headers for Stripe webhook
+// Note: Stripe webhooks come from Stripe's servers without origin header,
+// so we don't restrict origin for this endpoint - only Stripe can call it with valid signatures
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature, x-webhook-signature, x-stripe-signature, webhook-signature, x-test-request",
@@ -94,8 +96,7 @@ serve(async (req) => {
 
     console.log(`🔑 Mode: ${isLiveMode ? '🔴 LIVE MODE' : '🟢 TEST MODE'}`);
 
-    // For live mode, use the live webhook secret if available
-    const liveWebhookSecret = Deno.env.get("STRIPE_LIVE_WEBHOOK_SECRET");
+    // Use the appropriate webhook secret (liveWebhookSecret already defined above)
     const finalWebhookSecret = (isLiveMode && liveWebhookSecret) ? liveWebhookSecret : webhookSecret;
     
     // If we're missing the Supabase URL, try to get it from the request URL
