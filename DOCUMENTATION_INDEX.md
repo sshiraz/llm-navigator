@@ -9,10 +9,13 @@
 
 | File | Purpose | Status |
 |------|---------|--------|
-| `CLAUDE.md` | AI assistant instructions, patterns, pre-change checklist | Current |
+| `README.md` | Project overview, quick start, tech stack | Current |
+| `CLAUDE.md` | AI assistant instructions, collaboration rules, workflows | Current |
 | `ARCHITECTURE.md` | Tech stack, project structure, data flow | Current |
+| `MASTER_FEATURE_LIST.md` | Complete feature status (71% complete) | Current |
 | `ROADMAP.md` | Completed features and upcoming roadmap | Current |
 | `SECURITY_SCALABILITY_CHECKLIST.md` | Security/scalability status and action items | Current |
+| `BRANCH_ANALYSIS.md` | Historical record of commit reasoning | Current |
 
 ---
 
@@ -83,7 +86,6 @@ npm run test:payment   # Payment flow tests
 | File | Purpose |
 |------|---------|
 | `MODEL_COMPARISON.md` | AI model comparison |
-| `AI_COLLABORATION_RULES.md` | AI assistant behavior rules |
 | `PRODUCT_ENGINEERING_ROADMAP.md` | Engineering phases and principles |
 
 ---
@@ -102,7 +104,8 @@ npm run test:payment   # Payment flow tests
 
 The following redundant files were removed:
 
-**Deleted (12 files):**
+**Deleted (13 files):**
+- ~~AI_COLLABORATION_RULES.md~~ (merged into CLAUDE.md)
 - ~~AUTOMATIC_WEBHOOK_FIX.md~~ (historical)
 - ~~WEBHOOK_DEPLOYMENT_FIX.md~~ (historical)
 - ~~WEBHOOK_DEPLOYMENT_TROUBLESHOOTING.md~~ (historical)
@@ -120,13 +123,13 @@ The following redundant files were removed:
 
 ## File Count Summary
 
-- **Primary docs:** 4 files
+- **Primary docs:** 7 files
 - **Setup & deployment:** 4 files
 - **Stripe & payments:** 4 files
 - **Webhooks:** 2 files
 - **Troubleshooting:** 5 files
 - **Testing:** 2 files
-- **Reference:** 3 files
+- **Reference:** 2 files
 - **docs/ directory:** 3 files
 
-**Total:** 27 markdown files (down from 39)
+**Total:** 26 markdown files (down from 39, excludes this index)

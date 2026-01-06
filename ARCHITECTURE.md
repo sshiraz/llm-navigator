@@ -19,28 +19,45 @@
 ```
 llm-navigator/
 ├── src/
-│   ├── components/          # React UI components
+│   ├── components/
+│   │   ├── Account/         # User profile, subscription management
+│   │   ├── Admin/           # Admin dashboard, user management
 │   │   ├── Analysis/        # NewAnalysis, AnalysisProgress, AnalysisResults
-│   │   ├── History/         # AnalysisHistory
+│   │   ├── Auth/            # Login/signup pages
+│   │   ├── Contact/         # Contact page
+│   │   ├── Dashboard/       # Main dashboard, project cards, score cards
+│   │   ├── Database/        # Database utilities
+│   │   ├── Debug/           # Payment debugger, test tools
+│   │   ├── History/         # Analysis history
+│   │   ├── Landing/         # Landing page
 │   │   ├── Layout/          # Header, Sidebar
-│   │   ├── Dashboard/       # Main dashboard
-│   │   ├── Auth/            # Login/signup
-│   │   ├── Subscription/    # Pricing, payments
-│   │   └── ...
-│   ├── services/            # Supabase CRUD operations
-│   │   ├── analysisService.ts
-│   │   ├── authService.ts
-│   │   └── paymentService.ts
-│   ├── utils/               # Business logic
+│   │   ├── Legal/           # Privacy policy, terms of service
+│   │   ├── Payment/         # Credit card form, checkout
+│   │   ├── Pricing/         # Pricing display
+│   │   ├── Projects/        # Project management
+│   │   ├── Reports/         # PDF export, reports
+│   │   ├── Subscription/    # PricingTiers, plan selection
+│   │   └── UI/              # Shared UI components
+│   │
+│   ├── services/
+│   │   ├── analysisService.ts  # Analysis CRUD
+│   │   ├── authService.ts      # Auth operations + localStorage cleanup
+│   │   ├── paymentService.ts   # Payment records
+│   │   ├── projectService.ts   # Project CRUD
+│   │   └── usageService.ts     # API usage tracking
+│   │
+│   ├── utils/
 │   │   ├── analysisEngine.ts   # Core AEO logic (real vs simulated)
 │   │   ├── costTracker.ts      # Usage limits & costs
-│   │   └── ...
+│   │   ├── stripeUtils.ts      # Stripe API helpers
+│   │   └── fraudPrevention.ts  # Trial abuse prevention
+│   │
 │   ├── types/               # TypeScript interfaces
 │   └── lib/
 │       └── supabase.ts      # Supabase client
 │
 ├── supabase/
-│   └── functions/              # Edge functions (Deno runtime)
+│   └── functions/
 │       ├── _shared/            # Shared utilities (CORS)
 │       ├── cancel-subscription/# Cancel Stripe subscription
 │       ├── check-citations/    # Queries AI providers
@@ -110,14 +127,38 @@ AnalysisResults.tsx (display)
 
 ## Key Files
 
+### Core Logic
 | File | Purpose |
 |------|---------|
 | `src/utils/analysisEngine.ts` | Core analysis logic, routes real vs simulated |
-| `src/services/analysisService.ts` | Database CRUD for analyses |
 | `src/utils/costTracker.ts` | Usage limits, cost calculations |
-| `src/types/index.ts` | All TypeScript interfaces |
+| `src/utils/stripeUtils.ts` | Stripe checkout and subscription helpers |
+| `src/utils/fraudPrevention.ts` | Trial abuse detection (email, fingerprint, IP) |
+
+### Services
+| File | Purpose |
+|------|---------|
+| `src/services/analysisService.ts` | Analysis CRUD + localStorage migration |
+| `src/services/authService.ts` | Auth operations + localStorage cleanup |
+| `src/services/paymentService.ts` | Payment record management |
+| `src/services/projectService.ts` | Project CRUD |
+| `src/services/usageService.ts` | API usage tracking |
+
+### Edge Functions
+| File | Purpose |
+|------|---------|
+| `supabase/functions/_shared/cors.ts` | CORS origin whitelist |
 | `supabase/functions/check-citations/index.ts` | Queries AI providers |
 | `supabase/functions/crawl-website/index.ts` | Website content analysis |
+| `supabase/functions/stripe-webhook/index.ts` | Payment event handling |
+| `supabase/functions/delete-user/index.ts` | Admin user deletion (cascade) |
+
+### Types & Config
+| File | Purpose |
+|------|---------|
+| `src/types/index.ts` | Main TypeScript interfaces |
+| `src/types/crawl.ts` | Crawl result types |
+| `src/lib/supabase.ts` | Supabase client initialization |
 
 ## Environment Variables
 

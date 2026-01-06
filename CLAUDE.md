@@ -1,313 +1,163 @@
-# LLM Navigator - Project Context
+# LLM Navigator
 
-> This file provides context for AI assistants working on this codebase.
-> Read this FIRST before making any changes.
-
-## What This Project Is
-
-LLM Navigator is a SaaS platform for **Answer Engine Optimization (AEO)** - helping websites get cited by AI assistants like ChatGPT, Claude, and Perplexity.
-
-**Core Value Proposition:** Enter natural language prompts, check if your website gets cited by AI assistants, see who your competitors are, and get recommendations to improve.
+AEO (Answer Engine Optimization) SaaS platform - helps websites get cited by AI assistants (ChatGPT, Claude, Perplexity).
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | React 18 + TypeScript + Vite |
-| Styling | Tailwind CSS |
-| Database | Supabase (PostgreSQL + Auth) |
-| Backend | Supabase Edge Functions (Deno) |
-| Payments | Stripe |
-| Deployment | Netlify |
+React 18 + TypeScript + Vite | Tailwind CSS | Supabase (PostgreSQL + Edge Functions) | Stripe | Netlify
 
-## Subscription Plans
-
-| Plan | Price | Analyses/Month | Features |
-|------|-------|----------------|----------|
-| Trial | Free | Unlimited (simulated) | 14 days, simulated data only |
-| Starter | $29/mo | 10 | Real AI queries, email support |
-| Professional | $99/mo | 50 | + Competitor strategy, priority support |
-| Enterprise | $299/mo | 400 | + White-label, all AI models |
-
-## Architecture Overview
+## Project Structure
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        FRONTEND (React)                          │
-│  App.tsx → Routes to components based on URL hash                │
-│  Components organized by feature (Analysis/, Payment/, etc.)     │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     SERVICES LAYER                               │
-│  src/services/*Service.ts - Database operations via Supabase     │
-│  src/utils/*.ts - Business logic, calculations, helpers          │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   SUPABASE EDGE FUNCTIONS                        │
-│  _shared/cors.ts         - CORS utilities with origin whitelist  │
-│  cancel-subscription/    - Cancel Stripe subscription            │
-│  check-citations/        - Query AI providers for citations      │
-│  crawl-website/          - Real website crawling                 │
-│  create-payment-intent/  - Create Stripe payment intent          │
-│  create-subscription/    - Create Stripe subscription            │
-│  delete-user/            - Admin user deletion (cascade)         │
-│  stripe-webhook/         - Handle Stripe webhook events          │
-│  webhook-helper/         - Webhook utilities                     │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     SUPABASE DATABASE                            │
-│  users, projects, analyses, api_usage, payments, payment_logs    │
-└─────────────────────────────────────────────────────────────────┘
+src/
+├── components/     # React UI (by feature: Analysis/, Payment/, Admin/)
+├── services/       # Supabase CRUD operations (*Service.ts)
+├── utils/          # Business logic (analysisEngine.ts, costTracker.ts)
+├── types/          # TypeScript interfaces
+└── lib/            # Supabase client
+
+supabase/functions/ # Edge Functions (Deno)
+├── _shared/        # CORS utilities
+├── check-citations/# Query AI providers
+├── crawl-website/  # Website analysis
+├── stripe-webhook/ # Payment events
+└── delete-user/    # Admin deletion
+
+scripts/            # Test scripts
 ```
 
-## Key Files You Need to Know
+## Common Commands
 
-### Analysis Flow (Core Feature)
-```
-src/components/Analysis/NewAnalysis.tsx      → User input (prompts + website)
-src/components/Analysis/AnalysisProgress.tsx → Loading/progress UI
-src/components/Analysis/AnalysisResults.tsx  → Citation results display
-src/utils/analysisEngine.ts                  → MAIN LOGIC - routes to real/simulated
-supabase/functions/crawl-website/index.ts    → Real website crawling (Deno)
-supabase/functions/check-citations/index.ts  → Queries AI providers for citations
-```
+```bash
+# Development
+npm run dev              # Start dev server
+npm run build            # Build for production
 
-### Payment Flow
-```
-src/components/Subscription/PricingTiers.tsx → Plan selection + checkout
-src/components/Payment/CreditCardForm.tsx    → Stripe Elements payment form
-src/components/Account/AccountPage.tsx       → Subscription management + cancellation
-src/utils/stripeUtils.ts                     → Stripe API calls
-supabase/functions/create-subscription/      → Creates Stripe subscription
-supabase/functions/cancel-subscription/      → Cancels subscription at period end
-supabase/functions/stripe-webhook/           → Handles payment events
+# Testing
+npm run test             # Unit tests (watch)
+npm run test:functions   # Edge Function tests
+npm run test:payment     # Stripe flow tests
+
+# Deployment
+npx supabase functions deploy <function-name>
 ```
 
-### User Management
-```
-src/components/Auth/AuthPage.tsx             → Login/signup
-src/components/Account/AccountPage.tsx       → Profile + subscription management
-src/components/Admin/UserDashboard.tsx       → Admin user management (delete users)
-src/services/authService.ts                  → Auth operations + localStorage cleanup
-supabase/functions/delete-user/index.ts      → Admin user deletion (cascade delete)
-```
+## Collaboration Rules
 
-### CORS Security
-```
-supabase/functions/_shared/cors.ts           → Origin whitelist, validation
-  - Whitelisted: lucent-elf-359aef.netlify.app, localhost:5173, localhost:3000
-  - validateOrigin() returns 403 for unauthorized origins
-  - All Edge Functions use shared CORS utilities
-```
+**Work incrementally** - Small, reviewable changes. No massive code dumps.
 
-### Data Storage
-```
-src/lib/supabase.ts          → Supabase client initialization
-src/services/*Service.ts     → Database CRUD operations
-src/utils/costTracker.ts     → Plan limits and usage tracking
-```
+**Before implementing, clarify:**
+- What modules will this affect?
+- Any DB/schema changes?
+- Any subscription or billing logic implications?
 
-## Critical Patterns & Conventions
+**Ask permission before:**
+- Routing/navigation changes
+- Database schema changes
+- Multi-file refactors
+- Breaking existing integrations
 
-### 1. Real vs Simulated Analysis
+**Never bypass:**
+- Row Level Security (RLS)
+- Subscription gating (trial vs paid)
+- Stripe payment handling
+- Cost controls (real vs simulated)
+
+## Standard Workflows
+
+### Adding a New Feature
+1. Check if similar code exists in `src/utils/` or `src/services/`
+2. Create types first in `src/types/index.ts`
+3. Implement service layer if DB operations needed
+4. Build UI component last
+5. Run `npm run build` to verify no errors
+
+### Fixing a Bug
+1. Read the relevant file(s) first
+2. Check for related tests in `*.test.ts` files
+3. Fix the issue
+4. Run tests: `npm run test:run`
+5. Verify build: `npm run build`
+
+### Adding an Edge Function
+1. Create folder in `supabase/functions/<name>/`
+2. Import CORS from `../_shared/cors.ts`
+3. Follow pattern: preflight → origin validation → handle request
+4. Deploy: `npx supabase functions deploy <name>`
+5. Add test to `scripts/test-edge-functions.ts`
+
+### Modifying Payments
+1. Use Stripe test mode (`sk_test_*`, `pk_test_*`)
+2. Test with card: `4242 4242 4242 4242`
+3. Check webhook handling in `stripe-webhook/index.ts`
+4. Run: `npm run test:payment`
+
+## Key Patterns
+
+### Service/Util/Component Separation
 ```typescript
-// In analysisEngine.ts
-if (user.subscription in ['starter', 'professional', 'enterprise'] || user.isAdmin) {
-  // REAL analysis - calls edge functions, queries actual AI providers
-} else {
-  // SIMULATED analysis - returns plausible fake data for trial users
-}
+// Services → Supabase operations
+AnalysisService.createAnalysis(data)
+
+// Utils → Business logic
+AnalysisEngine.analyzeWebsite(url, prompts, user)
+
+// Components → UI only (never call Supabase directly)
 ```
 
-### 2. Edge Function Structure
-All edge functions follow this pattern with CORS validation:
+### Real vs Simulated Analysis
 ```typescript
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// Paid users → real API calls to AI providers
+// Trial users → simulated data (cost control)
+// Controlled by: AnalysisEngine.shouldUseRealAnalysis(user)
+```
+
+### Edge Function CORS Pattern
+```typescript
 import { getCorsHeaders, handleCorsPreflightWithValidation, validateOrigin } from "../_shared/cors.ts";
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
-
-  // Handle CORS preflight with origin validation
   const preflightResponse = handleCorsPreflightWithValidation(req);
   if (preflightResponse) return preflightResponse;
-
-  // Validate origin for non-preflight requests
   const originError = validateOrigin(req);
   if (originError) return originError;
-
   // ... handle request
 });
 ```
 
-**Note:** `stripe-webhook` does NOT validate origin - webhooks come from Stripe servers, not browsers. It uses Stripe signature verification instead.
+**Exception:** `stripe-webhook` skips origin validation - uses Stripe signature verification instead.
 
-### 3. Type Definitions
-- All types in `src/types/index.ts` and `src/types/crawl.ts`
-- User type includes subscription management fields:
-  ```typescript
-  interface User {
-    subscription: 'free' | 'trial' | 'starter' | 'professional' | 'enterprise';
-    stripeCustomerId?: string;
-    stripeSubscriptionId?: string;
-    cancelAtPeriodEnd?: boolean;
-    subscriptionEndsAt?: string;
-  }
-  ```
+## Don't
 
-### 4. Service Layer Pattern
-```typescript
-// Services handle Supabase operations
-// Utils handle business logic
-// Components handle UI only
+- **Duplicate code** - Check `src/utils/` and `src/services/` first
+- **Mix concerns** - Components render UI, services talk to DB, utils hold logic
+- **Skip the real/simulated split** - Trial = simulated, paid = real
+- **Hardcode secrets** - Use `import.meta.env.VITE_*` or Supabase secrets
+- **Throw unhandled errors in Edge Functions** - Always return JSON errors
 
-// GOOD: Service calls Supabase
-AnalysisService.createAnalysis(data)
+## Key Files
 
-// GOOD: Util handles business logic
-AnalysisEngine.analyzeWebsite(url, prompts, user)
+| Purpose | File |
+|---------|------|
+| Analysis logic | `src/utils/analysisEngine.ts` |
+| Plan limits | `src/utils/costTracker.ts` |
+| Payment handling | `supabase/functions/stripe-webhook/index.ts` |
+| CORS config | `supabase/functions/_shared/cors.ts` |
+| Types | `src/types/index.ts` |
 
-// BAD: Component directly calls Supabase
-supabase.from('analyses').insert(...)  // Don't do this in components
-```
+## Related Docs
 
-## Current Features (Working)
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - Detailed system design
+- [TESTING.md](./TESTING.md) - Complete test documentation
+- [STRIPE_SETUP.md](./STRIPE_SETUP.md) - Payment configuration
+- [BRANCH_ANALYSIS.md](./BRANCH_ANALYSIS.md) - Commit reasoning history
 
-### Core AEO Features
-- ✅ Prompt-based citation checking (enter prompts, see if you're cited)
-- ✅ Real AI queries to Perplexity, OpenAI, Anthropic (paid users)
-- ✅ Simulated analysis for trial users
-- ✅ Website crawling with content analysis
-- ✅ Schema.org detection
-- ✅ BLUF (Bottom Line Up Front) scoring
-- ✅ Competitor citation analysis
-- ✅ AEO recommendations
+## Pre-Change Checklist
 
-### Subscription & Payments
-- ✅ Stripe checkout (test and live mode)
-- ✅ Subscription creation and management
-- ✅ Cancel subscription at period end
-- ✅ Webhook handling for payment events
-- ✅ Usage tracking and plan limits
-- ✅ PCI-DSS compliant (Stripe Elements)
-
-### User Management
-- ✅ User authentication (Supabase Auth)
-- ✅ Profile management
-- ✅ Admin dashboard with user management
-- ✅ Admin user deletion (cascade: analyses → projects → payments → auth)
-- ✅ localStorage cleanup on auth state changes (prevents data leakage)
-
-### UI/UX
-- ✅ Responsive design
-- ✅ Live mode indicator
-- ✅ Analysis history
-- ✅ Export to PDF
-
-## What NOT To Do
-
-### ❌ Don't Duplicate Code
-Before creating a new utility function, check:
-- `src/utils/` - Does a similar function exist?
-- `src/services/` - Is there already a service for this entity?
-
-### ❌ Don't Add Random Dependencies
-Check `package.json` before adding new packages.
-
-### ❌ Don't Mix Concerns
-- Components: UI rendering only
-- Services: Database operations only
-- Utils: Business logic only
-
-### ❌ Don't Ignore the Simulated/Real Split
-Trial users get simulated data. Paid users get real data. This is intentional for cost control.
-
-### ❌ Don't Hardcode Secrets
-- Use `import.meta.env.VITE_*` for frontend variables
-- Use Supabase secrets for edge functions
-
-### ❌ Don't Skip Error Handling in Edge Functions
-Edge functions should always return proper JSON errors, never throw unhandled.
-
-## Environment Variables
-
-### Frontend (.env)
-```bash
-VITE_SUPABASE_URL=https://xxx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ...  # Legacy JWT format
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
-VITE_STRIPE_STARTER_PRICE_ID=price_xxx
-VITE_STRIPE_PROFESSIONAL_PRICE_ID=price_xxx
-VITE_STRIPE_ENTERPRISE_PRICE_ID=price_xxx
-```
-
-### Supabase Edge Function Secrets
-```bash
-STRIPE_SECRET_KEY=sk_test_xxx
-STRIPE_WEBHOOK_SECRET=whsec_xxx
-SUPABASE_SERVICE_ROLE_KEY=xxx
-OPENAI_API_KEY=xxx          # For citation checking
-ANTHROPIC_API_KEY=xxx       # For citation checking
-PERPLEXITY_API_KEY=xxx      # For citation checking
-```
-
-## Deployment
-
-### Frontend
-- **Platform:** Netlify (auto-deploys from main branch)
-- **Build:** `npm run build`
-
-### Edge Functions
-```bash
-npx supabase functions deploy cancel-subscription
-npx supabase functions deploy check-citations
-npx supabase functions deploy crawl-website
-npx supabase functions deploy create-payment-intent
-npx supabase functions deploy create-subscription
-npx supabase functions deploy delete-user
-npx supabase functions deploy stripe-webhook
-npx supabase functions deploy webhook-helper
-```
-
-## Testing
-
-See [TESTING.md](./TESTING.md) for comprehensive documentation.
-
-### Quick Commands
-```bash
-npm run test           # All unit tests (watch mode)
-npm run test:run       # Unit tests (once)
-npm run test:coverage  # With coverage report
-npm run test:payment   # Stripe payment flow
-npm run test:functions # All Edge Functions + CORS
-```
-
-### Unit Tests (Vitest)
-- `src/services/authService.test.ts` - Auth operations
-- `src/components/Auth/AuthPage.test.tsx` - Login/signup UI
-- `src/components/Analysis/AnalysisForm.test.tsx` - Analysis form
-- `src/components/Admin/UserDashboard.test.tsx` - Admin panel
-- `src/test/navigation.test.tsx` - App navigation
-
-### Integration Tests
-- `scripts/test-payment-flow.ts` - Stripe checkout, webhooks
-- `scripts/test-edge-functions.ts` - All Edge Functions + CORS validation
-
-### Test Cards (Stripe Test Mode)
-- Success: `4242 4242 4242 4242`
-- Decline: `4000 0000 0000 0002`
-- 3D Secure: `4000 0025 0000 3155`
-
-## Questions to Ask Before Making Changes
-
-1. Does this feature already exist somewhere?
-2. What files will this change affect?
-3. Does this follow the service/util/component pattern?
-4. Will this work for both trial (simulated) and paid (real) users?
-5. Have I updated the types if adding new data structures?
+- [ ] Does this feature already exist?
+- [ ] What files will this affect?
+- [ ] Does it follow service/util/component pattern?
+- [ ] Works for both trial and paid users?
+- [ ] Types updated if new data structures?
+- [ ] Tests pass? (`npm run test:run && npm run build`)
