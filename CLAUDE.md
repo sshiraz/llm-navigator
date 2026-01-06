@@ -130,6 +130,7 @@ serve(async (req) => {
 
 ## Don't
 
+- **Delete or modify files without understanding their purpose** - Check [BRANCH_ANALYSIS.md](./BRANCH_ANALYSIS.md) for history. If unclear, ask before changing.
 - **Duplicate code** - Check `src/utils/` and `src/services/` first
 - **Mix concerns** - Components render UI, services talk to DB, utils hold logic
 - **Skip the real/simulated split** - Trial = simulated, paid = real
@@ -155,6 +156,7 @@ serve(async (req) => {
 
 ## Pre-Change Checklist
 
+- [ ] Do I understand why this file/code exists? (Check BRANCH_ANALYSIS.md if unsure)
 - [ ] Does this feature already exist?
 - [ ] What files will this affect?
 - [ ] Does it follow service/util/component pattern?
