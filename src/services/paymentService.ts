@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { STRIPE_PLANS } from '../lib/stripe';
+import { STRIPE_PLANS } from '../utils/stripeUtils';
 import { PaymentLogger } from '../utils/paymentLogger';
 
 export interface PaymentIntent {

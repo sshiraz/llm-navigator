@@ -112,6 +112,24 @@ AnalysisEngine.analyzeWebsite(url, prompts, user)
 // Controlled by: AnalysisEngine.shouldUseRealAnalysis(user)
 ```
 
+### User Data: Database vs localStorage
+```typescript
+// Supabase = Source of truth (subscriptions, profiles)
+// localStorage = Cache for performance (avoid API calls on page refresh)
+
+// CORRECT: Update database FIRST, then sync localStorage
+const result = await PaymentService.handlePaymentSuccess(userId, plan, paymentId);
+localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+// WRONG: Only updating localStorage (data lost on re-login)
+localStorage.setItem('currentUser', JSON.stringify(updatedUser)); // Don't do this alone!
+```
+
+**Flow:**
+- Login/Signup → Database updated → localStorage cached from response
+- Payment/Upgrade → Database updated FIRST → localStorage synced
+- Page Load → Supabase session checked → localStorage refreshed
+
 ### Edge Function CORS Pattern
 ```typescript
 import { getCorsHeaders, handleCorsPreflightWithValidation, validateOrigin } from "../_shared/cors.ts";

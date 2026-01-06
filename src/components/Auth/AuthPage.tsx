@@ -1,10 +1,32 @@
 import React, { useState } from 'react';
 import { Search, ArrowRight, Mail, Lock, User as UserIcon, Building, Globe } from 'lucide-react';
 import { FraudPrevention } from '../../utils/fraudPrevention';
+import { AuthService } from '../../services/authService';
 import { FraudPreventionCheck, User } from '../../types';
 
 interface AuthPageProps {
   onLogin: (user: User) => void;
+}
+
+// Convert Supabase profile (snake_case) to User type (camelCase)
+function profileToUser(profile: any): User {
+  return {
+    id: profile.id,
+    email: profile.email,
+    name: profile.name || 'User',
+    avatar: profile.avatar || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
+    subscription: profile.subscription || 'trial',
+    trialEndsAt: profile.trial_ends_at,
+    createdAt: profile.created_at,
+    isAdmin: profile.is_admin || false,
+    deviceFingerprint: profile.device_fingerprint,
+    ipAddress: profile.ip_address,
+    paymentMethodAdded: profile.payment_method_added || false,
+    stripeCustomerId: profile.stripe_customer_id,
+    stripeSubscriptionId: profile.stripe_subscription_id,
+    cancelAtPeriodEnd: profile.cancel_at_period_end,
+    subscriptionEndsAt: profile.subscription_ends_at
+  };
 }
 
 export default function AuthPage({ onLogin }: AuthPageProps) {
@@ -23,7 +45,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
 
   const handleEmailBlur = async () => {
     if (!formData.email || isLogin) return;
-    
+
     setIsChecking(true);
     try {
       const check = await FraudPrevention.checkTrialEligibility(formData.email);
@@ -40,117 +62,59 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     setIsLoading(true);
     setError(null);
 
-    // Special handling for admin account
-    if (isLogin && formData.email === 'info@convologix.com' && formData.password === '4C0nv0@LLMNav') {
-      // Create admin user with unlimited access
-      const adminUser = {
-        id: 'admin-user',
-        email: 'info@convologix.com',
-        name: 'Admin User',
-        avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-        subscription: 'enterprise' as User['subscription'],
-        isAdmin: true,
-        createdAt: new Date().toISOString()
-      };
-      
-      // Store admin user in localStorage
-      localStorage.setItem('currentUser', JSON.stringify(adminUser));
-      
-      onLogin(adminUser);
-      setIsLoading(false);
-      return;
-    }
-    
-    // Simulate API call
-    setTimeout(() => {
+    try {
       if (isLogin) {
-        // Check if user exists in localStorage
-        try {
-          const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
-          const user = existingUsersList.find((u: User) => u.email === formData.email);
-        
-          if (!user) {
-            setError('No account found with this email address');
-            setIsLoading(false);
-            return;
-          }
-        
-          // Validate password (in a real app, this would be done securely on the server)
-          if (user.password !== formData.password) {
-            setError('Invalid password');
-            setIsLoading(false);
-            return;
-          }
-        
-          // Login successful - remove password before storing in state
-          const { ...userWithoutPassword } = user;
-          const userData = {
-            ...userWithoutPassword,
-            avatar: userWithoutPassword.avatar || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2'
-          };
-        
-          // Store current user in localStorage
-          localStorage.setItem('currentUser', JSON.stringify(userData));
-          
-          onLogin(userData as User);
-        } catch (error) {
-          console.error('Error parsing users from localStorage:', error);
-          setError('An error occurred during login. Please try again.');
-          setIsLoading(false);
-        }
-      } else {
-        // Check if email already exists
-        try {
-          const existingUsersList = JSON.parse(localStorage.getItem('users') || '[]');
-          const existingUser = existingUsersList.find((u: User) => u.email === formData.email);
-          
-          if (existingUser) {
-            setError('An account with this email already exists');
-            setIsLoading(false);
-            return;
-          }
-          
-          // Generate a unique user ID for demo purposes
-          const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-          
-          // Signup logic - check fraud prevention for trials
-          if (fraudCheck && !fraudCheck.isAllowed) {
-            alert(fraudCheck.reason);
-            setIsLoading(false);
-            return;
-          }
+        // Login via Supabase Auth
+        const result = await AuthService.signIn(formData.email, formData.password);
 
-          const user = {
-            id: userId,
-            email: formData.email,
-            name: formData.name || 'New User',
-            avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
-            subscription: 'trial' as User['subscription'],
-            paymentMethodAdded: false,
-            createdAt: new Date().toISOString()
-          };
-          
-          // Store user in localStorage
-          const usersList = JSON.parse(localStorage.getItem('users') || '[]');
-          const newUser = {
-            ...user,
-            password: formData.password // In a real app, this would be hashed
-          };
-          usersList.push(newUser);
-          localStorage.setItem('users', JSON.stringify(usersList)); 
-          
-          // Store current user in localStorage
-          localStorage.setItem('currentUser', JSON.stringify(user));
-          
-          onLogin(user);
-        } catch (error) {
-          console.error('Error during signup:', error);
-          setError('An error occurred during signup. Please try again.');
+        if (!result.success) {
+          setError(result.error || 'Invalid email or password');
           setIsLoading(false);
+          return;
         }
+
+        const user = profileToUser(result.data.profile);
+
+        // Store current user in localStorage for app state
+        localStorage.setItem('currentUser', JSON.stringify(user));
+
+        onLogin(user);
+      } else {
+        // Check fraud prevention for trials
+        if (fraudCheck && !fraudCheck.isAllowed) {
+          setError(fraudCheck.reason || 'Trial not allowed');
+          setIsLoading(false);
+          return;
+        }
+
+        // Sign up via Supabase Auth
+        const result = await AuthService.signUp({
+          email: formData.email,
+          password: formData.password,
+          name: formData.name || 'New User',
+          company: formData.company,
+          website: formData.website
+        });
+
+        if (!result.success) {
+          setError(result.error || 'Failed to create account');
+          setIsLoading(false);
+          return;
+        }
+
+        const user = profileToUser(result.data.profile);
+
+        // Store current user in localStorage for app state
+        localStorage.setItem('currentUser', JSON.stringify(user));
+
+        onLogin(user);
       }
+    } catch (error) {
+      console.error('Auth error:', error);
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (

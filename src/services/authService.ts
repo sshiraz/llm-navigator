@@ -227,4 +227,21 @@ export class AuthService {
   static onAuthStateChange(callback: (event: string, session: any) => void) {
     return supabase.auth.onAuthStateChange(callback);
   }
+
+  // Change password
+  static async changePassword(newPassword: string) {
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        return handleSupabaseError(error);
+      }
+
+      return handleSupabaseSuccess(data);
+    } catch (error) {
+      return handleSupabaseError(error);
+    }
+  }
 }

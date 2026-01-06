@@ -7,6 +7,7 @@ import CreditCardForm from '../Payment/CreditCardForm';
 import { isLiveMode } from '../../utils/liveMode';
 import { PLAN_CONFIGS, getPlanAmount } from '../../utils/planConfig';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
+import { PaymentService } from '../../services/paymentService';
 
 interface PricingTiersProps {
   currentPlan: string;
@@ -44,9 +45,36 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
     }
   };
 
-  const handleCheckoutSuccess = () => {
+  const handleCheckoutSuccess = async (paymentData?: any) => {
     setShowCheckout(false);
+
     if (selectedPlan) {
+      // Get user ID from localStorage
+      const currentUserStr = localStorage.getItem('currentUser');
+      let userId = '';
+
+      if (currentUserStr) {
+        try {
+          const currentUser = JSON.parse(currentUserStr);
+          userId = currentUser.id;
+        } catch (e) {
+          console.error('Failed to parse stored user', e);
+        }
+      }
+
+      // Update subscription in Supabase database
+      if (userId) {
+        const paymentIntentId = paymentData?.paymentId || `pi_${Date.now()}`;
+        const result = await PaymentService.handlePaymentSuccess(userId, selectedPlan, paymentIntentId);
+
+        if (!result.success) {
+          console.error('Failed to update subscription in database:', result.error);
+        } else {
+          console.log('Database updated successfully with plan:', selectedPlan);
+        }
+      }
+
+      // Also update localStorage for immediate UI update
       onUpgrade(selectedPlan);
     }
   };

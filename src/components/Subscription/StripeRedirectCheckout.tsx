@@ -6,6 +6,7 @@ import { stripePromise, STRIPE_CONFIG } from '../../utils/stripeUtils';
 import CheckoutForm from '../Payment/CheckoutForm';
 import { isLiveMode } from '../../utils/liveMode';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
+import { PaymentService } from '../../services/paymentService';
 
 interface StripeRedirectCheckoutProps {
   plan: string;
@@ -50,11 +51,11 @@ export default function StripeRedirectCheckout({ plan, onCancel }: StripeRedirec
     }
   };
 
-  const handlePaymentSuccess = (paymentData: any) => {
+  const handlePaymentSuccess = async (paymentData: any) => {
     // Get the current user from localStorage
     const currentUserStr = localStorage.getItem('currentUser');
     let userId = 'temp_user_id';
-    
+
     if (currentUserStr) {
       try {
         const currentUser = JSON.parse(currentUserStr);
@@ -63,10 +64,33 @@ export default function StripeRedirectCheckout({ plan, onCancel }: StripeRedirec
         console.error('Failed to parse stored user', e);
       }
     }
-    
+
+    // Update subscription in Supabase database
+    const paymentIntentId = paymentData.paymentIntentId || `pi_${Date.now()}`;
+    const result = await PaymentService.handlePaymentSuccess(userId, plan, paymentIntentId);
+
+    if (!result.success) {
+      console.error('Failed to update subscription in database:', result.error);
+    }
+
+    // Also update localStorage for immediate UI update
+    if (currentUserStr) {
+      try {
+        const currentUser = JSON.parse(currentUserStr);
+        const updatedUser = {
+          ...currentUser,
+          subscription: plan,
+          paymentMethodAdded: true
+        };
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      } catch (e) {
+        console.error('Failed to update localStorage', e);
+      }
+    }
+
     // Create a unique session ID to prevent duplicate processing
     const uniqueSessionId = `demo_session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    
+
     // Redirect to success page
     window.location.href = `${window.location.origin}?session_id=${uniqueSessionId}&plan=${plan}&user_id=${userId}`;
   };

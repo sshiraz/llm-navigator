@@ -20,6 +20,7 @@ import { Project, Analysis, User } from './types';
 import EnvironmentStatus from './components/UI/EnvironmentStatus';
 import { mockAnalyses } from './utils/mockData';
 import { isUserAdmin } from './utils/userUtils';
+import { AuthService } from './services/authService';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -84,49 +85,101 @@ function App() {
 
   // Check URL parameters for checkout success
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get('session_id');
-    const plan = params.get('plan');
-    const userId = params.get('user_id');
+    const handleCheckoutSuccess = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('session_id');
+      const plan = params.get('plan');
+      const userId = params.get('user_id');
 
-    if (sessionId && plan && userId) {
-      // Handle successful checkout
-      console.log('Checkout successful!', { sessionId, plan });
+      if (sessionId && plan && userId) {
+        // Handle successful checkout
+        console.log('Checkout successful!', { sessionId, plan, userId });
 
-      
-      // Update user subscription in localStorage
-      try {
-        const currentUserStr = localStorage.getItem('currentUser');
-        if (currentUserStr) {
-          const currentUser = JSON.parse(currentUserStr);
-          const updatedUser = {
-            ...currentUser,
-            subscription: plan,
-            paymentMethodAdded: true
-          };
-          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-          setUser(updatedUser);
+        // Update subscription in Supabase database
+        try {
+          const { PaymentService } = await import('./services/paymentService');
+          const result = await PaymentService.handlePaymentSuccess(userId, plan, sessionId);
+          if (result.success) {
+            console.log('Database updated successfully');
+          } else {
+            console.error('Failed to update database:', result.error);
+          }
+        } catch (error) {
+          console.error('Error updating database:', error);
         }
-      } catch (error) {
-        console.error('Error updating user in localStorage:', error);
+
+        // Also update localStorage for immediate UI update
+        try {
+          const currentUserStr = localStorage.getItem('currentUser');
+          if (currentUserStr) {
+            const currentUser = JSON.parse(currentUserStr);
+            const updatedUser = {
+              ...currentUser,
+              subscription: plan,
+              paymentMethodAdded: true
+            };
+            localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+            setUser(updatedUser);
+          }
+        } catch (error) {
+          console.error('Error updating localStorage:', error);
+        }
+
+        // Clear URL parameters after processing
+        window.history.replaceState({}, '', window.location.pathname + window.location.hash);
       }
-    }
+    };
+
+    handleCheckoutSuccess();
   }, []);
 
-  // Load user from localStorage on initial load
+  // Load user from Supabase session on initial load (with localStorage fallback)
   useEffect(() => {
-    try {
-      const currentUserStr = localStorage.getItem('currentUser');
-      if (currentUserStr) {
-        const userData = JSON.parse(currentUserStr);
-        setUser(userData);
-        if (activeSection === 'auth') {
-          setActiveSection('dashboard');
+    const loadUser = async () => {
+      try {
+        // First, check for valid Supabase session and get fresh profile
+        const result = await AuthService.getCurrentSession();
+
+        if (result.success && result.data) {
+          // Valid session - use fresh data from Supabase
+          const profile = result.data.profile;
+          const userData: User = {
+            id: profile.id,
+            email: profile.email,
+            name: profile.name || 'User',
+            avatar: profile.avatar || 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
+            subscription: profile.subscription || 'trial',
+            trialEndsAt: profile.trial_ends_at,
+            createdAt: profile.created_at,
+            isAdmin: profile.is_admin || false,
+            paymentMethodAdded: profile.payment_method_added || false,
+            stripeCustomerId: profile.stripe_customer_id,
+            stripeSubscriptionId: profile.stripe_subscription_id,
+            cancelAtPeriodEnd: profile.cancel_at_period_end,
+            subscriptionEndsAt: profile.subscription_ends_at
+          };
+
+          // Update localStorage cache with fresh data
+          localStorage.setItem('currentUser', JSON.stringify(userData));
+          setUser(userData);
+
+          if (activeSection === 'auth') {
+            setActiveSection('dashboard');
+          }
+        } else {
+          // No valid session - clear any stale localStorage data
+          localStorage.removeItem('currentUser');
+          setUser(null);
         }
+      } catch (error) {
+        console.error('Error loading user session:', error);
+        // On error, clear potentially corrupted state
+        localStorage.removeItem('currentUser');
+        setUser(null);
       }
-    } catch (error) {
-      console.error('Error loading user from localStorage:', error);
-    }
+    };
+
+    loadUser();
   }, []);
 
   const handleLogin = (userData: User) => {
@@ -135,7 +188,11 @@ function App() {
     localStorage.setItem('currentUser', JSON.stringify(userData));
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Clear Supabase session
+    await AuthService.signOut();
+
+    // Clear local state
     setUser(null);
     window.location.hash = '';
     localStorage.removeItem('currentUser');
