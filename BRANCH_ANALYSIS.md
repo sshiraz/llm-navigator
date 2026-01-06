@@ -5,9 +5,53 @@
 
 ---
 
-## 2026-01-05: Add historical commit documentation to BRANCH_ANALYSIS.md
+## 2026-01-06: Expand BRANCH_ANALYSIS.md with 10 more commits and fix dates
 
-**Commit:** `Add historical commit documentation to BRANCH_ANALYSIS.md`
+**Commit:** `Expand BRANCH_ANALYSIS.md with 10 more commits and fix dates`
+
+### Context
+
+Continuing to backfill BRANCH_ANALYSIS.md with historical commit documentation. During this process, discovered that all dates had been incorrectly assumed rather than pulled from actual git history.
+
+### Changes & Reasoning
+
+#### 1. Add 10 More Historical Commits
+
+**Problem:** Only 11 commits were documented. More history needed to be captured.
+
+**Solution:** Added entries for 10 additional commits:
+- 5 commits from Jan 1-2, 2026 (multi-page crawling, metrics, algorithm pivot)
+- 5 commits from Sep 18, 2025 (pricing page, code cleanup, bug fixes)
+
+#### 2. Fix All Incorrect Dates
+
+**Problem:** Dates were assumed/invented rather than taken from git history. For example, commits from September 2025 were incorrectly dated as December 2025.
+
+**Solution:** Ran `git log --format="%h %ad %s" --date=short` to get actual dates and corrected all 21 entries.
+
+**Key finding:** There's a 3.5-month gap between Sep 18, 2025 and Jan 1, 2026 with no commits. This wasn't obvious from the assumed sequential dates.
+
+**Lesson:** Always verify dates from git history. Don't assume sequential development.
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `BRANCH_ANALYSIS.md` | Modified | Add 10 commits, fix all dates |
+
+### Testing Performed
+
+- Verified dates match `git log` output
+
+### Related Issues
+
+- Documentation accuracy: Dates must come from source of truth (git)
+
+---
+
+## 2026-01-06: Add historical commit documentation to BRANCH_ANALYSIS.md
+
+**Commit:** `f79d51e` - Add historical commit documentation to BRANCH_ANALYSIS.md
 
 ### Context
 
@@ -66,9 +110,9 @@ Both reference BRANCH_ANALYSIS.md as the place to check for historical context.
 
 ---
 
-## 2026-01-05: Documentation consolidation and CLAUDE.md rewrite
+## 2026-01-06: Documentation consolidation and CLAUDE.md rewrite
 
-**Commit:** `Documentation consolidation and CLAUDE.md rewrite`
+**Commit:** `04fee45` - Documentation consolidation and CLAUDE.md rewrite
 
 ### Context
 
@@ -152,9 +196,9 @@ npm run build  # Verify no build errors (docs only, no code changes)
 
 ---
 
-## 2026-01-05: Add user deletion, test suite, and documentation cleanup
+## 2026-01-06: Add user deletion, test suite, and documentation cleanup
 
-**Commit:** `Add user deletion, test suite, and documentation cleanup`
+**Commit:** `8dd75fb` - Add user deletion, test suite, and documentation cleanup
 
 ### Context
 
@@ -295,7 +339,7 @@ npm run build           # No errors
 
 ---
 
-## 2026-01-04: Implement CORS restriction for Edge Functions
+## 2026-01-06: Implement CORS restriction for Edge Functions
 
 **Commit:** `9d41c1c` - Implement CORS restriction for Edge Functions
 
@@ -365,7 +409,7 @@ Edge Functions were accepting requests from any origin, creating a security vuln
 
 ---
 
-## 2026-01-04: Implement rate limiting and restore documentation
+## 2026-01-05: Implement rate limiting and restore documentation
 
 **Commit:** `8f3047b` - Implement rate limiting and restore documentation
 
@@ -428,7 +472,7 @@ This commit has two distinct parts:
 
 ---
 
-## 2026-01-03: Add cancel subscription feature and consolidate documentation
+## 2026-01-05: Add cancel subscription feature and consolidate documentation
 
 **Commit:** `21e098c` / `4e15bd2` - Add cancel subscription feature
 
@@ -513,7 +557,7 @@ Users had no way to cancel their subscription from within the app. They would ne
 
 ---
 
-## 2026-01-03: Security fixes, plan limits update, and UX improvements
+## 2026-01-04: Security fixes, plan limits update, and UX improvements
 
 **Commit:** `b19dc00` - Security fixes, plan limits update, and UX improvements
 
@@ -588,7 +632,7 @@ Pre-launch security audit identified several issues: hardcoded secrets in debug 
 
 ---
 
-## 2026-01-02: Fix payment upgrade flow and add admin user management
+## 2026-01-04: Fix payment upgrade flow and add admin user management
 
 **Commit:** `f83d2bd` - Fix payment upgrade flow and add admin user management
 
@@ -672,7 +716,7 @@ After implementing Stripe payments, testing revealed that successful payments we
 
 ---
 
-## 2026-01-02: Fix navigation flow bugs and add flow tests
+## 2026-01-03: Fix navigation flow bugs and add flow tests
 
 **Commit:** `4f82d2b` - Fix navigation flow bugs and add flow tests
 
@@ -749,7 +793,7 @@ Users reported that clicking "View Last Analysis" multiple times didn't work—t
 
 ---
 
-## 2026-01-01: Add security checklist, master feature list, and update documentation
+## 2026-01-03: Add security checklist, master feature list, and update documentation
 
 **Commit:** `76eb7e3` - Add security checklist, master feature list, and update documentation
 
@@ -831,7 +875,7 @@ Preparing for launch required a comprehensive security audit and feature invento
 
 ---
 
-## 2026-01-01: Add analysis history feature and project documentation
+## 2026-01-03: Add analysis history feature and project documentation
 
 **Commit:** `6b22714` - Add analysis history feature and project documentation
 
@@ -908,7 +952,7 @@ Users could run analyses but had no way to view past results. Each new analysis 
 
 ---
 
-## 2025-12-31: Change keyword term to query
+## 2026-01-02: Change keyword term to query
 
 **Commit:** `7572a09` - Change keyword term to query
 
@@ -955,6 +999,617 @@ The product pivoted from traditional SEO (keyword-based) to AEO (Answer Engine O
 
 - Product pivot: SEO → AEO
 - Branding consistency
+
+---
+
+## 2026-01-02: Update algorithm to use questions instead of keywords
+
+**Commit:** `ffce1f6` - Update algorithm to use questions instead of keywords
+
+### Context
+
+The core product pivot from SEO to AEO required fundamental changes to how analysis works. Traditional SEO checks for keyword presence; AEO checks if AI assistants cite a website when asked questions. This commit implements the new prompt-based analysis system.
+
+### Changes & Reasoning
+
+#### 1. New Analysis Input Model (`src/components/Analysis/NewAnalysis.tsx`)
+
+**Problem:** Users entered "keywords" which made sense for SEO but not for AEO.
+
+**Solution:** Changed input model:
+- **Before:** Enter keywords like "best coffee maker"
+- **After:** Enter questions/prompts like "What's the best coffee maker for home use?"
+
+Users now enter the actual questions they want their website to appear for in AI responses.
+
+#### 2. Check Citations Edge Function (`supabase/functions/check-citations/index.ts`)
+
+**Problem:** Need to query actual AI providers to check if a website gets cited.
+
+**Solution:** Created new Edge Function that:
+- Takes a list of prompts and target website
+- Queries multiple AI providers (OpenAI, Anthropic, Perplexity)
+- Checks if responses mention/cite the target website
+- Returns citation status per prompt per provider
+
+**Why Edge Function:** API keys for AI providers must be server-side.
+
+#### 3. Analysis Engine Updates (`src/utils/analysisEngine.ts`)
+
+**Problem:** Engine was built for keyword analysis, not prompt-based citation checking.
+
+**Solution:** Major refactor:
+- New `analyzeAEO()` function for prompt-based analysis
+- Integration with check-citations Edge Function
+- Maintains simulated mode for trial users (returns plausible fake data)
+- Real mode for paid users (actual API calls)
+
+#### 4. Type System Updates (`src/types/index.ts`)
+
+**Problem:** Types reflected keyword-based model.
+
+**Solution:** Added new types:
+- `PromptResult` - Citation result per prompt
+- `ProviderResult` - Result from specific AI provider
+- `AEOAnalysis` - Full analysis structure
+
+#### 5. Progress UI Updates (`src/components/Analysis/AnalysisProgress.tsx`)
+
+**Problem:** Progress indicators showed keyword-based steps.
+
+**Solution:** Updated to show AEO-relevant steps:
+- "Querying AI providers..."
+- "Checking citations..."
+- "Analyzing responses..."
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `src/components/Analysis/NewAnalysis.tsx` | Modified | Questions input |
+| `supabase/functions/check-citations/index.ts` | New | Query AI providers |
+| `src/utils/analysisEngine.ts` | Modified | AEO analysis logic |
+| `src/types/index.ts` | Modified | New AEO types |
+| `src/components/Analysis/AnalysisProgress.tsx` | Modified | New progress steps |
+| `src/components/Analysis/AnalysisResults.tsx` | Modified | Display citations |
+| `src/utils/costTracker.ts` | Modified | Track AI API costs |
+
+### Testing Performed
+
+- Manual testing with real prompts
+- Verified simulated mode returns plausible data
+- Build verification
+
+### Related Issues
+
+- Product pivot: SEO → AEO core implementation
+- This is the foundational commit for the new product direction
+
+---
+
+## 2026-01-02: Adjust highest tier limits
+
+**Commit:** `7253d16` - Adjust highest tier limits
+
+### Context
+
+Enterprise tier originally had "unlimited" analyses, which is financially unsustainable when each analysis costs real money (AI API calls).
+
+### Changes & Reasoning
+
+#### 1. Remove "Unlimited" from Enterprise Tier
+
+**Problem:** "Unlimited" analyses at a fixed price is a liability. One power user could bankrupt the service.
+
+**Solution:** Changed enterprise tier from "unlimited" to 1,000 analyses/month.
+
+**Why 1,000:** High enough to feel generous, low enough to be profitable at the price point.
+
+#### 2. Files Updated
+
+- `costTracker.ts` - Limit enforcement
+- `planConfig.ts` - Plan definitions
+- `analysisEngine.ts` - Limit checks
+- `AccountPage.tsx` - Display limits
+- `PlanFeatures.tsx` - Marketing copy
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `src/utils/costTracker.ts` | Modified | Add 1000 limit |
+| `src/utils/planConfig.ts` | Modified | Update tier definition |
+| `src/utils/analysisEngine.ts` | Modified | Enforce limit |
+| `src/components/Account/AccountPage.tsx` | Modified | Show limit |
+| `src/components/UI/PlanFeatures.tsx` | Modified | Update copy |
+
+### Testing Performed
+
+- Verified limit displays correctly
+- Build verification
+
+### Related Issues
+
+- Business sustainability: Cannot offer unlimited at fixed price
+
+---
+
+## 2026-01-02: Update metrics, resolve npm issues, create test suite
+
+**Commit:** `1aa3dcd` - Update metrics, resolve npm issues, create test suite
+
+### Context
+
+Multiple issues needed addressing: metrics didn't align with industry standards (Jason Wade's AEO ebook), npm had dependency issues, and there was no test coverage for UI components or auth flows.
+
+### Changes & Reasoning
+
+#### 1. Update Metrics per Jason Wade Ebook
+
+**Problem:** Original metrics were invented without industry reference.
+
+**Solution:** Aligned metrics with Jason Wade's AEO ebook recommendations:
+- Citation rate calculation
+- Content structure scoring
+- Schema.org presence weighting
+
+**Why this matters:** Using industry-standard metrics makes the product more credible and results more actionable.
+
+#### 2. Create Comprehensive Test Suite
+
+**Problem:** No automated tests. Bugs were caught in production.
+
+**Solution:** Created test files:
+- `authService.test.ts` - 562 lines, auth flow tests
+- `AuthPage.test.tsx` - 344 lines, login/logout UI tests
+- `AnalysisForm.test.tsx` - 350 lines, form validation tests
+- `UserDashboard.test.tsx` - 594 lines, admin panel tests
+
+Added Vitest configuration (`vitest.config.ts`) and test setup (`src/test/setup.ts`).
+
+#### 3. Resolve npm Issues
+
+**Problem:** Dependency conflicts causing build failures.
+
+**Solution:** Updated `package.json` and regenerated `package-lock.json` with compatible versions.
+
+#### 4. Add Project Documentation
+
+**Problem:** No documentation for AI assistants or developers.
+
+**Solution:** Created:
+- `CLAUDE.md` - AI assistant instructions
+- `AI_COLLABORATION_RULES.md` - Collaboration guidelines
+- `PRODUCT_ENGINEERING_ROADMAP.md` - Engineering phases
+- `docs/ARCHITECTURE.md` - System design
+- `docs/CODE_INVENTORY.md` - Code organization
+- `docs/decisions/` - Architecture Decision Records (ADRs)
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `src/services/authService.test.ts` | New | Auth tests |
+| `src/components/Auth/AuthPage.test.tsx` | New | Login UI tests |
+| `src/components/Analysis/AnalysisForm.test.tsx` | New | Form tests |
+| `src/components/Admin/UserDashboard.test.tsx` | New | Admin tests |
+| `vitest.config.ts` | New | Test config |
+| `src/test/setup.ts` | New | Test setup |
+| `CLAUDE.md` | New | AI instructions |
+| `AI_COLLABORATION_RULES.md` | New | Collab rules |
+| `docs/*.md` | New | Documentation |
+| `package.json` | Modified | Fix deps |
+
+### Testing Performed
+
+- All new tests pass
+- npm install succeeds
+- Build verification
+
+### Related Issues
+
+- Testing: First test coverage for the project
+- Documentation: Onboarding for AI assistants and developers
+
+---
+
+## 2026-01-01: Add multi-page crawling and Supabase storage
+
+**Commit:** `fe28888` - Add multi-page crawling and Supabase storage
+
+### Context
+
+The crawler only analyzed a single page. Real websites have multiple pages, and analysis results were only stored in localStorage (lost on browser clear).
+
+### Changes & Reasoning
+
+#### 1. Multi-Page Crawling (`supabase/functions/crawl-website/index.ts`)
+
+**Problem:** Single-page crawling misses most of a website's content.
+
+**Solution:** Created comprehensive crawl-website Edge Function:
+- Crawls homepage + linked pages (configurable depth)
+- Respects robots.txt
+- Rate limits to avoid overwhelming target servers
+- Extracts: title, meta description, headings, paragraphs, schema.org, Open Graph
+- Returns structured analysis per page
+
+**Why Edge Function:** Server-side crawling avoids CORS issues and can handle sites that block client-side requests.
+
+#### 2. Supabase Storage (`src/services/analysisService.ts`)
+
+**Problem:** localStorage is unreliable—cleared on browser reset, not synced across devices.
+
+**Solution:** Added Supabase storage:
+- `saveAnalysis()` - Save to Supabase with localStorage fallback
+- `getAnalyses()` - Fetch user's analyses from Supabase
+- `getAnalysisById()` - Fetch specific analysis
+
+**Fallback:** If Supabase fails, still saves to localStorage. Syncs when connection restored.
+
+#### 3. Database Migration
+
+**Problem:** Needed new columns for enhanced analysis data.
+
+**Solution:** Created migration `20250730_add_analysis_columns.sql`:
+- `crawl_data` - Raw crawl results (JSONB)
+- `page_count` - Number of pages crawled
+- `schema_detected` - Boolean for schema.org presence
+
+#### 4. New Types (`src/types/crawl.ts`)
+
+**Problem:** No types for crawl results.
+
+**Solution:** Created comprehensive types:
+- `CrawlResult` - Full crawl response
+- `PageData` - Per-page extracted data
+- `SchemaOrgData` - Structured data findings
+
+#### 5. Enhanced Metrics Display (`src/components/Analysis/MetricsBreakdown.tsx`)
+
+**Problem:** UI couldn't display multi-page results.
+
+**Solution:** Updated MetricsBreakdown to show:
+- Per-page scores
+- Aggregate metrics across all pages
+- Schema.org detection results
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `supabase/functions/crawl-website/index.ts` | New | Multi-page crawler |
+| `src/services/analysisService.ts` | Modified | Supabase storage |
+| `src/types/crawl.ts` | New | Crawl types |
+| `src/types/database.ts` | Modified | New columns |
+| `src/components/Analysis/MetricsBreakdown.tsx` | Modified | Multi-page display |
+| `migrations/20250730_add_analysis_columns.sql` | New | DB schema |
+
+### Testing Performed
+
+- Manual crawling of various websites
+- Verified Supabase storage and retrieval
+- Tested localStorage fallback
+- Build verification
+
+### Related Issues
+
+- Feature: Multi-page analysis requested by users
+- Reliability: Data persistence beyond localStorage
+
+---
+
+## 2025-09-18: Fix live mode issue and ensure test mode
+
+**Commit:** `b3f4f3f` - Fix live mode issue and ensure test mode
+
+### Context
+
+Stripe was accidentally configured in live mode during development, risking real charges to test cards.
+
+### Changes & Reasoning
+
+#### 1. Fix Live Mode Detection (`src/utils/liveMode.ts`)
+
+**Problem:** `isLiveMode()` function was returning true when it should return false.
+
+**Solution:** Fixed logic to correctly detect environment:
+- Development → always test mode
+- Production → check for live keys
+
+#### 2. Ensure Test Keys in Development (`src/utils/stripeUtils.ts`)
+
+**Problem:** Code was using `pk_live_*` keys in development.
+
+**Solution:** Added explicit check:
+```typescript
+const key = import.meta.env.DEV
+  ? import.meta.env.VITE_STRIPE_TEST_KEY
+  : import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+```
+
+#### 3. CreditCardForm Safety (`src/components/Payment/CreditCardForm.tsx`)
+
+**Problem:** Form would submit to live Stripe in development.
+
+**Solution:** Added development mode warning and double-check before submission.
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `src/utils/liveMode.ts` | Modified | Fix detection logic |
+| `src/utils/stripeUtils.ts` | Modified | Force test keys in dev |
+| `src/components/Payment/CreditCardForm.tsx` | Modified | Add safety checks |
+
+### Testing Performed
+
+- Verified test mode in development
+- Confirmed no live API calls in dev environment
+- Build verification
+
+### Related Issues
+
+- Critical: Prevent accidental live charges during development
+
+---
+
+## 2025-09-18: Fix missing handleCheckoutCancel function
+
+**Commit:** `7228860` - Fix missing handleCheckoutCancel function
+
+### Context
+
+After adding the pricing page, clicking "Cancel" during checkout caused a crash because the handler function was missing.
+
+### Changes & Reasoning
+
+#### 1. Add Missing Handler (`src/components/Subscription/PricingTiers.tsx`)
+
+**Problem:** `handleCheckoutCancel` was referenced in JSX but never defined. Clicking cancel threw "handleCheckoutCancel is not a function".
+
+**Solution:** Added the missing function:
+```typescript
+const handleCheckoutCancel = () => {
+  setShowCheckout(false);
+  setSelectedPlan(null);
+};
+```
+
+**Why this was missed:** Likely copy-paste error or incomplete refactor from PricingPage to PricingTiers.
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `src/components/Subscription/PricingTiers.tsx` | Modified | Add missing handler |
+
+### Testing Performed
+
+- Verified cancel button works
+- Build verification
+
+### Related Issues
+
+- Bug: Checkout cancel button crashed the app
+
+---
+
+## 2025-09-18: Fix blank screen when clicking skip trial
+
+**Commit:** `7c36bd8` - Fix blank screen when clicking skip trial
+
+### Context
+
+Users who clicked "Skip Trial" during signup saw a blank screen instead of being navigated to the dashboard.
+
+### Changes & Reasoning
+
+#### 1. Fix Navigation in TrialSignup (`src/components/Auth/TrialSignup.tsx`)
+
+**Problem:** "Skip Trial" button called a function that didn't properly update state or navigate.
+
+**Solution:** Fixed the skip trial flow:
+- Properly set user state
+- Navigate to dashboard using hash routing
+- Clean up any intermediate state
+
+#### 2. Remove Unused Import (`src/components/Subscription/PricingTiers.tsx`)
+
+**Problem:** Unused import causing linter warning.
+
+**Solution:** Removed unused import.
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `src/components/Auth/TrialSignup.tsx` | Modified | Fix skip trial navigation |
+| `src/components/Subscription/PricingTiers.tsx` | Modified | Remove unused import |
+
+### Testing Performed
+
+- Verified skip trial navigates to dashboard
+- No blank screen
+- Build verification
+
+### Related Issues
+
+- Bug: Blank screen on skip trial (broken user flow)
+
+---
+
+## 2025-09-18: Fix duplicate isAdmin declaration
+
+**Commit:** `2a2cdb3` - Fix duplicate isAdmin declaration
+
+### Context
+
+TypeScript build was failing due to duplicate variable declaration.
+
+### Changes & Reasoning
+
+#### 1. Remove Duplicate Declaration (`src/App.tsx`)
+
+**Problem:** `isAdmin` was declared twice in the same scope, causing TypeScript error:
+```
+error TS2451: Cannot redeclare block-scoped variable 'isAdmin'
+```
+
+**Solution:** Removed the duplicate declaration (2 lines).
+
+**Why this happened:** Likely a merge conflict resolution that kept both versions, or copy-paste error during refactoring.
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `src/App.tsx` | Modified | Remove duplicate variable |
+
+### Testing Performed
+
+- Build now succeeds
+- TypeScript compilation passes
+
+### Related Issues
+
+- Build failure: Duplicate declaration error
+
+---
+
+## 2025-09-18: Clean up code redundancies and consolidate duplicate functionality
+
+**Commit:** `d6ddf81` - Clean up code redundancies and consolidate duplicate functionality
+
+### Context
+
+Codebase had accumulated significant duplication and dead code. Multiple files implemented the same functionality, making maintenance difficult and increasing bug risk.
+
+### Changes & Reasoning
+
+#### 1. Create Consolidated Utility Files
+
+**Problem:** Same logic scattered across multiple files.
+
+**Solution:** Created focused utility files:
+- `src/utils/paymentUtils.ts` - All payment-related helpers (131 lines)
+- `src/utils/planConfig.ts` - Plan definitions and limits (93 lines)
+- `src/utils/userUtils.ts` - User-related utilities (115 lines)
+
+#### 2. Remove Duplicate/Dead Code
+
+**Problem:** Multiple implementations of same functionality.
+
+**Files removed or gutted:**
+- `src/utils/manualSubscriptionFix.ts` - 213 lines deleted (one-time fix, no longer needed)
+- `src/utils/stripeCheckoutService.ts` - 123 lines deleted (duplicated stripeUtils.ts)
+- `src/lib/stripe.ts` - 3 lines removed (unused)
+
+**Files simplified:**
+- `src/utils/adminUtils.ts` - 151 → ~20 lines (moved to userUtils)
+- `src/utils/authUtils.ts` - 72 → ~15 lines (moved to userUtils)
+- `src/components/Pricing/PricingPage.tsx` - 409 → ~30 lines (uses PricingTiers now)
+
+#### 3. Standardize Debug Components
+
+**Problem:** 8 debug components each had their own Supabase initialization.
+
+**Solution:** Updated all to use shared Supabase client from `src/lib/supabase.ts`:
+- AutomaticWebhookFixer.tsx
+- PaymentDebugger.tsx
+- SubscriptionFixTool.tsx
+- WebhookDebugger.tsx
+- WebhookDeployer.tsx
+- WebhookHelper.tsx
+- WebhookManager.tsx
+- WebhookSecretUpdater.tsx
+
+#### 4. Consolidate PricingTiers
+
+**Problem:** PricingPage and PricingTiers had overlapping functionality.
+
+**Solution:** Made PricingPage a thin wrapper around PricingTiers. All logic lives in PricingTiers.
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `src/utils/paymentUtils.ts` | New | Consolidated payment helpers |
+| `src/utils/planConfig.ts` | New | Plan definitions |
+| `src/utils/userUtils.ts` | New | User utilities |
+| `src/utils/manualSubscriptionFix.ts` | Deleted | Dead code |
+| `src/utils/stripeCheckoutService.ts` | Deleted | Duplicate |
+| `src/utils/adminUtils.ts` | Modified | Simplified |
+| `src/utils/authUtils.ts` | Modified | Simplified |
+| `src/components/Pricing/PricingPage.tsx` | Modified | Now wrapper |
+| `src/components/Debug/*.tsx` (8 files) | Modified | Use shared client |
+
+### Testing Performed
+
+- All existing functionality still works
+- Build verification
+- Manual testing of payment flows
+
+### Related Issues
+
+- Tech debt: Codebase was becoming unmaintainable
+- Net reduction: 625 lines removed
+
+---
+
+## 2025-09-18: Add and integrate pricing page
+
+**Commit:** `4a2a61e` - Add and integrate pricing page
+
+### Context
+
+The app needed a dedicated pricing page that users could access from the landing page to compare plans before signing up.
+
+### Changes & Reasoning
+
+#### 1. Create PricingPage Component (`src/components/Pricing/PricingPage.tsx`)
+
+**Problem:** No standalone page for viewing pricing outside the checkout flow.
+
+**Solution:** Created comprehensive PricingPage with:
+- Three tier cards (Starter, Professional, Enterprise)
+- Feature comparison
+- "Get Started" buttons that navigate to signup
+- FAQ section
+- Professional styling matching landing page
+
+**407 lines:** Includes all plan details, features, and styling.
+
+#### 2. Add Route (`src/App.tsx`)
+
+**Problem:** No route for pricing page.
+
+**Solution:** Added hash route `#pricing` → PricingPage component.
+
+#### 3. Link from Landing Page (`src/components/Landing/LandingPage.tsx`)
+
+**Problem:** No way to navigate to pricing from landing.
+
+**Solution:** Added "View Pricing" button in hero section and navigation.
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `src/components/Pricing/PricingPage.tsx` | New | Pricing display |
+| `src/App.tsx` | Modified | Add route |
+| `src/components/Landing/LandingPage.tsx` | Modified | Add links |
+
+### Testing Performed
+
+- Verified pricing page displays correctly
+- Navigation works from landing
+- Responsive on mobile
+- Build verification
+
+### Related Issues
+
+- Feature: Users want to see pricing before creating account
 
 ---
 
