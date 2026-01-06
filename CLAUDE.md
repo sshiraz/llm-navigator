@@ -114,7 +114,7 @@ AnalysisEngine.analyzeWebsite(url, prompts, user)
 
 ### User Data: Database vs localStorage
 ```typescript
-// Supabase = Source of truth (subscriptions, profiles)
+// Supabase = Source of truth (subscriptions, profiles, auth)
 // localStorage = Cache for performance (avoid API calls on page refresh)
 
 // CORRECT: Update database FIRST, then sync localStorage
@@ -126,9 +126,17 @@ localStorage.setItem('currentUser', JSON.stringify(updatedUser)); // Don't do th
 ```
 
 **Flow:**
-- Login/Signup → Database updated → localStorage cached from response
-- Payment/Upgrade → Database updated FIRST → localStorage synced
-- Page Load → Supabase session checked → localStorage refreshed
+- Login/Signup → AuthService.signIn/signUp → Database updated → localStorage cached
+- Payment/Upgrade → PaymentService.handlePaymentSuccess() → Database updated → localStorage synced
+- Page Load → AuthService.getCurrentSession() → Supabase session checked → localStorage refreshed
+- Logout → AuthService.signOut() → Supabase session cleared → localStorage cleared
+
+**Key files:**
+- `AuthPage.tsx` - Uses AuthService for Supabase Auth (not localStorage)
+- `App.tsx` - Loads user from Supabase session on startup, handles checkout success
+- `PricingTiers.tsx` / `StripeRedirectCheckout.tsx` - Call PaymentService on payment success
+- `authService.ts` - signIn, signUp, signOut, getCurrentSession, changePassword
+- `paymentService.ts` - handlePaymentSuccess updates subscription in DB
 
 ### Edge Function CORS Pattern
 ```typescript
