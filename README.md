@@ -4,18 +4,33 @@ Answer Engine Optimization (AEO) platform that helps websites get cited by AI as
 
 ## Features
 
+### Core AEO
 - **Citation Checking** - Enter natural language prompts, see if your website gets cited by AI
 - **Competitor Analysis** - See which competitors are getting cited and why
 - **Content Analysis** - Website crawling with Schema.org detection, BLUF scoring, and SEO analysis
 - **AI Provider Selection** - Query Perplexity, OpenAI, and Anthropic
 - **Actionable Recommendations** - Get specific suggestions to improve your AI visibility
 
+### Subscription & Payments
+- **Stripe Integration** - Test and live mode checkout with subscription management
+- **Plan-based Limits** - Usage tracking with plan-specific analysis limits
+- **Self-service Cancellation** - Cancel subscriptions from account page
+
+### Admin Features
+- **User Management** - View, edit, and delete users from admin dashboard
+- **Environment Indicators** - Clear test/live mode status display
+
+### Security
+- **CORS Protection** - Origin-based request validation (whitelisted domains only)
+- **Webhook Verification** - Stripe signature validation
+- **Fraud Prevention** - Email normalization, device fingerprinting, risk scoring
+
 ## Tech Stack
 
 - **Frontend:** React 18 + TypeScript + Vite + Tailwind CSS
 - **Backend:** Supabase (PostgreSQL + Edge Functions)
 - **Payments:** Stripe
-- **Deployment:** Netlify
+- **Deployment:** Netlify (https://lucent-elf-359aef.netlify.app)
 
 ## Getting Started
 
@@ -77,10 +92,28 @@ npm run dev
 
 # Build for production
 npm run build
-
-# Run payment tests
-npm run test:payment
 ```
+
+## Testing
+
+```bash
+# Run all unit tests (watch mode)
+npm run test
+
+# Run unit tests once
+npm run test:run
+
+# Run with coverage
+npm run test:coverage
+
+# Test Stripe payment flow
+npm run test:payment
+
+# Test all Edge Functions
+npm run test:functions
+```
+
+See [TESTING.md](./TESTING.md) for comprehensive test documentation.
 
 ## Deployment
 
@@ -100,7 +133,9 @@ npx supabase functions deploy check-citations
 npx supabase functions deploy crawl-website
 npx supabase functions deploy create-payment-intent
 npx supabase functions deploy create-subscription
+npx supabase functions deploy delete-user
 npx supabase functions deploy stripe-webhook
+npx supabase functions deploy webhook-helper
 ```
 
 ### Supabase Secrets
@@ -144,12 +179,15 @@ src/
 
 supabase/
 └── functions/
-    ├── cancel-subscription/
-    ├── check-citations/
-    ├── crawl-website/
-    ├── create-payment-intent/
-    ├── create-subscription/
-    └── stripe-webhook/
+    ├── _shared/              # Shared utilities (CORS)
+    ├── cancel-subscription/  # Cancel Stripe subscription
+    ├── check-citations/      # Query AI providers
+    ├── crawl-website/        # Website content analysis
+    ├── create-payment-intent/# Stripe payment intent
+    ├── create-subscription/  # Create Stripe subscription
+    ├── delete-user/          # Admin user deletion
+    ├── stripe-webhook/       # Stripe webhook handler
+    └── webhook-helper/       # Webhook utilities
 ```
 
 ## AI Assistants

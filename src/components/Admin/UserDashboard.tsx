@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Filter, Download, RefreshCw, CreditCard, Clock, CheckCircle, XCircle, ArrowLeft, Shield, Save, X, Trash2 } from 'lucide-react';
+import { Users, Search, Filter, Download, RefreshCw, CreditCard, Clock, CheckCircle, XCircle, ArrowLeft, Shield, Save, X, Trash2, Loader2 } from 'lucide-react';
 import { User } from '../../types';
+import { supabase } from '../../lib/supabase';
 
 export default function UserDashboard() {
   const [users, setUsers] = useState<User[]>([]);
@@ -24,6 +25,7 @@ export default function UserDashboard() {
     subscription: '',
     paymentMethodAdded: false
   });
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   // Check if current user is admin
   const [isAdmin, setIsAdmin] = useState(false);
@@ -58,36 +60,42 @@ export default function UserDashboard() {
     loadUsers();
   }, []);
 
-  const loadUsers = () => {
+  const loadUsers = async () => {
     setIsLoading(true);
     try {
-      // Load users from localStorage
-      const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-      
-      // Get current user data which includes subscription info
-      const currentUserStr = localStorage.getItem('currentUser');
-      let currentUser = null;
-      if (currentUserStr) {
-        currentUser = JSON.parse(currentUserStr);
+      // Load users from Supabase
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading users from Supabase:', error);
+        setUsers([]);
+        setFilteredUsers([]);
+        return;
       }
-      
-      // Combine data from both sources
-      const allUsers = storedUsers.map((user: User) => {
-        // If this is the current user, use that data as it's more up-to-date
-        if (currentUser && user.email === currentUser.email) {
-          return {
-            ...user,
-            subscription: currentUser.subscription,
-            paymentMethodAdded: currentUser.paymentMethodAdded
-          };
-        }
-        return user;
-      });
-      
-      setUsers(allUsers);
-      setFilteredUsers(allUsers);
+
+      // Map Supabase data to User type
+      const mappedUsers: User[] = (data || []).map((u: any) => ({
+        id: u.id,
+        email: u.email,
+        name: u.name,
+        avatar: u.avatar,
+        subscription: u.subscription,
+        trialEndsAt: u.trial_ends_at,
+        paymentMethodAdded: u.payment_method_added,
+        isAdmin: u.is_admin,
+        createdAt: u.created_at
+      }));
+
+      setUsers(mappedUsers);
+      setFilteredUsers(mappedUsers);
+      console.log(`Loaded ${mappedUsers.length} users from Supabase`);
     } catch (error) {
       console.error('Error loading users:', error);
+      setUsers([]);
+      setFilteredUsers([]);
     } finally {
       setIsLoading(false);
     }
@@ -242,39 +250,65 @@ export default function UserDashboard() {
     }
   };
 
-  const handleDeleteUser = (userToDelete: User) => {
-    // Don't allow deleting the admin account
-    if (userToDelete.email === 'info@convologix.com') {
-      alert('Cannot delete the admin account.');
+  const handleDeleteUser = async (userToDelete: User) => {
+    // Don't allow deleting admin accounts
+    if (userToDelete.isAdmin) {
+      alert('Cannot delete admin accounts.');
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete ${userToDelete.name || userToDelete.email}? This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to delete ${userToDelete.name || userToDelete.email}?\n\nThis will permanently delete:\n- User account\n- All their projects\n- All their analyses\n- All their payment records\n\nThis action cannot be undone.`)) {
       return;
     }
+
+    // Get current admin user ID
+    const currentUserStr = localStorage.getItem('currentUser');
+    if (!currentUserStr) {
+      alert('You must be logged in as an admin to delete users.');
+      return;
+    }
+
+    const currentUser = JSON.parse(currentUserStr);
+    if (!currentUser.isAdmin) {
+      alert('You must be an admin to delete users.');
+      return;
+    }
+
+    setDeletingUserId(userToDelete.id);
 
     try {
-      // Remove from users list in localStorage
-      const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-      const updatedUsers = storedUsers.filter((user: User) => user.id !== userToDelete.id);
-      localStorage.setItem('users', JSON.stringify(updatedUsers));
-
-      // If this was the current user, log them out
-      const currentUserStr = localStorage.getItem('currentUser');
-      if (currentUserStr) {
-        const currentUser = JSON.parse(currentUserStr);
-        if (currentUser.id === userToDelete.id) {
-          localStorage.removeItem('currentUser');
-          window.location.hash = '#auth';
-          return;
+      // Call the delete-user Edge Function
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            userIdToDelete: userToDelete.id,
+            adminUserId: currentUser.id
+          })
         }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete user');
       }
+
+      console.log('User deleted successfully:', result);
+      alert(result.message || 'User deleted successfully');
 
       // Refresh user list
       loadUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
-      alert('Failed to delete user. Please try again.');
+      alert(`Failed to delete user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
@@ -563,15 +597,31 @@ export default function UserDashboard() {
                           <button
                             onClick={() => handleEditUser(user)}
                             className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                            disabled={deletingUserId === user.id}
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => handleDeleteUser(user)}
-                            className="text-red-600 hover:text-red-800 font-medium text-sm flex items-center space-x-1"
+                            disabled={deletingUserId === user.id || user.isAdmin}
+                            className={`font-medium text-sm flex items-center space-x-1 ${
+                              user.isAdmin
+                                ? 'text-gray-400 cursor-not-allowed'
+                                : 'text-red-600 hover:text-red-800'
+                            }`}
+                            title={user.isAdmin ? 'Cannot delete admin accounts' : 'Delete user'}
                           >
-                            <Trash2 className="w-4 h-4" />
-                            <span>Delete</span>
+                            {deletingUserId === user.id ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Deleting...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Trash2 className="w-4 h-4" />
+                                <span>Delete</span>
+                              </>
+                            )}
                           </button>
                         </div>
                       </td>

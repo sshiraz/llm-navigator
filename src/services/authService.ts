@@ -2,6 +2,28 @@ import { supabase, handleSupabaseError, handleSupabaseSuccess } from '../lib/sup
 import { User } from '../types';
 import { FraudPrevention } from '../utils/fraudPrevention';
 
+// Clear user-specific localStorage data to ensure clean state for new users
+function clearUserLocalStorage() {
+  const keysToRemove = [
+    'analyses',
+    'projects',
+    'currentUser',
+    'costTracker',
+    'analysisHistory',
+    'recentAnalyses',
+  ];
+
+  keysToRemove.forEach(key => {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn(`Failed to remove localStorage key: ${key}`, e);
+    }
+  });
+
+  console.log('Cleared user-specific localStorage data');
+}
+
 export class AuthService {
   // Sign up with email and password
   static async signUp(userData: {
@@ -83,6 +105,9 @@ export class AuthService {
         checks: fraudCheck.checks
       });
 
+      // Clear any cached data from previous users
+      clearUserLocalStorage();
+
       return handleSupabaseSuccess({
         user: authData.user,
         profile: profileData
@@ -115,6 +140,9 @@ export class AuthService {
         return handleSupabaseError(profileError);
       }
 
+      // Clear any cached data from previous users
+      clearUserLocalStorage();
+
       return handleSupabaseSuccess({
         user: data.user,
         profile
@@ -128,10 +156,13 @@ export class AuthService {
   static async signOut() {
     try {
       const { error } = await supabase.auth.signOut();
-      
+
       if (error) {
         return handleSupabaseError(error);
       }
+
+      // Clear user-specific localStorage data on sign out
+      clearUserLocalStorage();
 
       return handleSupabaseSuccess(null);
     } catch (error) {

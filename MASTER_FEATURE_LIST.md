@@ -1,6 +1,6 @@
 # Master Feature List
 
-> Last updated: 2026-01-03
+> Last updated: 2026-01-05
 > Single source of truth for all features, organized by category.
 >
 > Legend: ✅ Complete | ⚠️ Partial | ❌ Not Started | 🔄 In Progress
@@ -12,17 +12,17 @@
 | Category | Complete | Partial | Pending | Total |
 |----------|----------|---------|---------|-------|
 | Core Features | 12 | 1 | 3 | 16 |
-| Security | 15 | 3 | 7 | 25 |
+| Security | 16 | 2 | 7 | 25 |
 | Scalability | 8 | 1 | 9 | 18 |
-| Testing | 2 | 1 | 4 | 7 |
-| Documentation | 5 | 1 | 3 | 9 |
+| Testing | 5 | 1 | 1 | 7 |
+| Documentation | 6 | 1 | 2 | 9 |
 | DevOps | 5 | 0 | 4 | 9 |
-| Payments | 8 | 1 | 2 | 11 |
+| Payments | 9 | 0 | 2 | 11 |
 | User Experience | 8 | 0 | 3 | 11 |
-| Admin | 3 | 1 | 2 | 6 |
-| **Total** | **66** | **9** | **37** | **112** |
+| Admin | 4 | 1 | 1 | 6 |
+| **Total** | **73** | **7** | **32** | **112** |
 
-**Overall Progress: 67% complete**
+**Overall Progress: 71% complete**
 
 ---
 
@@ -94,7 +94,7 @@
 | ✅ | HTTPS enforcement | Via Netlify config |
 | ✅ | Server-side API keys | AI keys in edge functions only |
 | ✅ | Webhook signature verification | Stripe webhooks validated |
-| ⚠️ | CORS configuration | Currently `*` (too permissive) |
+| ✅ | CORS configuration | Origin whitelist (Netlify, localhost) |
 | ❌ | Rate limiting | Returns unlimited always |
 | ❌ | API key rotation policy | No documented schedule |
 
@@ -177,22 +177,21 @@
 | Status | Feature | Notes |
 |--------|---------|-------|
 | ✅ | Vitest setup | Test framework configured |
-| ✅ | Service tests | authService.test.ts exists |
-| ⚠️ | Test coverage | Limited, 121 tests pass |
-| ❌ | Component tests | Not comprehensive |
-| ❌ | Utils tests | Business logic not fully tested |
+| ✅ | Service tests | authService.test.ts (20+ tests) |
+| ✅ | Component tests | AuthPage, AnalysisForm, UserDashboard |
+| ✅ | Navigation tests | Hash routing, localStorage persistence |
+| ⚠️ | Test coverage | ~125 tests, key paths covered |
 
 ### Integration Testing
 | Status | Feature | Notes |
 |--------|---------|-------|
-| ❌ | API integration tests | Not implemented |
-| ❌ | Edge function tests | Not implemented |
+| ✅ | Payment flow tests | test-payment-flow.ts |
+| ✅ | Edge function tests | test-edge-functions.ts (9 tests) |
 
 ### E2E Testing
 | Status | Feature | Notes |
 |--------|---------|-------|
 | ❌ | Playwright/Cypress | Not set up |
-| ❌ | Critical path tests | Login, analysis, payment |
 
 ### Performance Testing
 | Status | Feature | Notes |
@@ -211,9 +210,9 @@
 | ✅ | ARCHITECTURE.md | System design |
 | ✅ | ROADMAP.md | Feature roadmap |
 | ✅ | DOCUMENTATION_INDEX.md | Doc organization |
+| ✅ | TESTING.md | Comprehensive test documentation |
 | ⚠️ | Code comments | Inconsistent coverage |
 | ❌ | API documentation | No OpenAPI/Swagger |
-| ❌ | Component storybook | Not set up |
 
 ### User Docs
 | Status | Feature | Notes |
@@ -271,7 +270,7 @@
 | ✅ | Webhook handling | Payment events processed |
 | ✅ | Test mode | Fully functional |
 | ✅ | Live mode support | Keys configurable |
-| ⚠️ | Idempotent webhooks | Partial implementation |
+| ✅ | Idempotent webhooks | Prevents duplicate processing |
 
 ### Billing
 | Status | Feature | Notes |
@@ -285,8 +284,8 @@
 | Status | Feature | Notes |
 |--------|---------|-------|
 | ✅ | Upgrade flow | Checkout redirect |
+| ✅ | Cancellation flow | Self-service, cancel at period end |
 | ❌ | Downgrade flow | Not implemented |
-| ❌ | Cancellation flow | Not self-service |
 
 ---
 
@@ -328,13 +327,13 @@
 | ✅ | User management view | UserDashboard component |
 | ✅ | Environment status | Shows test/live mode |
 | ✅ | Admin-only routes | Protected by isAdmin |
+| ✅ | User deletion | Cascade delete via Edge Function |
 | ⚠️ | Usage analytics | Basic, in CostTracker |
 
 ### Admin Actions
 | Status | Feature | Notes |
 |--------|---------|-------|
 | ❌ | User impersonation | Not implemented |
-| ❌ | Manual subscription updates | Via DB only |
 
 ---
 
@@ -342,8 +341,7 @@
 
 ### Critical (Security)
 1. ❌ Rate limiting - API abuse possible
-2. ⚠️ CORS restriction - Currently `*`
-3. ❌ MFA for admin - High-value target
+2. ❌ MFA for admin - High-value target
 
 ### High Priority (Scalability)
 4. ❌ Redis caching - Every request hits DB
@@ -368,3 +366,10 @@
 |------|---------|
 | 2026-01-03 | Initial creation |
 | 2026-01-03 | Added HSTS header (Security) |
+| 2026-01-05 | CORS restriction implemented (origin whitelist) |
+| 2026-01-05 | Admin user deletion via Edge Function |
+| 2026-01-05 | Cancel subscription self-service |
+| 2026-01-05 | Comprehensive Edge Function tests (test-edge-functions.ts) |
+| 2026-01-05 | Component tests (AuthPage, AnalysisForm, UserDashboard) |
+| 2026-01-05 | Navigation tests (hash routing, localStorage) |
+| 2026-01-05 | TESTING.md documentation |

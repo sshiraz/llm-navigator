@@ -3,9 +3,9 @@ import { Plus, TrendingUp, Target, BarChart3 } from 'lucide-react';
 import ProjectCard from './ProjectCard';
 import ScoreCard from './ScoreCard';
 import RecentAnalyses from './RecentAnalyses';
-import { mockProjects } from '../../utils/mockData';
 import { Project, Analysis, User } from '../../types';
 import { AnalysisService } from '../../services/analysisService';
+import { ProjectService } from '../../services/projectService';
 
 interface DashboardProps {
   onProjectSelect: (project: Project) => void;
@@ -14,6 +14,7 @@ interface DashboardProps {
 
 export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardProps) {
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Get current user from localStorage
@@ -32,41 +33,51 @@ export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardP
   }, []);
 
   useEffect(() => {
-    // Load analyses from Supabase when user is available
-    async function loadAnalyses() {
+    // Load analyses and projects from Supabase when user is available
+    async function loadData() {
       if (!currentUser) {
         setAnalyses([]);
+        setProjects([]);
         setIsLoading(false);
         return;
       }
 
       setIsLoading(true);
       try {
-        // First, try to migrate any localStorage analyses to Supabase
+        // Load analyses
         const migrated = await AnalysisService.migrateFromLocalStorage(currentUser.id);
         if (migrated > 0) {
           console.log(`Migrated ${migrated} analyses to Supabase`);
         }
 
-        // Then load from Supabase
-        const result = await AnalysisService.getUserAnalyses(currentUser.id);
-        if (result.success && result.data) {
-          setAnalyses(result.data);
-          console.log(`Loaded ${result.data.length} analyses from Supabase`);
+        const analysesResult = await AnalysisService.getUserAnalyses(currentUser.id);
+        if (analysesResult.success && analysesResult.data) {
+          setAnalyses(analysesResult.data);
+          console.log(`Loaded ${analysesResult.data.length} analyses from Supabase`);
         } else {
           setAnalyses([]);
         }
+
+        // Load projects from Supabase
+        const projectsResult = await ProjectService.getUserProjects(currentUser.id);
+        if (projectsResult.success && projectsResult.data) {
+          setProjects(projectsResult.data);
+          console.log(`Loaded ${projectsResult.data.length} projects from Supabase`);
+        } else {
+          setProjects([]);
+        }
       } catch (error) {
-        console.error('Error loading analyses:', error);
-        // Fallback to localStorage
+        console.error('Error loading data:', error);
+        // Fallback to localStorage for analyses only
         const localAnalyses = AnalysisService.getFromLocalStorage(currentUser.id);
         setAnalyses(localAnalyses);
+        setProjects([]);
       } finally {
         setIsLoading(false);
       }
     }
 
-    loadAnalyses();
+    loadData();
   }, [currentUser]);
   
   const totalAnalyses = analyses.length;
@@ -151,14 +162,14 @@ export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardP
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockProjects.map((project) => (
+          {projects.map((project) => (
             <ProjectCard
               key={project.id}
               project={project}
               onSelect={onProjectSelect}
             />
           ))}
-          
+
           {/* Add Project Card */}
           <div 
             onClick={onNewAnalysis}

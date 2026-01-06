@@ -1,6 +1,6 @@
 # Documentation Index
 
-> Last updated: 2026-01-03
+> Last updated: 2026-01-05
 > This index organizes all documentation files in the LLM Navigator project.
 
 ---
@@ -31,17 +31,10 @@
 
 | File | Purpose | When to Use |
 |------|---------|-------------|
-| `STRIPE_SETUP.md` | Initial Stripe configuration | First-time Stripe setup |
-| `STRIPE_WEBHOOK_SETUP.md` | Webhook configuration | Setting up webhooks |
-| `LIVE_STRIPE_SETUP.md` | Going live with payments | Before production launch |
+| `STRIPE_SETUP.md` | **Complete Stripe setup** (products, webhooks, secrets) | First-time setup |
 | `STRIPE_LIVE_MODE_CHECKLIST.md` | Pre-launch payment checklist | Before accepting real payments |
-| `PCI_COMPLIANCE_GUIDE.md` | PCI compliance requirements | Compliance review |
 | `LIVE_MODE_SECURITY_CHECKLIST.md` | Security checklist for live mode | Before going live |
-
-### Potentially Redundant (Review for Consolidation)
-- `STRIPE_SETUP_COMPLETE.md` - May duplicate STRIPE_SETUP.md
-- `STRIPE_LIVE_DEPLOYMENT.md` - May duplicate LIVE_STRIPE_SETUP.md
-- `PAYMENT_DEPLOYMENT_GUIDE.md` - May duplicate other payment docs
+| `PCI_COMPLIANCE_GUIDE.md` | PCI compliance requirements | Compliance review |
 
 ---
 
@@ -52,14 +45,7 @@
 | `WEBHOOK_TESTING_GUIDE.md` | Testing webhooks | Webhook development |
 | `LIVE_WEBHOOK_SETUP.md` | Production webhook setup | Going live |
 
-### Potentially Redundant (Review for Consolidation)
-- `LIVE_WEBHOOK_SETUP_GUIDE.md` - Duplicates LIVE_WEBHOOK_SETUP.md?
-- `WEBHOOK_TROUBLESHOOTING.md` - Consider merging with below
-- `WEBHOOK_DEPLOYMENT_TROUBLESHOOTING.md` - Consider merging
-- `WEBHOOK_FIX_GUIDE.md` - Historical fix documentation
-- `WEBHOOK_FIX_STEPS.md` - Historical fix documentation
-- `WEBHOOK_DEPLOYMENT_FIX.md` - Historical fix documentation
-- `AUTOMATIC_WEBHOOK_FIX.md` - Historical fix documentation
+> **Note:** Webhook setup is now included in `STRIPE_SETUP.md`. Historical fix docs have been removed.
 
 ---
 
@@ -79,7 +65,16 @@
 
 | File | Purpose | When to Use |
 |------|---------|-------------|
-| `APP_TESTING_GUIDE.md` | End-to-end testing guide | Testing features |
+| `TESTING.md` | **Comprehensive test documentation** | Primary test reference |
+| `APP_TESTING_GUIDE.md` | End-to-end manual testing guide | Manual QA testing |
+
+### Test Commands
+```bash
+npm run test           # Unit tests (watch)
+npm run test:run       # Unit tests (once)
+npm run test:functions # Edge Function tests
+npm run test:payment   # Payment flow tests
+```
 
 ---
 
@@ -103,32 +98,23 @@
 
 ---
 
-## Recommended Cleanup
+## Cleanup Completed (2026-01-05)
 
-The following files could be consolidated to reduce documentation sprawl:
+The following redundant files were removed:
 
-### Webhook Fixes (8 files → 1 file)
-Merge into single `WEBHOOK_TROUBLESHOOTING.md`:
-- AUTOMATIC_WEBHOOK_FIX.md
-- WEBHOOK_DEPLOYMENT_FIX.md
-- WEBHOOK_DEPLOYMENT_TROUBLESHOOTING.md
-- WEBHOOK_FIX_GUIDE.md
-- WEBHOOK_FIX_STEPS.md
-- WEBHOOK_TROUBLESHOOTING.md
-
-### Stripe Setup (6 files → 2 files)
-Merge into `STRIPE_SETUP.md` (test) and `STRIPE_LIVE_SETUP.md` (production):
-- STRIPE_SETUP.md
-- STRIPE_SETUP_COMPLETE.md
-- STRIPE_LIVE_DEPLOYMENT.md
-- LIVE_STRIPE_SETUP.md
-- PAYMENT_DEPLOYMENT_GUIDE.md
-
-### Webhook Setup (3 files → 1 file)
-Merge into `WEBHOOK_SETUP.md`:
-- LIVE_WEBHOOK_SETUP.md
-- LIVE_WEBHOOK_SETUP_GUIDE.md
-- STRIPE_WEBHOOK_SETUP.md
+**Deleted (12 files):**
+- ~~AUTOMATIC_WEBHOOK_FIX.md~~ (historical)
+- ~~WEBHOOK_DEPLOYMENT_FIX.md~~ (historical)
+- ~~WEBHOOK_DEPLOYMENT_TROUBLESHOOTING.md~~ (historical)
+- ~~WEBHOOK_FIX_GUIDE.md~~ (historical)
+- ~~WEBHOOK_FIX_STEPS.md~~ (historical)
+- ~~WEBHOOK_TROUBLESHOOTING.md~~ (historical)
+- ~~LIVE_WEBHOOK_SETUP_GUIDE.md~~ (duplicate)
+- ~~STRIPE_WEBHOOK_SETUP.md~~ (merged into STRIPE_SETUP.md)
+- ~~STRIPE_SETUP_COMPLETE.md~~ (duplicate)
+- ~~STRIPE_LIVE_DEPLOYMENT.md~~ (duplicate)
+- ~~LIVE_STRIPE_SETUP.md~~ (duplicate)
+- ~~PAYMENT_DEPLOYMENT_GUIDE.md~~ (duplicate)
 
 ---
 
@@ -136,11 +122,11 @@ Merge into `WEBHOOK_SETUP.md`:
 
 - **Primary docs:** 4 files
 - **Setup & deployment:** 4 files
-- **Stripe & payments:** 9 files (could be 2-3)
-- **Webhooks:** 9 files (could be 2)
+- **Stripe & payments:** 4 files
+- **Webhooks:** 2 files
 - **Troubleshooting:** 5 files
-- **Testing:** 1 file
+- **Testing:** 2 files
 - **Reference:** 3 files
 - **docs/ directory:** 3 files
 
-**Total:** 38 markdown files (could be ~15 after consolidation)
+**Total:** 27 markdown files (down from 39)

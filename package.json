@@ -12,6 +12,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:payment": "npx tsx scripts/test-payment-flow.ts",
+    "test:functions": "npx tsx scripts/test-edge-functions.ts",
     "stripe:listen": "stripe listen --forward-to http://localhost:54321/functions/v1/stripe-webhook"
   },
   "dependencies": {

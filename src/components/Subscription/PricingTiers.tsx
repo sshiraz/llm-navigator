@@ -93,7 +93,7 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
       {/* Back to Home Button */}
       <div className="mb-8">
         <button
-          onClick={() => window.location.hash = 'landing'}
+          onClick={() => window.location.hash = 'dashboard'}
           className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />

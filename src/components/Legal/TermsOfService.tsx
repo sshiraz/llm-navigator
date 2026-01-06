@@ -3,8 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 
 export default function TermsOfService() {
   const goBack = () => {
-    window.location.hash = '';
-    window.location.reload();
+    window.location.hash = 'dashboard';
   };
 
   return (

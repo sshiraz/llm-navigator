@@ -58,9 +58,10 @@ Webhooks ensure your app knows when payments succeed or fail.
 ### 1. Create Webhook Endpoint
 - In Stripe Dashboard, go to **Developers → Webhooks**
 - Click **"Add endpoint"**
-- **Endpoint URL**: `https://your-supabase-project.supabase.co/functions/v1/stripe-webhook`
+- **Endpoint URL**: `https://jgkdzaoajbzmuuajpndv.supabase.co/functions/v1/stripe-webhook`
 - **Events to send**:
   - `payment_intent.succeeded`
+  - `checkout.session.completed`
   - `customer.subscription.created`
   - `customer.subscription.updated`
   - `customer.subscription.deleted`
@@ -70,7 +71,39 @@ Webhooks ensure your app knows when payments succeed or fail.
 - After creating the webhook, click on it
 - In the **Signing secret** section, click **"Reveal"**
 - Copy the webhook secret (starts with `whsec_`)
-- Add it to your `.env` file as `STRIPE_WEBHOOK_SECRET`
+
+### 3. Set Supabase Secrets
+```bash
+# Stripe secret key
+npx supabase secrets set STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
+
+# Webhook secret (from step 2)
+npx supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+
+# Supabase service role key (from Supabase Dashboard → Settings → API)
+npx supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
+
+### 4. Deploy Edge Functions
+```bash
+npx supabase functions deploy create-payment-intent
+npx supabase functions deploy create-subscription
+npx supabase functions deploy cancel-subscription
+npx supabase functions deploy stripe-webhook
+npx supabase functions deploy webhook-helper
+```
+
+### 5. Test Webhook
+**Option A: Use Stripe Dashboard**
+1. In your webhook settings, click "Send test webhook"
+2. Select `payment_intent.succeeded`
+3. Click "Send test webhook"
+4. Check that it shows "Success"
+
+**Option B: Run test script**
+```bash
+npm run test:functions
+```
 
 ## 🚀 Step 3: Test Your Integration
 
@@ -103,11 +136,23 @@ Your Stripe integration includes:
 ## 🆘 Troubleshooting
 
 **Common Issues:**
-1. **"No such price"** → Check your Price IDs are correct
-2. **Webhook not working** → Verify the endpoint URL and secret
-3. **Payment fails** → Check you're using test cards in test mode
-4. **CORS errors** → Ensure your domain is added to Stripe settings
 
-**Need Help?**
-- Check Stripe logs in Dashboard → Developers → Logs
-- Test webhooks in Dashboard → Developers → Webhooks → [Your webhook] → Test
+| Error | Cause | Fix |
+|-------|-------|-----|
+| "No such price" | Wrong Price ID | Check Price IDs in Stripe Dashboard |
+| Webhook 401/403 | Missing secrets | Set SUPABASE_SERVICE_ROLE_KEY |
+| Webhook 400 | Wrong webhook secret | Copy correct secret from Stripe |
+| Webhook 404 | Functions not deployed | Run `npx supabase functions deploy` |
+| Payment succeeds but plan doesn't upgrade | Webhook failing | Check webhook logs in Stripe |
+| CORS errors | Domain not whitelisted | Check `_shared/cors.ts` |
+
+**Webhook Flow:**
+1. User pays → Stripe processes payment
+2. Stripe sends `payment_intent.succeeded` to webhook
+3. Webhook verifies signature and updates database
+4. User sees plan upgraded
+
+**Debug Tools:**
+- Stripe logs: Dashboard → Developers → Logs
+- Webhook events: Dashboard → Developers → Webhooks → [Your webhook]
+- Test script: `npm run test:functions`

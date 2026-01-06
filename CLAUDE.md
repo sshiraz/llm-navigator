@@ -48,11 +48,13 @@ LLM Navigator is a SaaS platform for **Answer Engine Optimization (AEO)** - help
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                   SUPABASE EDGE FUNCTIONS                        │
+│  _shared/cors.ts         - CORS utilities with origin whitelist  │
 │  cancel-subscription/    - Cancel Stripe subscription            │
 │  check-citations/        - Query AI providers for citations      │
 │  crawl-website/          - Real website crawling                 │
 │  create-payment-intent/  - Create Stripe payment intent          │
 │  create-subscription/    - Create Stripe subscription            │
+│  delete-user/            - Admin user deletion (cascade)         │
 │  stripe-webhook/         - Handle Stripe webhook events          │
 │  webhook-helper/         - Webhook utilities                     │
 └─────────────────────────────────────────────────────────────────┘
@@ -91,7 +93,17 @@ supabase/functions/stripe-webhook/           → Handles payment events
 ```
 src/components/Auth/AuthPage.tsx             → Login/signup
 src/components/Account/AccountPage.tsx       → Profile + subscription management
-src/components/Admin/UserDashboard.tsx       → Admin user management
+src/components/Admin/UserDashboard.tsx       → Admin user management (delete users)
+src/services/authService.ts                  → Auth operations + localStorage cleanup
+supabase/functions/delete-user/index.ts      → Admin user deletion (cascade delete)
+```
+
+### CORS Security
+```
+supabase/functions/_shared/cors.ts           → Origin whitelist, validation
+  - Whitelisted: lucent-elf-359aef.netlify.app, localhost:5173, localhost:3000
+  - validateOrigin() returns 403 for unauthorized origins
+  - All Edge Functions use shared CORS utilities
 ```
 
 ### Data Storage
@@ -114,20 +126,27 @@ if (user.subscription in ['starter', 'professional', 'enterprise'] || user.isAdm
 ```
 
 ### 2. Edge Function Structure
-All edge functions follow this pattern:
+All edge functions follow this pattern with CORS validation:
 ```typescript
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, handleCorsPreflightWithValidation, validateOrigin } from "../_shared/cors.ts";
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const corsHeaders = getCorsHeaders(req);
+
+  // Handle CORS preflight with origin validation
+  const preflightResponse = handleCorsPreflightWithValidation(req);
+  if (preflightResponse) return preflightResponse;
+
+  // Validate origin for non-preflight requests
+  const originError = validateOrigin(req);
+  if (originError) return originError;
+
   // ... handle request
 });
 ```
+
+**Note:** `stripe-webhook` does NOT validate origin - webhooks come from Stripe servers, not browsers. It uses Stripe signature verification instead.
 
 ### 3. Type Definitions
 - All types in `src/types/index.ts` and `src/types/crawl.ts`
@@ -182,7 +201,8 @@ supabase.from('analyses').insert(...)  // Don't do this in components
 - ✅ User authentication (Supabase Auth)
 - ✅ Profile management
 - ✅ Admin dashboard with user management
-- ✅ Delete user functionality
+- ✅ Admin user deletion (cascade: analyses → projects → payments → auth)
+- ✅ localStorage cleanup on auth state changes (prevents data leakage)
 
 ### UI/UX
 - ✅ Responsive design
@@ -250,20 +270,34 @@ npx supabase functions deploy check-citations
 npx supabase functions deploy crawl-website
 npx supabase functions deploy create-payment-intent
 npx supabase functions deploy create-subscription
+npx supabase functions deploy delete-user
 npx supabase functions deploy stripe-webhook
+npx supabase functions deploy webhook-helper
 ```
 
 ## Testing
 
-### Build Check
+See [TESTING.md](./TESTING.md) for comprehensive documentation.
+
+### Quick Commands
 ```bash
-npm run build  # Must pass with no errors
+npm run test           # All unit tests (watch mode)
+npm run test:run       # Unit tests (once)
+npm run test:coverage  # With coverage report
+npm run test:payment   # Stripe payment flow
+npm run test:functions # All Edge Functions + CORS
 ```
 
-### Payment Flow Test
-```bash
-npm run test:payment
-```
+### Unit Tests (Vitest)
+- `src/services/authService.test.ts` - Auth operations
+- `src/components/Auth/AuthPage.test.tsx` - Login/signup UI
+- `src/components/Analysis/AnalysisForm.test.tsx` - Analysis form
+- `src/components/Admin/UserDashboard.test.tsx` - Admin panel
+- `src/test/navigation.test.tsx` - App navigation
+
+### Integration Tests
+- `scripts/test-payment-flow.ts` - Stripe checkout, webhooks
+- `scripts/test-edge-functions.ts` - All Edge Functions + CORS validation
 
 ### Test Cards (Stripe Test Mode)
 - Success: `4242 4242 4242 4242`
