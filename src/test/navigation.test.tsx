@@ -3,6 +3,17 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 
+// Mock user profile for AuthService
+const mockUserProfile = {
+  id: 'test-user-id',
+  email: 'test@example.com',
+  name: 'Test User',
+  subscription: 'trial',
+  is_admin: false,
+  payment_method_added: false,
+  created_at: new Date().toISOString(),
+};
+
 // Mock Supabase
 vi.mock('../lib/supabase', () => ({
   supabase: {
@@ -23,6 +34,38 @@ vi.mock('../lib/supabase', () => ({
     }),
   },
 }));
+
+// Mock AuthService to return the user from localStorage
+vi.mock('../services/authService', async (importOriginal) => {
+  return {
+    AuthService: {
+      getCurrentSession: vi.fn().mockImplementation(async () => {
+        const userStr = localStorage.getItem('currentUser');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          return {
+            success: true,
+            data: {
+              session: { user: { id: user.id, email: user.email } },
+              profile: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                subscription: user.subscription,
+                is_admin: user.isAdmin || false,
+                payment_method_added: user.paymentMethodAdded || false,
+                created_at: user.createdAt || new Date().toISOString(),
+              },
+            },
+          };
+        }
+        return { success: false, data: null };
+      }),
+      signIn: vi.fn().mockResolvedValue({ success: true }),
+      signOut: vi.fn().mockResolvedValue({ success: true }),
+    },
+  };
+});
 
 // Mock AnalysisEngine
 vi.mock('../utils/analysisEngine', () => ({
@@ -188,7 +231,8 @@ describe('Navigation Flow Tests', () => {
       render(<App />);
 
       await waitFor(() => {
-        expect(screen.getByText('Check Your AI Citations')).toBeInTheDocument();
+        // NewAnalysis component should render with this heading
+        expect(screen.getByText('Analyze Your AI Visibility')).toBeInTheDocument();
       });
 
       expect(screen.queryByText('View Last Analysis')).not.toBeInTheDocument();

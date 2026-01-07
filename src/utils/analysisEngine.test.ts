@@ -13,6 +13,7 @@ vi.mock('../lib/supabase', () => ({
 
 // Import after mocking
 import { AnalysisEngine } from './analysisEngine';
+import { performSimulatedAEOAnalysis } from './analysis/aeoAnalysis';
 
 // Test data
 const mockTrialUser: User = {
@@ -94,7 +95,7 @@ describe('Simulated vs Real Analysis Data Structure', () => {
   describe('Simulated AEO Analysis', () => {
     it('should include citationResults with simulated competitors', async () => {
       // Get simulated analysis directly (bypassing cost checks)
-      const simulatedResult = await (AnalysisEngine as any).performSimulatedAEOAnalysis(
+      const simulatedResult = await performSimulatedAEOAnalysis(
         testWebsite,
         testPrompts,
         testBrandName,
@@ -123,7 +124,7 @@ describe('Simulated vs Real Analysis Data Structure', () => {
     });
 
     it('should include simulated competitor domains', async () => {
-      const simulatedResult = await (AnalysisEngine as any).performSimulatedAEOAnalysis(
+      const simulatedResult = await performSimulatedAEOAnalysis(
         testWebsite,
         testPrompts,
         testBrandName,
@@ -151,7 +152,7 @@ describe('Simulated vs Real Analysis Data Structure', () => {
     });
 
     it('should have zero cost for simulated analysis', async () => {
-      const simulatedResult = await (AnalysisEngine as any).performSimulatedAEOAnalysis(
+      const simulatedResult = await performSimulatedAEOAnalysis(
         testWebsite,
         testPrompts,
         testBrandName,
@@ -166,7 +167,7 @@ describe('Simulated vs Real Analysis Data Structure', () => {
     });
 
     it('should calculate overallCitationRate correctly', async () => {
-      const simulatedResult = await (AnalysisEngine as any).performSimulatedAEOAnalysis(
+      const simulatedResult = await performSimulatedAEOAnalysis(
         testWebsite,
         testPrompts,
         testBrandName,
@@ -187,7 +188,7 @@ describe('Simulated vs Real Analysis Data Structure', () => {
 describe('CitationResult Data Consistency', () => {
   it('citationResults should have consistent structure for both real and simulated', async () => {
     // Get simulated result
-    const simulatedResult = await (AnalysisEngine as any).performSimulatedAEOAnalysis(
+    const simulatedResult = await performSimulatedAEOAnalysis(
       testWebsite,
       [testPrompts[0]], // Just one prompt for simplicity
       testBrandName,
@@ -212,7 +213,7 @@ describe('CitationResult Data Consistency', () => {
   });
 
   it('competitorsCited should have domain, context, and position', async () => {
-    const simulatedResult = await (AnalysisEngine as any).performSimulatedAEOAnalysis(
+    const simulatedResult = await performSimulatedAEOAnalysis(
       testWebsite,
       [testPrompts[0]],
       testBrandName,

@@ -1,6 +1,66 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+
+// Use vi.hoisted to create mutable mock data that can be changed per test
+const { mockSupabaseData } = vi.hoisted(() => ({
+  mockSupabaseData: {
+    users: [
+      {
+        id: 'user-1',
+        email: 'john@example.com',
+        name: 'John Doe',
+        subscription: 'trial',
+        payment_method_added: false,
+        created_at: '2024-01-15T10:00:00Z',
+        trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        id: 'user-2',
+        email: 'jane@example.com',
+        name: 'Jane Smith',
+        subscription: 'starter',
+        payment_method_added: true,
+        created_at: '2024-01-10T10:00:00Z'
+      },
+      {
+        id: 'user-3',
+        email: 'bob@example.com',
+        name: 'Bob Wilson',
+        subscription: 'professional',
+        payment_method_added: true,
+        created_at: '2024-01-05T10:00:00Z'
+      }
+    ]
+  }
+}));
+
+// Mock Supabase
+vi.mock('../../lib/supabase', () => ({
+  supabase: {
+    from: vi.fn().mockImplementation((table: string) => ({
+      select: vi.fn().mockReturnValue({
+        order: vi.fn().mockImplementation(() => Promise.resolve({
+          data: table === 'users' ? mockSupabaseData.users : [],
+          error: null
+        })),
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: null, error: null }),
+        }),
+      }),
+      update: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ data: null, error: null }),
+      }),
+      delete: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ data: null, error: null }),
+      }),
+    })),
+    functions: {
+      invoke: vi.fn().mockResolvedValue({ data: null, error: null }),
+    },
+  },
+}));
+
 import UserDashboard from './UserDashboard';
 
 describe('UserDashboard Component', () => {
@@ -13,31 +73,32 @@ describe('UserDashboard Component', () => {
     createdAt: new Date().toISOString()
   };
 
-  const mockUsers = [
+  // Initial users data (snake_case for Supabase)
+  const initialMockUsers = [
     {
       id: 'user-1',
       email: 'john@example.com',
       name: 'John Doe',
       subscription: 'trial',
-      paymentMethodAdded: false,
-      createdAt: '2024-01-15T10:00:00Z',
-      trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
+      payment_method_added: false,
+      created_at: '2024-01-15T10:00:00Z',
+      trial_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     },
     {
       id: 'user-2',
       email: 'jane@example.com',
       name: 'Jane Smith',
       subscription: 'starter',
-      paymentMethodAdded: true,
-      createdAt: '2024-01-10T10:00:00Z'
+      payment_method_added: true,
+      created_at: '2024-01-10T10:00:00Z'
     },
     {
       id: 'user-3',
       email: 'bob@example.com',
       name: 'Bob Wilson',
       subscription: 'professional',
-      paymentMethodAdded: true,
-      createdAt: '2024-01-05T10:00:00Z'
+      payment_method_added: true,
+      created_at: '2024-01-05T10:00:00Z'
     }
   ];
 
@@ -45,6 +106,9 @@ describe('UserDashboard Component', () => {
   const originalLocation = window.location;
 
   beforeEach(() => {
+    // Reset mock Supabase data to initial state
+    mockSupabaseData.users = [...initialMockUsers];
+
     // Mock window.location
     Object.defineProperty(window, 'location', {
       value: { ...originalLocation, hash: '#admin-users' },
@@ -56,8 +120,6 @@ describe('UserDashboard Component', () => {
     localStorage.clear();
     // Set admin user
     localStorage.setItem('currentUser', JSON.stringify(mockAdminUser));
-    // Set users list
-    localStorage.setItem('users', JSON.stringify(mockUsers));
   });
 
   afterEach(() => {
@@ -151,7 +213,8 @@ describe('UserDashboard Component', () => {
     });
 
     it('should show "No users found" when list is empty', async () => {
-      localStorage.setItem('users', JSON.stringify([]));
+      // Set mock data to empty array
+      mockSupabaseData.users = [];
 
       render(<UserDashboard />);
 
@@ -484,18 +547,18 @@ describe('UserDashboard Component', () => {
 
   describe('New User Registration Display', () => {
     it('should display newly registered user in the list', async () => {
-      // Add a new user to the list
+      // Add a new user to the mock data (snake_case for Supabase)
       const newUser = {
         id: 'new-user-123',
         email: 'newuser@example.com',
         name: 'New User',
         subscription: 'trial',
-        paymentMethodAdded: false,
-        createdAt: new Date().toISOString(),
-        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+        payment_method_added: false,
+        created_at: new Date().toISOString(),
+        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
       };
 
-      localStorage.setItem('users', JSON.stringify([...mockUsers, newUser]));
+      mockSupabaseData.users = [...mockSupabaseData.users, newUser];
 
       render(<UserDashboard />);
 
@@ -511,11 +574,11 @@ describe('UserDashboard Component', () => {
         email: 'another@example.com',
         name: 'Another User',
         subscription: 'trial',
-        paymentMethodAdded: false,
-        createdAt: new Date().toISOString()
+        payment_method_added: false,
+        created_at: new Date().toISOString()
       };
 
-      localStorage.setItem('users', JSON.stringify([...mockUsers, newUser]));
+      mockSupabaseData.users = [...mockSupabaseData.users, newUser];
 
       render(<UserDashboard />);
 
@@ -531,12 +594,12 @@ describe('UserDashboard Component', () => {
         email: 'trial@example.com',
         name: 'Trial User',
         subscription: 'trial',
-        paymentMethodAdded: false,
-        createdAt: new Date().toISOString(),
-        trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+        payment_method_added: false,
+        created_at: new Date().toISOString(),
+        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
       };
 
-      localStorage.setItem('users', JSON.stringify([...mockUsers, newTrialUser]));
+      mockSupabaseData.users = [...mockSupabaseData.users, newTrialUser];
 
       render(<UserDashboard />);
 
@@ -554,15 +617,16 @@ describe('UserDashboard Component', () => {
         expect(screen.getByText('3 users found')).toBeInTheDocument();
       });
 
-      // Add a new user after initial render
+      // Add a new user to mock data after initial render (snake_case for Supabase)
       const newUser = {
         id: 'refresh-test-user',
         email: 'refresh@example.com',
         name: 'Refresh Test User',
         subscription: 'trial',
-        createdAt: new Date().toISOString()
+        payment_method_added: false,
+        created_at: new Date().toISOString()
       };
-      localStorage.setItem('users', JSON.stringify([...mockUsers, newUser]));
+      mockSupabaseData.users = [...mockSupabaseData.users, newUser];
 
       // Click refresh
       await user.click(screen.getByText('Refresh'));

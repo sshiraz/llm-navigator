@@ -65,12 +65,46 @@ npx supabase functions deploy <function-name>
 
 ## Standard Workflows
 
+### Before Every Commit
+**REQUIRED:** Run the full test suite and document results in BRANCH_ANALYSIS.md.
+
+```bash
+npm run test:run && npm run build
+```
+
+**⚠️ ALL TESTS MUST PASS (0 failures) before a commit is ready to merge.**
+
+If tests fail:
+1. Fix the failing tests or the code causing failures
+2. Re-run until you get 0 failures
+3. Only then document results and commit
+
+Include in the "Testing Performed" section of your BRANCH_ANALYSIS.md entry:
+```markdown
+### Testing Performed
+
+- **Test Suite:** ✅ X passed, 0 failed (X total)
+- **Build:** ✓ Passed
+- [List any manual testing performed]
+```
+
+Example:
+```markdown
+### Testing Performed
+
+- **Test Suite:** ✅ 228 passed, 0 failed (228 total)
+- **Build:** ✓ Passed
+- Verified payment flow works with test card
+- Checked analysis results render correctly
+```
+
 ### Adding a New Feature
 1. Check if similar code exists in `src/utils/` or `src/services/`
 2. Create types first in `src/types/index.ts`
 3. Implement service layer if DB operations needed
 4. Build UI component last
-5. Run `npm run build` to verify no errors
+5. Run `npm run test:run && npm run build` to verify no errors
+6. Document in BRANCH_ANALYSIS.md with test results
 
 ### Fixing a Bug
 1. Read the relevant file(s) first
@@ -78,6 +112,7 @@ npx supabase functions deploy <function-name>
 3. Fix the issue
 4. Run tests: `npm run test:run`
 5. Verify build: `npm run build`
+6. Document in BRANCH_ANALYSIS.md with test results
 
 ### Adding an Edge Function
 1. Create folder in `supabase/functions/<name>/`
@@ -217,3 +252,14 @@ serve(async (req) => {
 - [ ] Works for both trial and paid users?
 - [ ] Types updated if new data structures?
 - [ ] Tests pass? (`npm run test:run && npm run build`)
+
+## Pre-Commit Checklist (Ready to Merge)
+
+- [ ] Run full test suite: `npm run test:run`
+- [ ] **All tests pass (0 failures)** ← Required for merge
+- [ ] Run build: `npm run build`
+- [ ] Add entry to BRANCH_ANALYSIS.md with:
+  - [ ] Context explaining the change
+  - [ ] Reasoning for implementation decisions
+  - [ ] Files changed table
+  - [ ] Test results showing ✅ 0 failures

@@ -1,6 +1,19 @@
 # Testing Guide
 
+> Last updated: 2026-01-07
+
 This document provides an overview of all automated tests in the LLM Navigator project.
+
+## Test Requirements
+
+**All tests must pass (0 failures) before code is ready to merge.**
+
+```bash
+# Run this before every commit
+npm run test:run && npm run build
+```
+
+Current test count: **228 tests** (9 test files)
 
 ## Quick Reference
 
@@ -104,6 +117,46 @@ Tests the AnalysisEngine for real vs simulated analysis flows.
 - "How do I implement AI chatbots for my business?"
 - "Which companies offer conversational AI solutions?"
 
+### Analysis Helpers
+**File:** `src/utils/analysis/analysisHelpers.test.ts`
+
+Tests the modularized analysis helper functions (39 tests).
+
+| Test Suite | Coverage |
+|------------|----------|
+| `calculateOverallCitationRate` | Zero results, all cited, partial citation, empty arrays |
+| `extractDomain` | Standard URLs, www prefix, subdomains, paths, edge cases |
+| `normalizeWebsiteUrl` | Scheme handling, path normalization |
+| `generateCitationResultsForPrompts` | Citation generation, provider simulation, competitor extraction |
+| `determineCompetitorContext` | Context determination based on prompt type |
+
+### Storage Manager
+**File:** `src/utils/storageManager.test.ts`
+
+Tests the StorageManager localStorage abstraction (20 tests).
+
+| Test Suite | Coverage |
+|------------|----------|
+| `getCurrentUser` | Parse from localStorage, null handling, invalid JSON |
+| `setCurrentUser` / `clearCurrentUser` | Store and clear operations |
+| `getCurrentAnalysis` / `setCurrentAnalysis` | Analysis storage operations |
+| `getLastAnalysisWebsite` | Last website retrieval |
+| `clearAllAnalysisData` | Bulk clear operations |
+
+### Payment Service
+**File:** `src/services/paymentService.test.ts`
+
+Tests the PaymentService for Stripe integration (19 tests).
+
+| Test Suite | Coverage |
+|------------|----------|
+| `recordPayment` | Success/failure recording, Supabase calls |
+| `getPaymentsByUser` | User payment retrieval, error handling |
+| `handleCheckoutSuccess` | Checkout completion, user update |
+| `handleCheckoutCancel` | Checkout cancellation handling |
+| `createPaymentIntent` | Payment intent creation |
+| `getSubscriptionStatus` | Subscription status retrieval |
+
 ---
 
 ## Integration Tests (Scripts)
@@ -180,10 +233,13 @@ set -a && . ./.env && set +a && npm run test:functions
 | Authentication | authService.test.ts | - |
 | UI Components | AuthPage, AnalysisForm, UserDashboard | - |
 | Navigation | navigation.test.tsx | - |
-| Analysis Engine | analysisEngine.test.ts (real vs simulated) | - |
-| Payment/Stripe | - | test-payment-flow.ts |
+| Analysis Engine | analysisEngine.test.ts, analysisHelpers.test.ts | - |
+| Storage | storageManager.test.ts | - |
+| Payment/Stripe | paymentService.test.ts | test-payment-flow.ts |
 | Edge Functions | - | test-edge-functions.ts |
 | CORS Security | - | test-edge-functions.ts |
+
+**Total: 228 tests across 9 test files**
 
 ---
 

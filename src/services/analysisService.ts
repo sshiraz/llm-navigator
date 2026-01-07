@@ -1,5 +1,6 @@
 import { supabase, handleSupabaseError, handleSupabaseSuccess } from '../lib/supabase';
 import { Analysis } from '../types';
+import { StorageManager } from '../utils/storageManager';
 
 // Convert database row to Analysis type
 function rowToAnalysis(row: any): Analysis {
@@ -20,6 +21,8 @@ function rowToAnalysis(row: any): Analysis {
     isSimulated: row.is_simulated,
     costInfo: row.cost_info,
     crawlData: row.crawl_data,
+    citationResults: row.citation_results,
+    overallCitationRate: row.overall_citation_rate,
   };
 }
 
@@ -41,6 +44,8 @@ function analysisToRow(analysis: Analysis): any {
     is_simulated: analysis.isSimulated,
     cost_info: analysis.costInfo,
     crawl_data: analysis.crawlData,
+    citation_results: analysis.citationResults,
+    overall_citation_rate: analysis.overallCitationRate,
   };
 }
 
@@ -254,37 +259,17 @@ export class AnalysisService {
     }
   }
 
-  // LocalStorage fallback methods
+  // Storage fallback methods (using StorageManager)
   static saveToLocalStorage(analysis: Analysis): void {
-    try {
-      const existing = JSON.parse(localStorage.getItem('analyses') || '[]');
-      const filtered = existing.filter((a: Analysis) => a.id !== analysis.id);
-      const updated = [analysis, ...filtered];
-      localStorage.setItem('analyses', JSON.stringify(updated));
-      localStorage.setItem('currentAnalysis', JSON.stringify(analysis));
-    } catch (err) {
-      console.error('Error saving to localStorage:', err);
-    }
+    StorageManager.addAnalysis(analysis);
   }
 
   static getFromLocalStorage(userId: string): Analysis[] {
-    try {
-      const stored = JSON.parse(localStorage.getItem('analyses') || '[]');
-      return stored.filter((a: Analysis) => a.userId === userId);
-    } catch (err) {
-      console.error('Error reading from localStorage:', err);
-      return [];
-    }
+    return StorageManager.getAnalysesForUser(userId);
   }
 
   static removeFromLocalStorage(analysisId: string): void {
-    try {
-      const existing = JSON.parse(localStorage.getItem('analyses') || '[]');
-      const updated = existing.filter((a: Analysis) => a.id !== analysisId);
-      localStorage.setItem('analyses', JSON.stringify(updated));
-    } catch (err) {
-      console.error('Error removing from localStorage:', err);
-    }
+    StorageManager.removeAnalysis(analysisId);
   }
 
   // Migrate localStorage analyses to Supabase (one-time migration)
@@ -322,14 +307,10 @@ export class AnalysisService {
     }
   }
 
-  // Clear localStorage after successful migration
+  // Clear storage after successful migration
   static clearLocalStorage(): void {
-    try {
-      localStorage.removeItem('analyses');
-      localStorage.removeItem('currentAnalysis');
-      console.log('Cleared analyses from localStorage');
-    } catch (err) {
-      console.error('Error clearing localStorage:', err);
-    }
+    StorageManager.setAnalyses([]);
+    StorageManager.clearCurrentAnalysis();
+    console.log('Cleared analyses from storage');
   }
 }

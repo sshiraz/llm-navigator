@@ -20,6 +20,7 @@ import EnvironmentStatus from './components/UI/EnvironmentStatus';
 import { mockAnalyses } from './utils/mockData';
 import { isUserAdmin } from './utils/userUtils';
 import { AuthService } from './services/authService';
+import { StorageManager } from './utils/storageManager';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -33,16 +34,14 @@ function App() {
   // Check if user is admin
   const isAdmin = user && isUserAdmin(user);
 
-  // Load current analysis from localStorage if available
+  // Load current analysis from storage if available
   useEffect(() => {
-    try {
-      const storedAnalysis = localStorage.getItem('currentAnalysis');
-      if (storedAnalysis && activeSection === 'analysis-results') {
-        setCurrentAnalysis(JSON.parse(storedAnalysis));
+    if (activeSection === 'analysis-results') {
+      const storedAnalysis = StorageManager.getCurrentAnalysis();
+      if (storedAnalysis) {
+        setCurrentAnalysis(storedAnalysis);
         // Don't clear - keep it for "View Last Analysis" button
       }
-    } catch (error) {
-      console.error('Error loading current analysis from localStorage:', error);
     }
   }, [activeSection]);
 
@@ -56,15 +55,11 @@ function App() {
         setActiveSection('landing');
       }
 
-      // If we're on the analysis-results page, try to load the analysis from localStorage
+      // If we're on the analysis-results page, try to load the analysis from storage
       if (hash === 'analysis-results') {
-        try {
-          const storedAnalysis = localStorage.getItem('currentAnalysis');
-          if (storedAnalysis) {
-            setCurrentAnalysis(JSON.parse(storedAnalysis));
-          }
-        } catch (error) {
-          console.error('Error loading analysis from localStorage:', error);
+        const storedAnalysis = StorageManager.getCurrentAnalysis();
+        if (storedAnalysis) {
+          setCurrentAnalysis(storedAnalysis);
         }
       }
     };
@@ -106,21 +101,16 @@ function App() {
           console.error('Error updating database:', error);
         }
 
-        // Also update localStorage for immediate UI update
-        try {
-          const currentUserStr = localStorage.getItem('currentUser');
-          if (currentUserStr) {
-            const currentUser = JSON.parse(currentUserStr);
-            const updatedUser = {
-              ...currentUser,
-              subscription: plan,
-              paymentMethodAdded: true
-            };
-            localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-            setUser(updatedUser);
-          }
-        } catch (error) {
-          console.error('Error updating localStorage:', error);
+        // Also update storage for immediate UI update
+        const currentUser = StorageManager.getCurrentUser();
+        if (currentUser) {
+          const updatedUser = {
+            ...currentUser,
+            subscription: plan,
+            paymentMethodAdded: true
+          };
+          StorageManager.setCurrentUser(updatedUser);
+          setUser(updatedUser);
         }
 
         // Clear URL parameters after processing
@@ -157,22 +147,22 @@ function App() {
             subscriptionEndsAt: profile.subscription_ends_at
           };
 
-          // Update localStorage cache with fresh data
-          localStorage.setItem('currentUser', JSON.stringify(userData));
+          // Update storage cache with fresh data
+          StorageManager.setCurrentUser(userData);
           setUser(userData);
 
           if (activeSection === 'auth') {
             setActiveSection('dashboard');
           }
         } else {
-          // No valid session - clear any stale localStorage data
-          localStorage.removeItem('currentUser');
+          // No valid session - clear any stale storage data
+          StorageManager.clearCurrentUser();
           setUser(null);
         }
       } catch (error) {
         console.error('Error loading user session:', error);
         // On error, clear potentially corrupted state
-        localStorage.removeItem('currentUser');
+        StorageManager.clearCurrentUser();
         setUser(null);
       }
     };
@@ -183,7 +173,7 @@ function App() {
   const handleLogin = (userData: User) => {
     setUser(userData);
     setActiveSection('dashboard');
-    localStorage.setItem('currentUser', JSON.stringify(userData));
+    StorageManager.setCurrentUser(userData);
   };
 
   const handleLogout = async () => {
@@ -193,7 +183,7 @@ function App() {
     // Clear local state
     setUser(null);
     window.location.hash = '';
-    localStorage.removeItem('currentUser');
+    StorageManager.clearSession();
   };
 
   const handleNewAnalysisClick = () => {
@@ -203,12 +193,8 @@ function App() {
 
   const handleNewAnalysis = (analysis: Analysis) => {
     // Analysis is already saved to Supabase by AnalysisProgress component
-    // Save to localStorage for "View Last Analysis" button and navigation
-    try {
-      localStorage.setItem('currentAnalysis', JSON.stringify(analysis));
-    } catch (error) {
-      console.error('Error saving analysis to localStorage:', error);
-    }
+    // Save to storage for "View Last Analysis" button and navigation
+    StorageManager.setCurrentAnalysis(analysis);
     setCurrentAnalysis(analysis);
     window.location.hash = 'analysis-results';
   };
@@ -228,26 +214,16 @@ function App() {
     // Update state
     setUser(updatedUser);
 
-    // Update localStorage
-    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-
-    // Also update in users list
-    try {
-      const usersList = JSON.parse(localStorage.getItem('users') || '[]');
-      const updatedUsersList = usersList.map((u: User) =>
-        u.id === user.id ? { ...u, subscription: plan, paymentMethodAdded: true } : u
-      );
-      localStorage.setItem('users', JSON.stringify(updatedUsersList));
-    } catch (error) {
-      console.error('Error updating users list:', error);
-    }
+    // Update storage
+    StorageManager.setCurrentUser(updatedUser);
+    StorageManager.updateUserInList(user.id, { subscription: plan as User['subscription'], paymentMethodAdded: true });
 
     // Navigate to dashboard
     window.location.hash = 'dashboard';
   };
 
   const handleGetStarted = () => {
-    window.location.hash = 'auth';
+    window.location.hash = 'auth?signup=true';
   };
 
   const renderContent = () => {
@@ -283,7 +259,7 @@ function App() {
               onUpdateProfile={(updates) => {
                 const updatedUser = { ...user, ...updates };
                 setUser(updatedUser);
-                localStorage.setItem('currentUserId', updatedUser.id);
+                StorageManager.setCurrentUser(updatedUser);
               }}
             />
           ) : <AuthPage onLogin={handleLogin} />;

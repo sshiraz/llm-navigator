@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, Filter, Download, RefreshCw, CreditCard, Clock, CheckCircle, XCircle, ArrowLeft, Shield, Save, X, Trash2, Loader2 } from 'lucide-react';
+import { Users, Search, Filter, Download, RefreshCw, CreditCard, Clock, CheckCircle, XCircle, ArrowLeft, Shield, Save, X, Trash2, Loader2, Key } from 'lucide-react';
 import { User } from '../../types';
 import { supabase } from '../../lib/supabase';
 
@@ -26,6 +26,12 @@ export default function UserDashboard() {
     paymentMethodAdded: false
   });
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+
+  // State for password reset
+  const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [resetPasswordError, setResetPasswordError] = useState<string | null>(null);
 
   // Check if current user is admin
   const [isAdmin, setIsAdmin] = useState(false);
@@ -309,6 +315,68 @@ export default function UserDashboard() {
       alert(`Failed to delete user: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setDeletingUserId(null);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetPasswordUser) return;
+
+    // Validate password
+    if (!newPassword || newPassword.length < 6) {
+      setResetPasswordError('Password must be at least 6 characters');
+      return;
+    }
+
+    // Get current admin user ID
+    const currentUserStr = localStorage.getItem('currentUser');
+    if (!currentUserStr) {
+      setResetPasswordError('You must be logged in as an admin');
+      return;
+    }
+
+    const currentUser = JSON.parse(currentUserStr);
+    if (!currentUser.isAdmin) {
+      setResetPasswordError('You must be an admin to reset passwords');
+      return;
+    }
+
+    setIsResettingPassword(true);
+    setResetPasswordError(null);
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-reset-password`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            targetUserId: resetPasswordUser.id,
+            newPassword: newPassword,
+            adminUserId: currentUser.id
+          })
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to reset password');
+      }
+
+      console.log('Password reset successful:', result);
+      alert(`Password reset successfully for ${resetPasswordUser.email}`);
+
+      // Close modal and reset state
+      setResetPasswordUser(null);
+      setNewPassword('');
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      setResetPasswordError(error instanceof Error ? error.message : 'Failed to reset password');
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -601,6 +669,21 @@ export default function UserDashboard() {
                           >
                             Edit
                           </button>
+                          {!user.isAdmin && (
+                            <button
+                              onClick={() => {
+                                setResetPasswordUser(user);
+                                setNewPassword('');
+                                setResetPasswordError(null);
+                              }}
+                              className="text-amber-600 hover:text-amber-800 font-medium text-sm flex items-center space-x-1"
+                              disabled={deletingUserId === user.id}
+                              title="Reset user password"
+                            >
+                              <Key className="w-4 h-4" />
+                              <span>Reset Password</span>
+                            </button>
+                          )}
                           <button
                             onClick={() => handleDeleteUser(user)}
                             disabled={deletingUserId === user.id || user.isAdmin}
@@ -751,6 +834,87 @@ export default function UserDashboard() {
               >
                 <Save className="w-4 h-4" />
                 <span>Save Changes</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {resetPasswordUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Reset Password</h3>
+              <button
+                onClick={() => {
+                  setResetPasswordUser(null);
+                  setNewPassword('');
+                  setResetPasswordError(null);
+                }}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-gray-600">
+                Set a new password for <span className="font-semibold">{resetPasswordUser.email}</span>
+              </p>
+            </div>
+
+            {resetPasswordError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {resetPasswordError}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password (min 6 characters)"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  disabled={isResettingPassword}
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex space-x-3">
+              <button
+                onClick={() => {
+                  setResetPasswordUser(null);
+                  setNewPassword('');
+                  setResetPasswordError(null);
+                }}
+                disabled={isResettingPassword}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleResetPassword}
+                disabled={isResettingPassword || !newPassword}
+                className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isResettingPassword ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Resetting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Key className="w-4 h-4" />
+                    <span>Reset Password</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

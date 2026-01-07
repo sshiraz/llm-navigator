@@ -14,6 +14,55 @@ vi.mock('../../utils/fraudPrevention', () => ({
   },
 }));
 
+// Helper to create a delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Mock AuthService
+vi.mock('../../services/authService', () => ({
+  AuthService: {
+    signIn: vi.fn().mockImplementation(async (email: string, password: string) => {
+      // Add a small delay to allow loading state to be visible
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Simulate different responses based on email
+      if (email === 'notfound@example.com') {
+        return {
+          success: false,
+          error: 'No account found with this email address',
+        };
+      }
+      if (email === 'demo@example.com' || email === 'existing@test.com') {
+        return {
+          success: true,
+          data: {
+            id: 'demo-user-id',
+            email: email,
+            name: 'Demo User',
+            subscription: 'trial',
+          },
+        };
+      }
+      return {
+        success: false,
+        error: 'Invalid credentials',
+      };
+    }),
+    signUp: vi.fn().mockImplementation(async () => {
+      // Add a small delay to allow loading state to be visible
+      await new Promise(resolve => setTimeout(resolve, 100));
+      return {
+        success: true,
+        data: {
+          id: 'new-user-id',
+          email: 'test@example.com',
+          name: 'Test User',
+          subscription: 'trial',
+        },
+      };
+    }),
+  },
+}));
+
 describe('AuthPage Component', () => {
   const mockOnLogin = vi.fn();
 

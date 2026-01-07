@@ -3,7 +3,8 @@ import { CreditCard, User, CheckCircle } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
 import { Elements } from '@stripe/react-stripe-js';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { STRIPE_CONFIG, stripePromise, createPaymentIntent } from '../../utils/stripeUtils';
+import { STRIPE_CONFIG, stripePromise } from '../../utils/stripeUtils';
+import { PaymentService } from '../../services/paymentService';
 import { isLiveMode } from '../../utils/liveMode';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
 import SecurePaymentNotice from '../UI/SecurePaymentNotice';
@@ -92,12 +93,12 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
       // For live mode, we should create a real payment intent on the server
       if (isLiveMode) {
         try {
-          // Create payment intent using the utility function
-          const result = await createPaymentIntent(amount, {
-            userId: 'current-user', // In a real app, get this from auth
+          // Create payment intent using PaymentService
+          const result = await PaymentService.createPaymentIntent(
+            'current-user', // In a real app, get this from auth
             plan,
-            email: cardName // Using name as email for demo
-          });
+            cardName // Using name as email for demo
+          );
 
           if (!result.success) {
             throw new Error(result.error || 'Failed to create payment intent');
@@ -139,7 +140,7 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
             }, 1500);
             return;
           }
-        } catch (err) {
+        } catch (err: any) {
           const errorMessage = err.message || 'Payment failed. Please try again.';
           setCardError(errorMessage);
           PaymentLogger.trackPaymentFlow('Live payment failed', { error: errorMessage });
@@ -165,7 +166,7 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
           brand: paymentMethod.card?.brand || 'visa'
         });
       }, 1500);
-    } catch (err) {
+    } catch (err: any) {
       const errorMessage = err.message || 'Payment failed. Please try again.';
       setCardError(errorMessage);
       PaymentLogger.trackPaymentFlow('Payment failed', { error: errorMessage });

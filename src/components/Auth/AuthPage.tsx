@@ -30,7 +30,11 @@ function profileToUser(profile: any): User {
 }
 
 export default function AuthPage({ onLogin }: AuthPageProps) {
-  const [isLogin, setIsLogin] = useState(true);
+  // Check URL for signup parameter (e.g., #auth?signup=true)
+  const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+  const startWithSignup = urlParams.get('signup') === 'true';
+
+  const [isLogin, setIsLogin] = useState(!startWithSignup);
   const [formData, setFormData] = useState({
     name: '',
     email: '',

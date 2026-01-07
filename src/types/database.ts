@@ -1,4 +1,72 @@
-import type { AnalysisProvider } from './index';
+import type { AnalysisProvider, Recommendation } from './index';
+
+// Reusable type definitions for database schema
+type AnalysisMetrics = {
+  contentClarity: number;
+  semanticRichness: number;
+  structuredData: number;
+  naturalLanguage: number;
+  keywordRelevance: number;
+};
+
+type CostInfo = {
+  totalCost: number;
+  breakdown: {
+    crawling: number;
+    embeddings: number;
+    insights: number;
+    total: number;
+  };
+  tokensUsed: {
+    input: number;
+    output: number;
+    embeddings: number;
+  };
+};
+
+type CrawlDataType = {
+  url: string;
+  title: string;
+  metaDescription: string;
+  headings: { level: number; text: string; hasDirectAnswer: boolean }[];
+  schemaTypes: string[];
+  contentStats: {
+    wordCount: number;
+    paragraphCount: number;
+    avgSentenceLength: number;
+    readabilityScore: number;
+  };
+  technicalSignals: {
+    hasCanonical: boolean;
+    hasOpenGraph: boolean;
+    hasTwitterCard: boolean;
+    mobileViewport: boolean;
+    hasHttps: boolean;
+    loadTime: number;
+  };
+  issues: { type: 'error' | 'warning' | 'info'; message: string }[];
+};
+
+type ApiCosts = {
+  crawling: number;
+  embeddings: number;
+  insights: number;
+  total: number;
+};
+
+type ApiTokens = {
+  input: number;
+  output: number;
+  embeddings: number;
+};
+
+type FraudChecks = {
+  emailSimilarity: boolean;
+  deviceFingerprint: boolean;
+  ipAddress: boolean;
+  browserPattern: boolean;
+  timePattern: boolean;
+};
 
 export interface Database {
   public: {
@@ -115,44 +183,10 @@ export interface Database {
           insights: string;
           predicted_rank: number;
           category: string;
-          recommendations: any[];
+          recommendations: Recommendation[];
           is_simulated: boolean;
-          cost_info?: {
-            totalCost: number;
-            breakdown: {
-              crawling: number;
-              embeddings: number;
-              insights: number;
-              total: number;
-            };
-            tokensUsed: {
-              input: number;
-              output: number;
-              embeddings: number;
-            };
-          };
-          crawl_data?: {
-            url: string;
-            title: string;
-            metaDescription: string;
-            headings: { level: number; text: string; hasDirectAnswer: boolean }[];
-            schemaTypes: string[];
-            contentStats: {
-              wordCount: number;
-              paragraphCount: number;
-              avgSentenceLength: number;
-              readabilityScore: number;
-            };
-            technicalSignals: {
-              hasCanonical: boolean;
-              hasOpenGraph: boolean;
-              hasTwitterCard: boolean;
-              mobileViewport: boolean;
-              hasHttps: boolean;
-              loadTime: number;
-            };
-            issues: { type: 'error' | 'warning' | 'info'; message: string }[];
-          };
+          cost_info?: CostInfo;
+          crawl_data?: CrawlDataType;
           created_at: string;
         };
         Insert: {
@@ -173,10 +207,10 @@ export interface Database {
           insights: string;
           predicted_rank: number;
           category: string;
-          recommendations: any[];
+          recommendations: Recommendation[];
           is_simulated?: boolean;
-          cost_info?: any;
-          crawl_data?: any;
+          cost_info?: CostInfo;
+          crawl_data?: CrawlDataType;
           created_at?: string;
         };
         Update: {
@@ -187,14 +221,14 @@ export interface Database {
           keywords?: string[];
           score?: number;
           model?: string;
-          metrics?: any;
+          metrics?: AnalysisMetrics;
           insights?: string;
           predicted_rank?: number;
           category?: string;
-          recommendations?: any[];
+          recommendations?: Recommendation[];
           is_simulated?: boolean;
-          cost_info?: any;
-          crawl_data?: any;
+          cost_info?: CostInfo;
+          crawl_data?: CrawlDataType;
         };
       };
       api_usage: {
@@ -223,8 +257,8 @@ export interface Database {
           user_id: string;
           analysis_id: string;
           timestamp?: string;
-          costs: any;
-          tokens: any;
+          costs: ApiCosts;
+          tokens: ApiTokens;
           provider: AnalysisProvider;
           success: boolean;
           error_code?: string;
@@ -233,8 +267,8 @@ export interface Database {
           id?: string;
           user_id?: string;
           analysis_id?: string;
-          costs?: any;
-          tokens?: any;
+          costs?: ApiCosts;
+          tokens?: ApiTokens;
           provider?: AnalysisProvider;
           success?: boolean;
           error_code?: string;
@@ -268,7 +302,7 @@ export interface Database {
           risk_score: number;
           is_allowed: boolean;
           reason?: string;
-          checks: any;
+          checks: FraudChecks;
           created_at?: string;
         };
         Update: {
@@ -280,7 +314,7 @@ export interface Database {
           risk_score?: number;
           is_allowed?: boolean;
           reason?: string;
-          checks?: any;
+          checks?: FraudChecks;
         };
       };
     };

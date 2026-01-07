@@ -5,6 +5,160 @@
 
 ---
 
+## 2026-01-07: Code maintainability improvements and test suite fixes
+
+**Commit:** `pending` - Code maintainability improvements and test suite fixes
+
+### Context
+
+The codebase had several maintainability issues: `analysisEngine.ts` was 1,273 lines, payment logic was scattered across 4 files, localStorage access was inconsistent, and `database.ts` had 13 untyped `any` parameters. Additionally, the test suite had 40 failing tests due to missing mocks, preventing reliable CI/CD.
+
+### Changes & Reasoning
+
+#### 1. Split analysisEngine.ts into Modules (1,273 → 357 lines)
+
+**Problem:** `analysisEngine.ts` was a monolithic 1,273-line file containing model configs, helper functions, AEO analysis logic, and recommendation generation - violating single responsibility principle.
+
+**Solution:** Extracted into focused modules:
+- `src/utils/analysis/modelConfig.ts` - AI model configurations (GPT-4, Claude, etc.)
+- `src/utils/analysis/analysisHelpers.ts` - Score calculations, category mapping, simulated data generation
+- `src/utils/analysis/aeoAnalysis.ts` - Real and simulated AEO analysis orchestration
+- `src/utils/analysis/recommendations.ts` - Recommendation generation from crawl data
+- `src/utils/analysis/index.ts` - Clean re-exports
+
+**Why this matters:** Smaller, focused files are easier to test, review, and maintain. Each module now has a single responsibility.
+
+#### 2. Consolidate Payment Utilities (4 → 3 files)
+
+**Problem:** Payment logic was scattered across `paymentUtils.ts`, `paymentService.ts`, `stripeUtils.ts`, and `paymentLogger.ts` with duplicate functions.
+
+**Solution:**
+- Moved `fixSubscription()`, `checkSubscriptionStatus()`, `getLatestPayment()` from `paymentUtils.ts` into `PaymentService` class
+- Removed duplicate `createPaymentIntent` from `stripeUtils.ts`
+- Deleted `paymentUtils.ts` entirely
+- Updated `SubscriptionFixTool.tsx` and `CreditCardForm.tsx` to use `PaymentService`
+
+**Why this matters:** Single source of truth for payment operations. Easier to maintain and test.
+
+#### 3. Create StorageManager Abstraction
+
+**Problem:** Direct `localStorage.getItem()`/`setItem()` calls were scattered throughout the codebase with inconsistent error handling and key names.
+
+**Solution:** Created `src/utils/storageManager.ts` with:
+- Centralized storage keys as constants
+- Type-safe getters/setters for User, Analysis, and collections
+- Consistent JSON parse/stringify with error handling
+- Helper methods: `clearSession()`, `clearAll()`, `getStorageSize()`
+
+**Why this matters:** Single point of control for all localStorage operations. Easy to migrate to different storage (IndexedDB, etc.) later.
+
+#### 4. Fix 13 'any' Types in database.ts
+
+**Problem:** `database.ts` had 13 parameters typed as `any`, losing TypeScript's safety benefits.
+
+**Solution:** Added proper types from `src/types/database.ts`:
+- `DbUser`, `DbAnalysis`, `DbPayment` for database row types
+- `DbUserInsert`, `DbAnalysisInsert` for insert operations
+- Explicit return types on all functions
+
+**Why this matters:** Type safety catches bugs at compile time instead of runtime.
+
+#### 5. Add Comprehensive Test Coverage
+
+**Problem:** No tests existed for payment service, analysis helpers, or storage manager.
+
+**Solution:** Created three new test files:
+- `paymentService.test.ts` - 19 tests for payment operations
+- `analysisHelpers.test.ts` - 39 tests for score calculations, category mapping
+- `storageManager.test.ts` - 20 tests for localStorage abstraction
+
+**Why this matters:** Tests document expected behavior and prevent regressions.
+
+#### 6. Fix All Failing Tests (40 → 0 failures)
+
+**Problem:** Test suite had 40 failing tests across 4 files due to missing mocks:
+- `UserDashboard.test.tsx` - 26 failures (no Supabase mock)
+- `navigation.test.tsx` - 6 failures (AuthService not mocked)
+- `AuthPage.test.tsx` - 2 failures (AuthService not mocked)
+- `analysisEngine.test.ts` - 6 failures (referenced moved functions)
+
+**Solution:**
+
+**UserDashboard.test.tsx:**
+- Added Supabase mock using `vi.hoisted()` for mutable test data
+- Mock returns `mockSupabaseData.users` which can be modified per-test
+- Reset mock data in `beforeEach` to prevent test pollution
+
+**navigation.test.tsx:**
+- Added `AuthService.getCurrentSession` mock that reads from localStorage
+- Returns proper session/profile structure when user exists in localStorage
+- Fixed test assertion looking for wrong text ("Check Your AI Citations" → "Analyze Your AI Visibility")
+
+**AuthPage.test.tsx:**
+- Added `AuthService` mock with `signIn` and `signUp` methods
+- Added 100ms delay to allow loading state ("Signing In...") to be visible
+- Mock returns different responses based on email input
+
+**analysisEngine.test.ts:**
+- Updated imports to use `performSimulatedAEOAnalysis` from new module location
+- Fixed 6 tests that were calling moved functions
+
+#### 7. Update CLAUDE.md with Test Requirements
+
+**Problem:** No documented requirement to run tests before commits.
+
+**Solution:** Added to CLAUDE.md:
+- "Before Every Commit" section requiring `npm run test:run && npm run build`
+- **All tests must pass (0 failures) before merge**
+- Template for documenting test results in BRANCH_ANALYSIS.md
+- "Pre-Commit Checklist (Ready to Merge)" section
+
+**Why this matters:** Prevents broken code from being merged. Creates audit trail of test health.
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `src/utils/analysis/modelConfig.ts` | Created | Extract model configs from analysisEngine |
+| `src/utils/analysis/analysisHelpers.ts` | Created | Extract helper functions |
+| `src/utils/analysis/aeoAnalysis.ts` | Created | Extract AEO analysis logic |
+| `src/utils/analysis/recommendations.ts` | Created | Extract recommendation generation |
+| `src/utils/analysis/index.ts` | Created | Module exports |
+| `src/utils/analysisEngine.ts` | Modified | Reduced from 1,273 to 357 lines |
+| `src/utils/storageManager.ts` | Created | localStorage abstraction |
+| `src/services/paymentService.ts` | Modified | Added fix/check subscription methods |
+| `src/utils/stripeUtils.ts` | Modified | Removed duplicate functions |
+| `src/utils/paymentUtils.ts` | Deleted | Consolidated into paymentService |
+| `src/types/database.ts` | Modified | Fixed 13 'any' types |
+| `src/components/Debug/SubscriptionFixTool.tsx` | Modified | Use PaymentService |
+| `src/components/Payment/CreditCardForm.tsx` | Modified | Use PaymentService |
+| `src/services/paymentService.test.ts` | Created | 19 tests for payment service |
+| `src/utils/analysis/analysisHelpers.test.ts` | Created | 39 tests for helpers |
+| `src/utils/storageManager.test.ts` | Created | 20 tests for storage |
+| `src/utils/analysisEngine.test.ts` | Modified | Fix imports for moved functions |
+| `src/components/Admin/UserDashboard.test.tsx` | Modified | Add Supabase mock |
+| `src/test/navigation.test.tsx` | Modified | Add AuthService mock |
+| `src/components/Auth/AuthPage.test.tsx` | Modified | Add AuthService mock |
+| `CLAUDE.md` | Modified | Add test requirements |
+
+### Testing Performed
+
+- **Test Suite:** ✅ 228 passed, 0 failed (228 total)
+- **Build:** ✓ Passed
+- Verified all new test files run correctly
+- Confirmed mocks properly isolate tests from external dependencies
+- Verified analysisEngine still works after modularization
+
+### Lessons Learned
+
+1. **Use `vi.hoisted()` for mutable mock data** - Allows changing mock return values per-test without complex mock reset logic.
+2. **Mock at the service layer, not Supabase** - Mocking `AuthService.getCurrentSession()` is cleaner than mocking raw Supabase calls.
+3. **Loading states need delays in tests** - Async mocks resolve instantly; add small delays (100ms) to test loading UI.
+4. **Modularization enables testing** - Extracting `analysisHelpers.ts` made it trivial to add 39 focused unit tests.
+5. **Document test requirements** - Explicit "0 failures required" rule prevents accumulating broken tests.
+
+---
+
 ## 2026-01-06: Remove Projects feature and add Citation Results UI
 
 **Commit:** `pending` - Remove Projects feature and add Citation Results UI

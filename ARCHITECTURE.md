@@ -1,6 +1,6 @@
 # LLM Navigator Architecture
 
-> Last updated: 2026-01-05
+> Last updated: 2026-01-07
 
 ## Tech Stack
 
@@ -34,7 +34,6 @@ llm-navigator/
 │   │   ├── Legal/           # Privacy policy, terms of service
 │   │   ├── Payment/         # Credit card form, checkout
 │   │   ├── Pricing/         # Pricing display
-│   │   ├── Projects/        # Project management
 │   │   ├── Reports/         # PDF export, reports
 │   │   ├── Subscription/    # PricingTiers, plan selection
 │   │   └── UI/              # Shared UI components
@@ -42,12 +41,18 @@ llm-navigator/
 │   ├── services/
 │   │   ├── analysisService.ts  # Analysis CRUD
 │   │   ├── authService.ts      # Auth operations + localStorage cleanup
-│   │   ├── paymentService.ts   # Payment records
-│   │   ├── projectService.ts   # Project CRUD
+│   │   ├── paymentService.ts   # Payment records (consolidated)
 │   │   └── usageService.ts     # API usage tracking
 │   │
 │   ├── utils/
-│   │   ├── analysisEngine.ts   # Core AEO logic (real vs simulated)
+│   │   ├── analysisEngine.ts   # Core AEO orchestration
+│   │   ├── analysis/           # Modularized analysis logic
+│   │   │   ├── index.ts        # Re-exports all analysis modules
+│   │   │   ├── aeoAnalysis.ts  # Simulated AEO analysis
+│   │   │   ├── analysisHelpers.ts # Citation/URL helpers
+│   │   │   ├── modelConfig.ts  # AI model configurations
+│   │   │   └── recommendations.ts # Recommendation generation
+│   │   ├── storageManager.ts   # localStorage abstraction
 │   │   ├── costTracker.ts      # Usage limits & costs
 │   │   ├── stripeUtils.ts      # Stripe API helpers
 │   │   └── fraudPrevention.ts  # Trial abuse prevention
@@ -130,7 +135,9 @@ AnalysisResults.tsx (display)
 ### Core Logic
 | File | Purpose |
 |------|---------|
-| `src/utils/analysisEngine.ts` | Core analysis logic, routes real vs simulated |
+| `src/utils/analysisEngine.ts` | Core analysis orchestration |
+| `src/utils/analysis/` | Modularized analysis logic (aeoAnalysis, helpers, recommendations) |
+| `src/utils/storageManager.ts` | localStorage abstraction layer |
 | `src/utils/costTracker.ts` | Usage limits, cost calculations |
 | `src/utils/stripeUtils.ts` | Stripe checkout and subscription helpers |
 | `src/utils/fraudPrevention.ts` | Trial abuse detection (email, fingerprint, IP) |
@@ -140,8 +147,7 @@ AnalysisResults.tsx (display)
 |------|---------|
 | `src/services/analysisService.ts` | Analysis CRUD + localStorage migration |
 | `src/services/authService.ts` | Auth operations + localStorage cleanup |
-| `src/services/paymentService.ts` | Payment record management |
-| `src/services/projectService.ts` | Project CRUD |
+| `src/services/paymentService.ts` | Payment record management (consolidated) |
 | `src/services/usageService.ts` | API usage tracking |
 
 ### Edge Functions
@@ -195,8 +201,11 @@ PERPLEXITY_API_KEY=pplx-xxx
 
 ## Testing
 
+**All tests must pass (0 failures) before code is ready to merge.**
+
 ```bash
-npm run test           # Unit tests (Vitest)
+npm run test           # Unit tests (Vitest) - watch mode
+npm run test:run       # Unit tests once (228 tests)
 npm run test:functions # Edge Function tests
 npm run test:payment   # Payment flow tests
 ```

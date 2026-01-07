@@ -4,8 +4,6 @@ import { getPlanAmount as getPlanAmountFromConfig } from './planConfig';
 
 // Environment variables
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Initialize Stripe
 export const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
@@ -90,104 +88,6 @@ export const validateStripeConfig = () => {
     isValid: issues.length === 0,
     issues
   };
-};
-
-// Create payment intent
-export const createPaymentIntent = async (amount: number, metadata: any) => {
-  try {
-    PaymentLogger.trackPaymentFlow('Creating payment intent', { amount, metadata });
-    
-    const response = await fetch(`${supabaseUrl}/functions/v1/create-payment-intent`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseAnonKey}`
-      },
-      body: JSON.stringify({
-        amount,
-        currency: 'usd',
-        metadata
-      })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to create payment intent');
-    }
-    
-    const data = await response.json();
-    PaymentLogger.trackPaymentFlow('Payment intent created', data);
-    
-    return { success: true, data };
-  } catch (error) {
-    PaymentLogger.log('error', 'StripeUtils', 'Failed to create payment intent', error);
-    return { success: false, error: error.message };
-  }
-};
-
-// Create subscription
-export const createSubscription = async (userId: string, email: string, plan: string, paymentMethodId: string) => {
-  try {
-    const planConfig = STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS];
-    if (!planConfig) {
-      return { success: false, error: 'Invalid plan selected' };
-    }
-    
-    const response = await fetch(`${supabaseUrl}/functions/v1/create-subscription`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseAnonKey}`
-      },
-      body: JSON.stringify({
-        userId,
-        email,
-        plan,
-        priceId: planConfig.priceId,
-        paymentMethodId
-      })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to create subscription');
-    }
-    
-    const data = await response.json();
-    return { success: true, data };
-  } catch (error) {
-    PaymentLogger.log('error', 'StripeUtils', 'Failed to create subscription', error);
-    return { success: false, error: error.message };
-  }
-};
-
-// Handle successful payment
-export const handlePaymentSuccess = async (userId: string, plan: string, paymentIntentId: string) => {
-  try {
-    PaymentLogger.trackPaymentFlow('Handling payment success', { userId, plan, paymentIntentId });
-    
-    // Update user in localStorage
-    const currentUserStr = localStorage.getItem('currentUser');
-    if (currentUserStr) {
-      try {
-        const currentUser = JSON.parse(currentUserStr);
-        const updatedUser = {
-          ...currentUser,
-          subscription: plan,
-          paymentMethodAdded: true
-        };
-        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-        PaymentLogger.log('info', 'StripeUtils', 'Updated user in localStorage', { userId, plan });
-      } catch (e) {
-        console.error('Failed to update stored user', e);
-      }
-    }
-    
-    return { success: true };
-  } catch (error) {
-    PaymentLogger.log('error', 'StripeUtils', 'Failed to handle payment success', error);
-    return { success: false, error: error.message };
-  }
 };
 
 // Get plan amount

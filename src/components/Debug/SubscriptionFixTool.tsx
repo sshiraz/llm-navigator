@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { UserCheck, AlertTriangle, CheckCircle, RefreshCw, X, Search, CreditCard } from 'lucide-react';
 import { PaymentLogger } from '../../utils/paymentLogger';
 import { isCurrentUserAdmin } from '../../utils/userUtils';
-import { checkSubscriptionStatus, getLatestPayment, fixSubscription } from '../../utils/paymentUtils';
+import { PaymentService } from '../../services/paymentService';
 import { isLiveMode } from '../../utils/liveMode';
 import LiveModeIndicator from '../UI/LiveModeIndicator';
 
@@ -27,59 +27,59 @@ export default function SubscriptionFixTool() {
       alert('Please enter a user ID');
       return;
     }
-    
+
     setIsLoading(true);
     setCheckResult(null);
     setLatestPayment(null);
-    
+
     try {
-      const checkResult = await checkSubscriptionStatus(userId);
+      const status = await PaymentService.checkSubscriptionStatus(userId);
       setCheckResult(status);
-      
+
       // If there's a payment, get the details
       if (status.hasPayment) {
-        const payment = await getLatestPayment(userId);
+        const payment = await PaymentService.getLatestPayment(userId);
         setLatestPayment(payment);
-        
+
         // Set the plan based on the payment
         if (payment && payment.plan) {
           setPlan(payment.plan);
         }
       }
-      
+
       PaymentLogger.log('info', 'SubscriptionFixTool', 'Checked subscription status', { userId, status });
-    } catch (error) {
+    } catch (error: any) {
       PaymentLogger.log('error', 'SubscriptionFixTool', 'Failed to check subscription', error);
       alert(`Error checking subscription: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
   };
-  
-  const fixSubscription = async () => {
+
+  const handleFixSubscription = async () => {
     if (!userId) {
       alert('Please enter a user ID');
       return;
     }
-    
+
     setIsLoading(true);
     setResult(null);
-    
+
     try {
-      const result = await fixSubscription(userId, plan);
-      setResult(result);
-      
-      if (result.success) {
+      const fixResult = await PaymentService.fixSubscription(userId, plan);
+      setResult(fixResult);
+
+      if (fixResult.success) {
         // Refresh the check result
-        const status = await checkSubscriptionStatus(userId);
+        const status = await PaymentService.checkSubscriptionStatus(userId);
         setCheckResult(status);
       }
-      
-      PaymentLogger.log(result.success ? 'info' : 'error', 'SubscriptionFixTool', 
-        result.success ? 'Fixed subscription successfully' : 'Failed to fix subscription', 
-        { userId, plan, result }
+
+      PaymentLogger.log(fixResult.success ? 'info' : 'error', 'SubscriptionFixTool',
+        fixResult.success ? 'Fixed subscription successfully' : 'Failed to fix subscription',
+        { userId, plan, result: fixResult }
       );
-    } catch (error) {
+    } catch (error: any) {
       PaymentLogger.log('error', 'SubscriptionFixTool', 'Error fixing subscription', error);
       alert(`Error fixing subscription: ${error.message}`);
     } finally {
@@ -256,7 +256,7 @@ export default function SubscriptionFixTool() {
           {/* Fix Button */}
           {checkResult && (
             <button
-              onClick={fixSubscription}
+              onClick={handleFixSubscription}
               disabled={isLoading || !checkResult.hasPayment}
               className={`w-full py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center space-x-2 ${
                 checkResult.needsFix
