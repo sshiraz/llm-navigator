@@ -9,6 +9,9 @@
 - [x] AEO-specific recommendations
 - [x] Brand name detection
 - [x] Provider selection (choose which AI to query)
+- [x] Citation Results Detail UI (per-prompt AI responses, expandable accordion)
+- [x] Competitor Strategy with real data (uses citationResults, not mock)
+- [x] Demo Mode indicator (clear banner for simulated vs real data)
 
 ### History & Tracking
 - [x] Analysis history page
@@ -20,6 +23,7 @@
 - [x] check-citations edge function
 - [x] Supabase storage for analyses
 - [x] Cost tracking for citation checks
+- [x] Analysis engine tests (16 tests for real vs simulated flows)
 
 ---
 

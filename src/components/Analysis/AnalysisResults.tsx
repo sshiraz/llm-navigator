@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { ArrowLeft, ExternalLink, Clock, Zap, AlertCircle, CheckCircle, Download, FileText, Trash2, X } from 'lucide-react';
 import { Analysis } from '../../types';
 import MetricsBreakdown from './MetricsBreakdown';
+import CitationResultsDetail from './CitationResultsDetail';
 import { mockAnalyses } from '../../utils/mockData';
 import { generatePDFReport } from '../../utils/pdfGenerator';
 import { AnalysisService } from '../../services/analysisService'; 
@@ -271,12 +272,22 @@ export default function AnalysisResults({ analysis, onBack }: AnalysisResultsPro
 
         {/* Enhanced Metrics Breakdown */}
         <div className="mb-8">
-          <MetricsBreakdown 
-            analysis={analysis} 
-            competitors={competitorAnalyses} 
+          <MetricsBreakdown
+            analysis={analysis}
+            competitors={competitorAnalyses}
             onViewInsights={handleViewInsights}
           />
         </div>
+
+        {/* Citation Results Detail - Only show for AEO analyses with citation data */}
+        {analysis.citationResults && analysis.citationResults.length > 0 && (
+          <div className="mb-8">
+            <CitationResultsDetail
+              citationResults={analysis.citationResults}
+              overallCitationRate={analysis.overallCitationRate || 0}
+            />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* AI Insights */}

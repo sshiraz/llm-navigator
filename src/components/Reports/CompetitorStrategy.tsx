@@ -4,7 +4,6 @@ import { Analysis, CitationResult, CompetitorCitation } from '../../types';
 
 interface CompetitorStrategyProps {
   analysis: Analysis;
-  competitors?: Analysis[];
 }
 
 // Extract competitor data from AEO analysis
@@ -13,20 +12,51 @@ function extractCompetitorData(analysis: Analysis): {
   totalQueries: number;
   userCitationCount: number;
 } {
-  // Check if this is an AEO analysis with citation results stored in recommendations
   const isAEO = analysis.category === 'Answer Engine Optimization';
 
   if (!isAEO) {
-    // Return empty data for non-AEO analyses
     return { competitors: [], totalQueries: 0, userCitationCount: 0 };
   }
 
-  // For AEO analyses, we need to extract competitor data
-  // Citation results may be stored in insights or as part of the analysis
-  // Parse competitor mentions from recommendations and insights
+  // Use real citationResults if available
+  if (analysis.citationResults && analysis.citationResults.length > 0) {
+    const competitorMap = new Map<string, { count: number; contexts: string[] }>();
+
+    // Extract competitors from each citation result
+    analysis.citationResults.forEach(result => {
+      result.competitorsCited.forEach(comp => {
+        const existing = competitorMap.get(comp.domain);
+        if (existing) {
+          existing.count++;
+          if (comp.context && !existing.contexts.includes(comp.context)) {
+            existing.contexts.push(comp.context);
+          }
+        } else {
+          competitorMap.set(comp.domain, {
+            count: 1,
+            contexts: comp.context ? [comp.context] : []
+          });
+        }
+      });
+    });
+
+    const totalQueries = analysis.citationResults.length;
+    const userCitationCount = analysis.citationResults.filter(r => r.isCited).length;
+
+    const competitors = Array.from(competitorMap.entries())
+      .map(([domain, data]) => ({
+        domain,
+        citationCount: data.count,
+        contexts: data.contexts
+      }))
+      .sort((a, b) => b.citationCount - a.citationCount);
+
+    return { competitors, totalQueries, userCitationCount };
+  }
+
+  // Fallback: Try to parse from insights (legacy behavior)
   const competitorMap = new Map<string, { count: number; contexts: string[] }>();
 
-  // Try to parse citation data from insights (if it contains JSON)
   try {
     const insightsMatch = analysis.insights.match(/Competitors cited: ([\w., ]+)/);
     if (insightsMatch) {
@@ -41,22 +71,6 @@ function extractCompetitorData(analysis: Analysis): {
     // Ignore parsing errors
   }
 
-  // Also check if there are competitor mentions in the insights text
-  const commonCompetitorDomains = [
-    'hubspot.com', 'mailchimp.com', 'salesforce.com', 'activecampaign.com',
-    'convertkit.com', 'sendinblue.com', 'constantcontact.com', 'klaviyo.com',
-    'marketo.com', 'pardot.com', 'intercom.com', 'drift.com', 'zendesk.com'
-  ];
-
-  commonCompetitorDomains.forEach(domain => {
-    if (analysis.insights.toLowerCase().includes(domain.replace('.com', ''))) {
-      if (!competitorMap.has(domain)) {
-        competitorMap.set(domain, { count: 1, contexts: ['Mentioned in analysis'] });
-      }
-    }
-  });
-
-  // Calculate user citation count from score (for AEO, score represents citation rate)
   const totalQueries = analysis.keywords.length || 1;
   const userCitationCount = Math.round((analysis.score / 100) * totalQueries);
 
@@ -71,27 +85,16 @@ function extractCompetitorData(analysis: Analysis): {
   return { competitors, totalQueries, userCitationCount };
 }
 
-export default function CompetitorStrategy({ analysis, competitors: competitorAnalyses = [] }: CompetitorStrategyProps) {
+export default function CompetitorStrategy({ analysis }: CompetitorStrategyProps) {
   const isAEO = analysis.category === 'Answer Engine Optimization';
 
-  // Use competitor analyses if provided, otherwise try to extract from analysis
-  const hasCompetitorAnalyses = competitorAnalyses.length > 0;
-
-  // Extract competitor data from the analysis insights (for AEO)
+  // Extract competitor data from citation results (real or simulated)
   const extractedData = extractCompetitorData(analysis);
 
-  // Build competitor list from competitor analyses
-  const competitorsFromAnalyses = competitorAnalyses.map(comp => ({
-    domain: comp.website,
-    score: comp.score,
-    citationCount: isAEO ? Math.round((comp.score / 100) * (analysis.keywords.length || 1)) : 0,
-    contexts: [`Score: ${comp.score}/100`],
-    analysis: comp
-  })).sort((a, b) => b.score - a.score);
-
-  const citationRate = analysis.score; // For AEO, score IS the citation rate
-  const totalQueries = analysis.keywords.length || 1;
-  const userCitationCount = Math.round((analysis.score / 100) * totalQueries);
+  // Use citation data from analysis
+  const citationRate = analysis.overallCitationRate || 0;
+  const totalQueries = extractedData.totalQueries;
+  const userCitationCount = extractedData.userCitationCount;
 
   const getAEOOpportunities = () => {
     if (!isAEO) {
@@ -149,8 +152,9 @@ export default function CompetitorStrategy({ analysis, competitors: competitorAn
 
   const opportunities = getAEOOpportunities();
 
-  // If not an AEO analysis, show a prompt to run one
-  if (!isAEO) {
+  // If no citation data available (neither real nor simulated), show a prompt to run analysis
+  const hasCitationData = analysis.citationResults && analysis.citationResults.length > 0;
+  if (!isAEO || !hasCitationData) {
     return (
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="text-center">
@@ -162,15 +166,15 @@ export default function CompetitorStrategy({ analysis, competitors: competitorAn
 
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
           <AlertTriangle className="w-12 h-12 text-yellow-600 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">No AEO Analysis Found</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Citation Data Available</h2>
           <p className="text-gray-600 mb-6">
-            Run an AEO (Answer Engine Optimization) analysis to see which competitors are being cited by AI assistants like ChatGPT, Claude, and Perplexity.
+            Run an AI Visibility analysis to see which competitors are being cited by AI assistants like ChatGPT, Claude, and Perplexity.
           </p>
           <button
             onClick={() => window.location.hash = 'new-analysis'}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Run AEO Analysis
+            Run AI Visibility Analysis
           </button>
         </div>
       </div>
@@ -186,6 +190,17 @@ export default function CompetitorStrategy({ analysis, competitors: competitorAn
           See who AI assistants are citing for your target queries
         </p>
       </div>
+
+      {/* Simulated Data Notice */}
+      {analysis.isSimulated && (
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+          <div className="flex items-center justify-center gap-2 text-purple-800">
+            <Zap className="w-5 h-5" />
+            <span className="font-medium">Demo Mode</span>
+            <span className="text-purple-600">— These are simulated results. Upgrade to see real competitor data.</span>
+          </div>
+        </div>
+      )}
 
       {/* Your Citation Performance */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
@@ -214,7 +229,7 @@ export default function CompetitorStrategy({ analysis, competitors: competitorAn
           <div className="bg-white rounded-lg p-4 text-center">
             <Users className="w-6 h-6 text-orange-600 mx-auto mb-2" />
             <div className="text-2xl font-bold text-gray-900">
-              {hasCompetitorAnalyses ? competitorsFromAnalyses.length : extractedData.competitors.length}
+              {extractedData.competitors.length}
             </div>
             <div className="text-xs text-gray-600">Competitors Tracked</div>
           </div>
@@ -230,66 +245,7 @@ export default function CompetitorStrategy({ analysis, competitors: competitorAn
           </h2>
         </div>
 
-        {hasCompetitorAnalyses ? (
-          <div className="space-y-3">
-            {competitorsFromAnalyses.map((competitor, index) => (
-              <div
-                key={competitor.domain}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
-                    index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-400' : 'bg-gray-300'
-                  }`}>
-                    {index + 1}
-                  </div>
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <Globe className="w-4 h-4 text-gray-400" />
-                      <span className="font-medium text-gray-900">{competitor.domain}</span>
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {isAEO ? `Est. ${competitor.citationCount} citations` : competitor.contexts[0]}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className={`text-2xl font-bold ${
-                    competitor.score >= 80 ? 'text-emerald-600' :
-                    competitor.score >= 60 ? 'text-yellow-600' : 'text-red-600'
-                  }`}>
-                    {competitor.score}
-                  </div>
-                  <div className="text-xs text-gray-500">{isAEO ? 'Citation Rate' : 'Score'}</div>
-                </div>
-              </div>
-            ))}
-
-            {/* Your position indicator */}
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
-                    {competitorsFromAnalyses.filter(c => c.score > analysis.score).length + 1}
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-900">{analysis.website}</span>
-                    <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">You</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className={`text-2xl font-bold ${
-                    analysis.score >= 80 ? 'text-emerald-600' :
-                    analysis.score >= 60 ? 'text-yellow-600' : 'text-red-600'
-                  }`}>
-                    {analysis.score}
-                  </div>
-                  <div className="text-xs text-gray-500">{isAEO ? 'Citation Rate' : 'Score'}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : extractedData.competitors.length > 0 ? (
+        {extractedData.competitors.length > 0 ? (
           <div className="space-y-3">
             {extractedData.competitors.map((competitor, index) => (
               <div

@@ -5,6 +5,220 @@
 
 ---
 
+## 2026-01-06: Remove Projects feature and add Citation Results UI
+
+**Commit:** `pending` - Remove Projects feature and add Citation Results UI
+
+### Context
+
+The app had two issues: (1) an abandoned Projects feature that was broken and redundant with Analysis History, and (2) citation data from the backend wasn't being displayed properly in the UI - the Citation Results page showed real competitors but the Competitor Strategy page showed mock data.
+
+### Changes & Reasoning
+
+#### 1. Remove Projects Feature
+
+**Problem:** Projects feature was abandoned - edit buttons didn't work, used mock data, and was redundant with Analysis History.
+
+**Solution:** Deleted `ProjectDetail.tsx`, `ProjectCard.tsx`, `projectService.ts`. Removed from `App.tsx`, `Dashboard.tsx`, `Sidebar.tsx`.
+
+**Why this matters:** Dead code confuses users and developers. Better to remove entirely than maintain broken features.
+
+#### 2. Create CitationResultsDetail Component
+
+**Problem:** The backend returns detailed `citationResults` (per-prompt, per-provider AI responses), but the UI only showed aggregate numbers.
+
+**Solution:** Created `CitationResultsDetail.tsx` with:
+- Summary header with overall citation rate
+- Provider breakdown (ChatGPT/Claude/Perplexity percentages)
+- Expandable accordion for each prompt
+- Citation context when cited
+- Competitor list when not cited
+
+**Why this matters:** Users need to see exactly what AI said about their site to understand why they're cited or not.
+
+#### 3. Fix CompetitorStrategy to Use Real Data
+
+**Problem:** `CompetitorStrategy.tsx` received `mockAnalyses` from `App.tsx` and displayed fake competitors (hubspot, mailchimp) even when real citation data existed.
+
+**Solution:**
+- Changed `hasCompetitorAnalyses` logic to only use passed data when NO real `citationResults` exist
+- Extract competitors from `analysis.citationResults.competitorsCited`
+- Removed mock data passing from `App.tsx`
+
+**Critical fix:** The component now checks `analysis.citationResults` first before falling back.
+
+#### 4. Add Demo Mode Indicator
+
+**Problem:** Users couldn't distinguish between real and simulated data, leading to confusion.
+
+**Solution:** Added purple "Demo Mode" banner in CompetitorStrategy when `analysis.isSimulated === true`.
+
+**Why this matters:** Trial users get simulated data (intentional for cost control). They need to know this isn't real data.
+
+#### 5. Preserve citationResults in Type Conversion
+
+**Problem:** `AnalysisProgress.tsx` converts `AEOAnalysis` to `Analysis` for compatibility, but wasn't preserving `citationResults` and `overallCitationRate`.
+
+**Solution:** Added these fields to the conversion in `AnalysisProgress.tsx` and to the `Analysis` type in `types/index.ts`.
+
+#### 6. Rename Button Text
+
+**Problem:** "Check My Citations" was too narrow - the analysis does more (crawling, competitor analysis, recommendations).
+
+**Solution:** Changed to "Run AI Visibility Analysis" and header to "Analyze Your AI Visibility".
+
+#### 7. Add Analysis Engine Tests
+
+**Problem:** No automated tests for real vs simulated analysis flows.
+
+**Solution:** Created `analysisEngine.test.ts` with 16 tests covering:
+- `shouldUseRealAnalysis` for different subscription types
+- Simulated AEO analysis structure
+- CitationResult data consistency
+- Competitor extraction logic
+
+**Test data:** Uses www.convologix.com with chatbot-related prompts.
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `src/components/Projects/ProjectDetail.tsx` | Deleted | Abandoned feature |
+| `src/components/Dashboard/ProjectCard.tsx` | Deleted | Abandoned feature |
+| `src/services/projectService.ts` | Deleted | Abandoned feature |
+| `src/App.tsx` | Modified | Remove Projects, fix competitor-strategy route |
+| `src/components/Dashboard/Dashboard.tsx` | Modified | Remove Projects section |
+| `src/components/Layout/Sidebar.tsx` | Modified | Remove Projects nav item |
+| `src/components/Analysis/CitationResultsDetail.tsx` | Created | New citation detail UI |
+| `src/components/Analysis/AnalysisResults.tsx` | Modified | Integrate CitationResultsDetail |
+| `src/components/Analysis/AnalysisProgress.tsx` | Modified | Preserve citationResults |
+| `src/components/Analysis/NewAnalysis.tsx` | Modified | Rename button/header text |
+| `src/components/Reports/CompetitorStrategy.tsx` | Modified | Use real data, add Demo banner |
+| `src/types/index.ts` | Modified | Add citationResults to Analysis |
+| `src/utils/analysisEngine.test.ts` | Created | 16 tests for real vs simulated |
+
+### Testing Performed
+
+- Run simulated analysis → CitationResults shows simulated competitors ✓
+- Run real analysis (as admin) → CitationResults shows real competitors ✓
+- CompetitorStrategy matches CitationResults data ✓
+- Demo Mode banner shows for trial users ✓
+- All 16 new tests pass ✓
+- Build verification ✓
+
+### Lessons Learned
+
+1. **Mock data should be clearly labeled** - Users assumed mock data was real, leading to confusion.
+2. **Data should flow from one source** - Having `mockAnalyses` passed separately from `analysis.citationResults` caused data mismatch.
+3. **Dead features should be removed** - Broken Projects feature was confusing users. Better to delete than maintain.
+4. **Test real vs simulated paths** - Different subscription tiers get different data flows; both need testing.
+
+---
+
+## 2026-01-06: Fix authentication and subscription persistence
+
+**Commit:** `21b7a11` - Fix authentication and subscription persistence
+
+### Context
+
+Users reported that after subscribing to a paid plan (e.g., enterprise), logging out and back in would reset their subscription to "trial". Investigation revealed the codebase had inconsistent data persistence - some flows updated only localStorage while others updated the database, causing state desync.
+
+### Changes & Reasoning
+
+#### 1. AuthPage.tsx - Replace localStorage Auth with Supabase Auth
+
+**Problem:** AuthPage had a hardcoded admin backdoor using localStorage. Login/signup bypassed Supabase Auth entirely for some flows.
+
+**Solution:** Complete rewrite to use `AuthService.signIn()` and `AuthService.signUp()` for all authentication. Added `profileToUser()` helper to convert snake_case database fields to camelCase TypeScript properties.
+
+**Why this matters:** Authentication must go through Supabase Auth to maintain proper sessions. localStorage-only auth meant sessions weren't tracked server-side.
+
+#### 2. App.tsx - Load User from Supabase Session on Startup
+
+**Problem:** `App.tsx` loaded user data from localStorage only. If localStorage had stale data (e.g., old subscription), user saw wrong subscription until page refresh after re-login.
+
+**Solution:** On app load, call `AuthService.getCurrentSession()` to get fresh user data from Supabase, then cache to localStorage.
+
+**Pattern established:** Database → localStorage (not localStorage → hope it's correct)
+
+#### 3. App.tsx - Fix Logout to Clear Supabase Session
+
+**Problem:** `handleLogout()` only cleared localStorage. Supabase session remained active, causing auto-login on next visit.
+
+**Solution:** Added `AuthService.signOut()` call before clearing localStorage.
+
+#### 4. PricingTiers.tsx - Update Database on Payment Success
+
+**Problem:** `handleCheckoutSuccess()` only called `onUpgrade()` which updated localStorage. Database never updated with new subscription.
+
+**Solution:** Added `PaymentService.handlePaymentSuccess()` call to update Supabase database FIRST, then sync localStorage via `onUpgrade()`.
+
+**This was the root cause** of subscriptions not persisting.
+
+#### 5. StripeRedirectCheckout.tsx - Add Database Update
+
+**Problem:** Similar issue - payment success only updated localStorage.
+
+**Solution:** Added `PaymentService.handlePaymentSuccess()` call.
+
+#### 6. authService.ts - Add changePassword Method
+
+**Problem:** No way for users to change password.
+
+**Solution:** Added `changePassword()` method using `supabase.auth.updateUser()`.
+
+#### 7. AccountPage.tsx - Add Change Password Modal
+
+**Problem:** No UI for password change.
+
+**Solution:** Added modal with password/confirm fields and validation.
+
+#### 8. paymentService.ts - Fix Import Path
+
+**Problem:** Build error: `Could not resolve '../lib/stripe'`
+
+**Solution:** Changed import to `'../utils/stripeUtils'` (correct location).
+
+#### 9. CLAUDE.md - Document Data Persistence Pattern
+
+**Problem:** No documentation explaining the database vs localStorage pattern, leading to inconsistent implementations.
+
+**Solution:** Added "User Data: Database vs localStorage" section documenting the correct flow:
+- Login → Database → localStorage
+- Payment → Database FIRST → localStorage
+- Page Load → Check Supabase session → Refresh localStorage
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `src/components/Auth/AuthPage.tsx` | Rewritten | Use Supabase Auth, not localStorage |
+| `src/App.tsx` | Modified | Load from Supabase session, fix logout |
+| `src/components/Subscription/PricingTiers.tsx` | Modified | Update DB on payment success |
+| `src/components/Subscription/StripeRedirectCheckout.tsx` | Modified | Update DB on payment success |
+| `src/services/authService.ts` | Modified | Add changePassword method |
+| `src/components/Account/AccountPage.tsx` | Modified | Add change password modal |
+| `src/services/paymentService.ts` | Modified | Fix import path |
+| `CLAUDE.md` | Modified | Document data persistence pattern |
+
+### Testing Performed
+
+- Login → Subscribe to enterprise → Logout → Login → Verify still enterprise ✓
+- Change password → Logout → Login with new password ✓
+- Build verification ✓
+
+### Lessons Learned
+
+**Database is source of truth, localStorage is cache.** Every write operation must update database first, then sync localStorage. Reading should prefer database (via session) and use localStorage as fallback/cache.
+
+### Related Issues
+
+- Subscription persistence bug
+- Auto-login after logout bug
+- Missing change password feature
+
+---
+
 ## 2026-01-06: Expand BRANCH_ANALYSIS.md with 10 more commits and fix dates
 
 **Commit:** `Expand BRANCH_ANALYSIS.md with 10 more commits and fix dates`

@@ -86,6 +86,24 @@ Tests the AuthService class for user authentication flows.
 | Sidebar Navigation | Section switching |
 | LocalStorage Persistence | Analysis persistence, parameter loading |
 
+### Analysis Engine
+**File:** `src/utils/analysisEngine.test.ts`
+
+Tests the AnalysisEngine for real vs simulated analysis flows.
+
+| Test Suite | Coverage |
+|------------|----------|
+| `shouldUseRealAnalysis` | Trial users (false), free users (false), starter/pro/enterprise (true), admin users (true) |
+| `Simulated AEO Analysis` | citationResults structure, simulated competitor domains, zero cost, citation rate calculation |
+| `CitationResult Data Consistency` | Required fields, competitorsCited structure |
+| `Analysis to AEOAnalysis Conversion` | citationResults preservation |
+| `extractCompetitorData helper` | Competitor extraction, empty results handling, competitor deduplication |
+
+**Test Data:** Uses www.convologix.com (AI chatbot services) with relevant prompts:
+- "What are the best customer service chatbot providers?"
+- "How do I implement AI chatbots for my business?"
+- "Which companies offer conversational AI solutions?"
+
 ---
 
 ## Integration Tests (Scripts)
@@ -162,6 +180,7 @@ set -a && . ./.env && set +a && npm run test:functions
 | Authentication | authService.test.ts | - |
 | UI Components | AuthPage, AnalysisForm, UserDashboard | - |
 | Navigation | navigation.test.tsx | - |
+| Analysis Engine | analysisEngine.test.ts (real vs simulated) | - |
 | Payment/Stripe | - | test-payment-flow.ts |
 | Edge Functions | - | test-edge-functions.ts |
 | CORS Security | - | test-edge-functions.ts |

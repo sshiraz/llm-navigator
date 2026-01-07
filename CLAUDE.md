@@ -112,6 +112,34 @@ AnalysisEngine.analyzeWebsite(url, prompts, user)
 // Controlled by: AnalysisEngine.shouldUseRealAnalysis(user)
 ```
 
+### Citation Checking (AEO Core Feature)
+**Backend is COMPLETE** - queries ChatGPT, Claude, and Perplexity to check if websites get cited.
+
+```typescript
+// Entry point: AnalysisEngine.analyzeAEO()
+// Edge function: supabase/functions/check-citations/index.ts
+// Types: CitationResult, AEOAnalysis, CompetitorCitation (in src/types/index.ts)
+
+// Flow:
+// 1. User enters prompts (questions) + website + brand name
+// 2. Edge function queries AI providers with each prompt
+// 3. Checks if response mentions user's website/brand
+// 4. Returns: isCited, citationContext, competitorsCited
+// 5. Calculates overall citation rate
+```
+
+**What exists:**
+- `check-citations` edge function - fully working, queries 3 AI providers
+- `analyzeAEO()` in analysisEngine.ts - orchestrates real/simulated flows
+- Types defined: `CitationResult`, `AEOAnalysis`, `CompetitorCitation`
+- UI shows summary stats (citation rate %) in AnalysisResults
+
+**What's missing (UI/UX):**
+- Detailed results page showing each prompt's AI response
+- Citation context viewer (what exactly AI said about the site)
+- Historical trends (citation rate over time)
+- Per-provider breakdown in results
+
 ### User Data: Database vs localStorage
 ```typescript
 // Supabase = Source of truth (subscriptions, profiles, auth)

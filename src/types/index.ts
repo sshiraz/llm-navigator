@@ -104,6 +104,9 @@ export interface Analysis {
       issues: string[];
     }[];
   };
+  // AEO citation results (for Answer Engine Optimization analyses)
+  citationResults?: CitationResult[];
+  overallCitationRate?: number;
 }
 
 export interface Recommendation {

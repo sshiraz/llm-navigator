@@ -4,7 +4,6 @@ import Sidebar from './components/Layout/Sidebar';
 import Dashboard from './components/Dashboard/Dashboard';
 import NewAnalysis from './components/Analysis/NewAnalysis';
 import AnalysisResults from './components/Analysis/AnalysisResults';
-import ProjectDetail from './components/Projects/ProjectDetail';
 import PricingTiers from './components/Subscription/PricingTiers';
 import UserDashboard from './components/Admin/UserDashboard';
 import AccountPage from './components/Account/AccountPage';
@@ -16,7 +15,7 @@ import AnalysisHistory from './components/History/AnalysisHistory';
 import LandingPage from './components/Landing/LandingPage';
 import AuthPage from './components/Auth/AuthPage';
 import PricingPage from './components/Pricing/PricingPage';
-import { Project, Analysis, User } from './types';
+import { Analysis, User } from './types';
 import EnvironmentStatus from './components/UI/EnvironmentStatus';
 import { mockAnalyses } from './utils/mockData';
 import { isUserAdmin } from './utils/userUtils';
@@ -29,7 +28,6 @@ function App() {
     const hash = window.location.hash.slice(1);
     return hash || 'landing';
   });
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
 
   // Check if user is admin
@@ -198,11 +196,6 @@ function App() {
     localStorage.removeItem('currentUser');
   };
 
-  const handleProjectSelect = (project: Project) => {
-    setSelectedProject(project);
-    window.location.hash = 'project-detail';
-  };
-
   const handleNewAnalysisClick = () => {
     setActiveSection('new-analysis');
     window.location.hash = '#new-analysis';
@@ -310,13 +303,13 @@ function App() {
     }
 
     // Protected routes that require login
-    if (!user && ['dashboard', 'new-analysis', 'analysis-results', 'project-detail', 'pricing', 'competitor-strategy', 'history'].includes(activeSection)) {
+    if (!user && ['dashboard', 'new-analysis', 'analysis-results', 'pricing', 'competitor-strategy', 'history'].includes(activeSection)) {
       return <AuthPage onLogin={handleLogin} />;
     }
 
     switch (activeSection) {
       case 'dashboard':
-        return <Dashboard onProjectSelect={handleProjectSelect} onNewAnalysis={handleNewAnalysisClick} />;
+        return <Dashboard onNewAnalysis={handleNewAnalysisClick} />;
 
       case 'new-analysis':
         return <NewAnalysis onAnalyze={handleNewAnalysis} user={user} />;
@@ -340,14 +333,6 @@ function App() {
           />
         ) : null;
 
-      case 'project-detail':
-        return selectedProject ? (
-          <ProjectDetail
-            project={selectedProject}
-            onBack={() => setActiveSection('dashboard')}
-          />
-        ) : null;
-
       case 'pricing':
         return user ? (
           <PricingPage currentPlan={user.subscription} onUpgrade={handleUpgrade} />
@@ -356,14 +341,16 @@ function App() {
         );
 
       case 'competitor-strategy':
-        // Use current analysis if available, otherwise use mock data
-        const analysisForStrategy = currentAnalysis || mockAnalyses[0];
-        const competitorAnalysesForStrategy = mockAnalyses.filter(a => a.id !== analysisForStrategy.id);
+        // Only show real analysis data - no mock data
+        if (!currentAnalysis) {
+          return (
+            <CompetitorStrategy
+              analysis={{ id: '', projectId: '', userId: '', website: '', keywords: [], score: 0, metrics: { contentClarity: 0, semanticRichness: 0, structuredData: 0, naturalLanguage: 0, keywordRelevance: 0 }, insights: '', predictedRank: 0, category: '', recommendations: [], createdAt: '' }}
+            />
+          );
+        }
         return (
-          <CompetitorStrategy
-            analysis={analysisForStrategy}
-            competitors={competitorAnalysesForStrategy}
-          />
+          <CompetitorStrategy analysis={currentAnalysis} />
         );
 
       default:

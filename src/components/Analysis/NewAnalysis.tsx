@@ -250,7 +250,7 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">
-          Check Your AI Citations
+          Analyze Your AI Visibility
         </h1>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Enter prompts that your potential customers might ask AI assistants.
@@ -576,7 +576,7 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
               {!canAnalyze
                 ? 'Usage Limit Reached'
                 : isRealAnalysis
-                  ? 'Check My Citations'
+                  ? 'Run AI Visibility Analysis'
                   : 'Try Demo Analysis'
               }
             </span>

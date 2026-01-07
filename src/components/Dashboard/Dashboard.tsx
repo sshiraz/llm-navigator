@@ -1,20 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, TrendingUp, Target, BarChart3 } from 'lucide-react';
-import ProjectCard from './ProjectCard';
 import ScoreCard from './ScoreCard';
 import RecentAnalyses from './RecentAnalyses';
-import { Project, Analysis, User } from '../../types';
+import { Analysis, User } from '../../types';
 import { AnalysisService } from '../../services/analysisService';
-import { ProjectService } from '../../services/projectService';
 
 interface DashboardProps {
-  onProjectSelect: (project: Project) => void;
   onNewAnalysis: () => void;
 }
 
-export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardProps) {
+export default function Dashboard({ onNewAnalysis }: DashboardProps) {
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Get current user from localStorage
@@ -33,11 +29,10 @@ export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardP
   }, []);
 
   useEffect(() => {
-    // Load analyses and projects from Supabase when user is available
+    // Load analyses from Supabase when user is available
     async function loadData() {
       if (!currentUser) {
         setAnalyses([]);
-        setProjects([]);
         setIsLoading(false);
         return;
       }
@@ -57,21 +52,11 @@ export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardP
         } else {
           setAnalyses([]);
         }
-
-        // Load projects from Supabase
-        const projectsResult = await ProjectService.getUserProjects(currentUser.id);
-        if (projectsResult.success && projectsResult.data) {
-          setProjects(projectsResult.data);
-          console.log(`Loaded ${projectsResult.data.length} projects from Supabase`);
-        } else {
-          setProjects([]);
-        }
       } catch (error) {
         console.error('Error loading data:', error);
-        // Fallback to localStorage for analyses only
+        // Fallback to localStorage for analyses
         const localAnalyses = AnalysisService.getFromLocalStorage(currentUser.id);
         setAnalyses(localAnalyses);
-        setProjects([]);
       } finally {
         setIsLoading(false);
       }
@@ -152,36 +137,6 @@ export default function Dashboard({ onProjectSelect, onNewAnalysis }: DashboardP
           icon={Target}
           color="indigo"
         />
-      </div>
-
-      {/* Projects Section */}
-      <div>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Your Projects</h2>
-          <button className="text-blue-600 hover:text-blue-700 font-medium">View All</button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              onSelect={onProjectSelect}
-            />
-          ))}
-
-          {/* Add Project Card */}
-          <div 
-            onClick={onNewAnalysis}
-            className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center text-center hover:border-gray-400 transition-colors cursor-pointer group"
-          >
-            <div className="w-12 h-12 bg-gray-200 rounded-xl flex items-center justify-center mb-4 group-hover:bg-gray-300 transition-colors">
-              <Plus className="w-6 h-6 text-gray-500" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Start New Analysis</h3>
-            <p className="text-gray-600 text-sm">Analyze a website's LLM optimization</p>
-          </div>
-        </div>
       </div>
 
       {/* Recent Analyses */}

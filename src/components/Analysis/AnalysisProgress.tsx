@@ -103,6 +103,8 @@ export default function AnalysisProgress({
               createdAt: result.createdAt,
               isSimulated: result.isSimulated,
               crawlData: result.crawlData,
+              citationResults: result.citationResults,
+              overallCitationRate: result.overallCitationRate,
               costInfo: {
                 totalCost: result.costInfo.totalCost,
                 breakdown: {
