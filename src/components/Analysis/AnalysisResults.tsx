@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { ArrowLeft, ExternalLink, Clock, Zap, AlertCircle, CheckCircle, Download, FileText, Trash2, X } from 'lucide-react';
 import { Analysis } from '../../types';
 import MetricsBreakdown from './MetricsBreakdown';
@@ -14,6 +14,22 @@ interface AnalysisResultsProps {
 export default function AnalysisResults({ analysis, onBack }: AnalysisResultsProps) {
   const reportRef = useRef<HTMLDivElement>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [previousAnalysis, setPreviousAnalysis] = useState<Analysis | null>(null);
+
+  // Fetch previous analysis for trend comparison
+  useEffect(() => {
+    const fetchPreviousAnalysis = async () => {
+      if (analysis.userId && analysis.website) {
+        const previous = await AnalysisService.getPreviousAnalysisForWebsite(
+          analysis.userId,
+          analysis.website,
+          analysis.id
+        );
+        setPreviousAnalysis(previous);
+      }
+    };
+    fetchPreviousAnalysis();
+  }, [analysis.id, analysis.userId, analysis.website]);
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-emerald-600';
@@ -260,6 +276,7 @@ export default function AnalysisResults({ analysis, onBack }: AnalysisResultsPro
           <MetricsBreakdown
             analysis={analysis}
             competitors={competitorAnalyses}
+            previousAnalysis={previousAnalysis}
           />
         </div>
 

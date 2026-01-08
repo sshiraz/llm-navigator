@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { HelpCircle, TrendingUp, ArrowUpRight, X, ExternalLink } from 'lucide-react';
+import { HelpCircle, TrendingUp, TrendingDown, ArrowUpRight, X, ExternalLink, Minus } from 'lucide-react';
 import { Analysis } from '../../types';
 
 interface MetricsBreakdownProps {
   analysis: Analysis;
   competitors?: Analysis[];
+  previousAnalysis?: Analysis | null;
 }
 
 interface MetricInfo {
@@ -47,7 +48,7 @@ const metricsInfo: MetricInfo[] = [
   }
 ];
 
-export default function MetricsBreakdown({ analysis, competitors = [] }: MetricsBreakdownProps) {
+export default function MetricsBreakdown({ analysis, competitors = [], previousAnalysis }: MetricsBreakdownProps) {
   const [hoveredMetric, setHoveredMetric] = useState<string | null>(null);
   const [selectedInsights, setSelectedInsights] = useState<Analysis | null>(null);
 
@@ -61,6 +62,41 @@ export default function MetricsBreakdown({ analysis, competitors = [] }: Metrics
     if (score >= 80) return 'bg-emerald-50';
     if (score >= 60) return 'bg-yellow-50';
     return 'bg-red-50';
+  };
+
+  // Calculate trend between current and previous score
+  const getTrend = (current: number, previous: number | undefined): { change: number; direction: 'up' | 'down' | 'same' } => {
+    if (previous === undefined) return { change: 0, direction: 'same' };
+    const change = current - previous;
+    if (change > 0) return { change, direction: 'up' };
+    if (change < 0) return { change: Math.abs(change), direction: 'down' };
+    return { change: 0, direction: 'same' };
+  };
+
+  // Render trend indicator
+  const renderTrend = (current: number, previous: number | undefined) => {
+    const { change, direction } = getTrend(current, previous);
+    if (direction === 'same' || change === 0) {
+      return previousAnalysis ? (
+        <span className="flex items-center text-gray-400 text-xs ml-1" title="No change from previous">
+          <Minus className="w-3 h-3" />
+        </span>
+      ) : null;
+    }
+    if (direction === 'up') {
+      return (
+        <span className="flex items-center text-emerald-600 text-xs ml-1" title={`+${change} from previous`}>
+          <TrendingUp className="w-3 h-3" />
+          <span className="ml-0.5">+{change}</span>
+        </span>
+      );
+    }
+    return (
+      <span className="flex items-center text-red-600 text-xs ml-1" title={`-${change} from previous`}>
+        <TrendingDown className="w-3 h-3" />
+        <span className="ml-0.5">-{change}</span>
+      </span>
+    );
   };
 
   const allAnalyses = [analysis, ...competitors];
@@ -138,7 +174,11 @@ export default function MetricsBreakdown({ analysis, competitors = [] }: Metrics
                 <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded">PRO</span>
               </h3>
               <p className="text-gray-300 text-sm mt-1">
-                Compare your latest analysis with competitors. Click 'View Insights' to see actionable recommendations.
+                {previousAnalysis ? (
+                  <>Compare your latest analysis with competitors. <span className="text-emerald-400">Score trends show changes from your previous analysis.</span></>
+                ) : (
+                  <>Compare your latest analysis with competitors. Click 'View Insights' to see actionable recommendations.</>
+                )}
               </p>
             </div>
           </div>
@@ -209,17 +249,24 @@ export default function MetricsBreakdown({ analysis, competitors = [] }: Metrics
                     </td>
                     
                     <td className="px-4 py-4 text-center">
-                      <div className={`inline-flex items-center justify-center w-12 h-8 rounded text-sm font-bold ${getScoreBackground(analysisItem.score)} ${getScoreColor(analysisItem.score)}`}>
-                        {analysisItem.score}
+                      <div className="flex items-center justify-center">
+                        <div className={`inline-flex items-center justify-center w-12 h-8 rounded text-sm font-bold ${getScoreBackground(analysisItem.score)} ${getScoreColor(analysisItem.score)}`}>
+                          {analysisItem.score}
+                        </div>
+                        {isUser && renderTrend(analysisItem.score, previousAnalysis?.score)}
                       </div>
                     </td>
-                    
+
                     {metricsInfo.map((metric) => {
                       const score = analysisItem.metrics[metric.key];
+                      const previousScore = isUser && previousAnalysis ? previousAnalysis.metrics[metric.key] : undefined;
                       return (
                         <td key={metric.key} className="px-4 py-4 text-center">
-                          <div className={`inline-flex items-center justify-center w-12 h-8 rounded text-sm font-bold ${getScoreBackground(score)} ${getScoreColor(score)}`}>
-                            {score}
+                          <div className="flex items-center justify-center">
+                            <div className={`inline-flex items-center justify-center w-12 h-8 rounded text-sm font-bold ${getScoreBackground(score)} ${getScoreColor(score)}`}>
+                              {score}
+                            </div>
+                            {isUser && renderTrend(score, previousScore)}
                           </div>
                         </td>
                       );

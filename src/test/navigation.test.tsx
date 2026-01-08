@@ -121,6 +121,9 @@ vi.mock('../services/analysisService', () => ({
     saveToLocalStorage: vi.fn(),
     migrateFromLocalStorage: vi.fn().mockResolvedValue(0),
     getFromLocalStorage: vi.fn().mockReturnValue([]),
+    getPreviousAnalysisForWebsite: vi.fn().mockResolvedValue(null),
+    getWebsiteAnalysisHistory: vi.fn().mockResolvedValue([]),
+    deleteAnalysis: vi.fn().mockResolvedValue({ success: true }),
   },
 }));
 

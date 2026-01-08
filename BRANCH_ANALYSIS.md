@@ -5,6 +5,135 @@
 
 ---
 
+## 2026-01-07: Add historical score tracking for trend comparison
+
+**Commit:** `pending` - Add historical score tracking to show improvement trends
+
+### Context
+
+User feedback: "How do I know if I am improving if my business is not showing in the results but perhaps the ranking is increasing?" The analysis results show scores for Clarity, Depth, Trust, Quotable, and Match, but users couldn't see if these scores were improving over time. Even with a 0% citation rate, users wanted to know if their optimization efforts were moving scores in the right direction.
+
+### Changes & Reasoning
+
+#### 1. Add Historical Analysis Methods (`src/services/analysisService.ts`)
+
+**Problem:** No way to retrieve previous analyses for the same website to compare scores.
+
+**Solution:** Added two new methods:
+
+| Method | Purpose |
+|--------|---------|
+| `getPreviousAnalysisForWebsite(userId, website, currentAnalysisId?)` | Gets the most recent previous analysis for trend comparison |
+| `getWebsiteAnalysisHistory(userId, website, limit)` | Gets all analyses for a website (for future charts/graphs) |
+
+**Why separate from `getExistingAnalysis`?** The existing method only returns one result and is used for duplicate detection. The new methods:
+- `getPreviousAnalysisForWebsite` explicitly excludes the current analysis
+- Returns the second-most-recent analysis for accurate comparison
+- Handles edge cases (first analysis = no previous)
+
+**Implementation detail:**
+```typescript
+// If we have currentAnalysisId, exclude it and return first result
+// Otherwise, skip first (current) and return second (previous)
+if (currentAnalysisId) {
+  query = query.neq('id', currentAnalysisId);
+}
+```
+
+#### 2. Update MetricsBreakdown Component (`src/components/Analysis/MetricsBreakdown.tsx`)
+
+**Problem:** Scores displayed as static numbers with no historical context.
+
+**Solution:** Added trend indicators next to each score:
+
+| Trend | Display | Meaning |
+|-------|---------|---------|
+| Improvement | ↑ +5 (green) | Score increased from previous |
+| Decline | ↓ -3 (red) | Score decreased from previous |
+| No change | – (gray) | Score unchanged |
+| First analysis | (nothing) | No previous analysis to compare |
+
+**UI changes:**
+- Added `previousAnalysis` prop to component interface
+- Created `getTrend()` helper to calculate change direction and amount
+- Created `renderTrend()` helper to display trend icons with tooltips
+- Updated header text to mention trends when previous analysis exists
+- Trends shown for: Overall score, Clarity, Depth, Trust, Quotable, Match
+
+**Why only show trends for user's site?** Competitor data is extracted from citation results (different each analysis), so trends wouldn't be meaningful.
+
+#### 3. Fetch Previous Analysis in AnalysisResults (`src/components/Analysis/AnalysisResults.tsx`)
+
+**Problem:** MetricsBreakdown didn't have access to previous analysis data.
+
+**Solution:** Added `useEffect` to fetch previous analysis on component mount:
+
+```typescript
+useEffect(() => {
+  const fetchPreviousAnalysis = async () => {
+    if (analysis.userId && analysis.website) {
+      const previous = await AnalysisService.getPreviousAnalysisForWebsite(
+        analysis.userId,
+        analysis.website,
+        analysis.id
+      );
+      setPreviousAnalysis(previous);
+    }
+  };
+  fetchPreviousAnalysis();
+}, [analysis.id, analysis.userId, analysis.website]);
+```
+
+**Why useEffect?** The previous analysis fetch is async and shouldn't block initial render. The component shows scores immediately, then adds trend indicators once previous analysis loads.
+
+#### 4. Update Test Mocks (`src/test/navigation.test.tsx`)
+
+**Problem:** Tests failed because mock didn't include new `AnalysisService` methods.
+
+**Solution:** Added mocks for new methods:
+```typescript
+getPreviousAnalysisForWebsite: vi.fn().mockResolvedValue(null),
+getWebsiteAnalysisHistory: vi.fn().mockResolvedValue([]),
+deleteAnalysis: vi.fn().mockResolvedValue({ success: true }),
+```
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `src/services/analysisService.ts` | Modified | Add getPreviousAnalysisForWebsite, getWebsiteAnalysisHistory |
+| `src/components/Analysis/MetricsBreakdown.tsx` | Modified | Add trend indicators, previousAnalysis prop |
+| `src/components/Analysis/AnalysisResults.tsx` | Modified | Fetch and pass previous analysis |
+| `src/test/navigation.test.tsx` | Modified | Add mocks for new service methods |
+| `ARCHITECTURE.md` | Modified | Document new service capabilities |
+
+### User Flow
+
+```
+1. User runs first analysis → Scores shown, no trends (first analysis)
+2. User implements recommendations → Makes website changes
+3. User runs second analysis → Scores shown WITH trends (↑/↓/–)
+4. User sees: "Clarity: 45 ↑+12" → Knows improvements are working
+5. Even with 0% citation rate, user can track progress
+```
+
+### Testing Performed
+
+```
+npm run test:run && npm run build
+```
+
+- **Test Suite:** ✅ 367 passed, 0 failed
+- **Build:** ✓ Passed
+
+### Future Enhancements
+
+- Add score history chart/graph visualization
+- Show trends in Analysis History list view
+- Email notifications when scores improve significantly
+
+---
+
 ## 2026-01-07: Implement input sanitization for XSS and SQL injection prevention
 
 **Commit:** `a11167b` - Add comprehensive input sanitization utilities and tests

@@ -147,7 +147,7 @@ AnalysisResults.tsx (display)
 ### Services
 | File | Purpose |
 |------|---------|
-| `src/services/analysisService.ts` | Analysis CRUD + localStorage migration |
+| `src/services/analysisService.ts` | Analysis CRUD + localStorage migration + historical trends |
 | `src/services/authService.ts` | Auth operations + localStorage cleanup |
 | `src/services/paymentService.ts` | Payment record management (consolidated) |
 | `src/services/usageService.ts` | API usage tracking |

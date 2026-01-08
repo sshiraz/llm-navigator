@@ -259,6 +259,66 @@ export class AnalysisService {
     }
   }
 
+  // Get previous analysis for a website (for trend comparison)
+  // Returns the second most recent analysis (the one before current)
+  static async getPreviousAnalysisForWebsite(userId: string, website: string, currentAnalysisId?: string): Promise<Analysis | null> {
+    try {
+      let query = supabase
+        .from('analyses')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('website', website)
+        .order('created_at', { ascending: false })
+        .limit(2);
+
+      // If we have the current analysis ID, exclude it
+      if (currentAnalysisId) {
+        query = query.neq('id', currentAnalysisId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching previous analysis:', error);
+        return null;
+      }
+
+      // If we excluded current ID, return the first result (most recent excluding current)
+      // Otherwise, skip the first (current) and return the second (previous)
+      if (currentAnalysisId) {
+        return data && data.length > 0 ? rowToAnalysis(data[0]) : null;
+      } else {
+        return data && data.length > 1 ? rowToAnalysis(data[1]) : null;
+      }
+    } catch (err: any) {
+      console.error('Exception fetching previous analysis:', err);
+      return null;
+    }
+  }
+
+  // Get analysis history for a website (all analyses, sorted by date)
+  static async getWebsiteAnalysisHistory(userId: string, website: string, limit = 10): Promise<Analysis[]> {
+    try {
+      const { data, error } = await supabase
+        .from('analyses')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('website', website)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('Error fetching analysis history:', error);
+        return [];
+      }
+
+      return data ? data.map(rowToAnalysis) : [];
+    } catch (err: any) {
+      console.error('Exception fetching analysis history:', err);
+      return [];
+    }
+  }
+
   // Storage fallback methods (using StorageManager)
   static saveToLocalStorage(analysis: Analysis): void {
     StorageManager.addAnalysis(analysis);
