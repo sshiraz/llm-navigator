@@ -205,7 +205,7 @@ PERPLEXITY_API_KEY=pplx-xxx
 
 ```bash
 npm run test           # Unit tests (Vitest) - watch mode
-npm run test:run       # Unit tests once (228 tests)
+npm run test:run       # Unit tests once (252 tests)
 npm run test:functions # Edge Function tests
 npm run test:payment   # Payment flow tests
 ```

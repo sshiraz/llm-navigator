@@ -13,7 +13,7 @@ This document provides an overview of all automated tests in the LLM Navigator p
 npm run test:run && npm run build
 ```
 
-Current test count: **228 tests** (9 test files)
+Current test count: **252 tests** (10 test files)
 
 ## Quick Reference
 
@@ -157,6 +157,20 @@ Tests the PaymentService for Stripe integration (19 tests).
 | `createPaymentIntent` | Payment intent creation |
 | `getSubscriptionStatus` | Subscription status retrieval |
 
+### Competitor Comparison
+**File:** `src/components/Analysis/competitorComparison.test.ts`
+
+Tests data consistency between Performance Snapshot and Competitor Strategy (24 tests).
+
+| Test Suite | Coverage |
+|------------|----------|
+| `extractCompetitorsAsAnalyses` | Empty states, competitor extraction, sorting, citation counts |
+| `extractCompetitorData` | Non-AEO handling, competitor extraction, query counts |
+| `Data Consistency` | Same domains, same ranking, same citation counts |
+| `Edge Cases` | Empty context, no competitors, mixed cited/not-cited |
+
+**Purpose:** Ensures both UI components (Performance Snapshot in analysis results, Competitor Strategy page) display the same competitor data extracted from `analysis.citationResults`.
+
 ---
 
 ## Integration Tests (Scripts)
@@ -234,12 +248,13 @@ set -a && . ./.env && set +a && npm run test:functions
 | UI Components | AuthPage, AnalysisForm, UserDashboard | - |
 | Navigation | navigation.test.tsx | - |
 | Analysis Engine | analysisEngine.test.ts, analysisHelpers.test.ts | - |
+| Competitor Comparison | competitorComparison.test.ts | - |
 | Storage | storageManager.test.ts | - |
 | Payment/Stripe | paymentService.test.ts | test-payment-flow.ts |
 | Edge Functions | - | test-edge-functions.ts |
 | CORS Security | - | test-edge-functions.ts |
 
-**Total: 228 tests across 9 test files**
+**Total: 252 tests across 10 test files**
 
 ---
 

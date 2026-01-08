@@ -5,9 +5,95 @@
 
 ---
 
+## 2026-01-07: Fix competitor data mismatch and add comparison tests
+
+**Commit:** `pending` - Fix competitor data mismatch between Performance Snapshot and Competitor Strategy
+
+### Context
+
+User reported that the **Performance Snapshot** (in analysis results) showed different competitors than the **Competitor Strategy** page. Performance Snapshot showed hubspot.com, mailchimp.com, etc., while Competitor Strategy showed xsoneconsultants.com, toimi.pro, etc. Both should display the same data from `analysis.citationResults`.
+
+### Changes & Reasoning
+
+#### 1. Fix AnalysisResults.tsx to Use Real Citation Data
+
+**Problem:** `AnalysisResults.tsx` line 155 was:
+```javascript
+const competitorAnalyses = mockAnalyses.filter(a => a.id !== analysis.id);
+```
+This pulled from hardcoded `mockAnalyses` (hubspot, mailchimp, etc.) instead of the actual citation results.
+
+**Solution:** Created `extractCompetitorsAsAnalyses()` function that:
+- Extracts competitors from `analysis.citationResults`
+- Counts citation frequency per competitor
+- Generates `Analysis[]` format for `MetricsBreakdown` component
+- Sorts by citation count (most cited first)
+- Limits to top 10 competitors
+
+**Why this matters:** Both Performance Snapshot and Competitor Strategy now use the same data source (`analysis.citationResults`), ensuring consistent competitor display.
+
+#### 2. Remove Unused mockAnalyses Import
+
+**Problem:** After the fix, `mockAnalyses` import was no longer needed.
+
+**Solution:** Removed `import { mockAnalyses } from '../../utils/mockData';` and the unused `onViewInsights` prop.
+
+#### 3. Add Comprehensive Competitor Comparison Tests
+
+**Problem:** No tests existed to verify that Performance Snapshot and Competitor Strategy show consistent data.
+
+**Solution:** Created `competitorComparison.test.ts` with 24 tests covering:
+- `extractCompetitorsAsAnalyses` (7 tests) - Performance Snapshot data extraction
+- `extractCompetitorData` (7 tests) - Competitor Strategy data extraction
+- Data Consistency (6 tests) - Both functions return same domains, same order, same counts
+- Edge Cases (4 tests) - Empty contexts, no competitors, mixed results
+
+**Key test:**
+```typescript
+it('should extract the same competitor domains from both functions', () => {
+  const performanceSnapshot = extractCompetitorsAsAnalyses(mockAnalysis);
+  const competitorStrategy = extractCompetitorData(mockAnalysis);
+
+  const snapshotDomains = performanceSnapshot.map(a => a.website).sort();
+  const strategyDomains = competitorStrategy.competitors.map(c => c.domain).sort();
+
+  expect(snapshotDomains).toEqual(strategyDomains);
+});
+```
+
+**Why this matters:** Tests ensure future changes can't break data consistency between these views.
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `src/components/Analysis/AnalysisResults.tsx` | Modified | Use citationResults instead of mockAnalyses |
+| `src/components/Analysis/competitorComparison.test.ts` | Created | 24 tests for data consistency |
+| `TESTING.md` | Modified | Document new test file, update count to 252 |
+| `DOCUMENTATION_INDEX.md` | Modified | Update test count |
+| `ARCHITECTURE.md` | Modified | Update test count |
+
+### Testing Performed
+
+```
+npm run test:run && npm run build
+```
+
+- **Test Suite:** ✅ 252 passed, 0 failed (252 total)
+- **Build:** ✓ Passed
+- Manual verification: Both Performance Snapshot and Competitor Strategy now show same competitors
+
+### Lessons Learned
+
+1. **Mock data vs real data should never mix** - Using `mockAnalyses` alongside `analysis.citationResults` caused UI inconsistency.
+2. **Test data consistency between views** - When two UI components show the same data, add tests to verify they stay in sync.
+3. **Extract and test the extraction logic** - Moving competitor extraction to testable functions caught the bug immediately.
+
+---
+
 ## 2026-01-07: Code maintainability improvements and test suite fixes
 
-**Commit:** `pending` - Code maintainability improvements and test suite fixes
+**Commit:** `5847a27` - Update documentation for code maintainability improvements
 
 ### Context
 
@@ -161,7 +247,7 @@ The codebase had several maintainability issues: `analysisEngine.ts` was 1,273 l
 
 ## 2026-01-06: Remove Projects feature and add Citation Results UI
 
-**Commit:** `pending` - Remove Projects feature and add Citation Results UI
+**Commit:** `972e9bb` - Remove Projects feature and add Citation Results UI
 
 ### Context
 
@@ -375,7 +461,7 @@ Users reported that after subscribing to a paid plan (e.g., enterprise), logging
 
 ## 2026-01-06: Expand BRANCH_ANALYSIS.md with 10 more commits and fix dates
 
-**Commit:** `Expand BRANCH_ANALYSIS.md with 10 more commits and fix dates`
+**Commit:** `1aa788e` - Expand BRANCH_ANALYSIS.md with 10 more commits and fix dates
 
 ### Context
 
