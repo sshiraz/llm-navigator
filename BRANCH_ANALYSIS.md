@@ -7,7 +7,7 @@
 
 ## 2026-01-07: Implement input sanitization for XSS and SQL injection prevention
 
-**Commit:** `pending` - Add comprehensive input sanitization utilities and tests
+**Commit:** `a11167b` - Add comprehensive input sanitization utilities and tests
 
 ### Context
 
@@ -148,7 +148,7 @@ npm run test:run && npm run build
 
 ## 2026-01-07: Fix competitor data mismatch and add comparison tests
 
-**Commit:** `pending` - Fix competitor data mismatch between Performance Snapshot and Competitor Strategy
+**Commit:** `1416c9d` - Fix competitor data mismatch between Performance Snapshot and Competitor Strategy
 
 ### Context
 
