@@ -52,6 +52,7 @@ llm-navigator/
 │   │   │   ├── analysisHelpers.ts # Citation/URL helpers
 │   │   │   ├── modelConfig.ts  # AI model configurations
 │   │   │   └── recommendations.ts # Recommendation generation
+│   │   ├── sanitize.ts         # Input sanitization (XSS, SQL injection prevention)
 │   │   ├── storageManager.ts   # localStorage abstraction
 │   │   ├── costTracker.ts      # Usage limits & costs
 │   │   ├── stripeUtils.ts      # Stripe API helpers
@@ -137,6 +138,7 @@ AnalysisResults.tsx (display)
 |------|---------|
 | `src/utils/analysisEngine.ts` | Core analysis orchestration |
 | `src/utils/analysis/` | Modularized analysis logic (aeoAnalysis, helpers, recommendations) |
+| `src/utils/sanitize.ts` | Input sanitization (XSS, SQL injection, URL validation) |
 | `src/utils/storageManager.ts` | localStorage abstraction layer |
 | `src/utils/costTracker.ts` | Usage limits, cost calculations |
 | `src/utils/stripeUtils.ts` | Stripe checkout and subscription helpers |
@@ -205,7 +207,7 @@ PERPLEXITY_API_KEY=pplx-xxx
 
 ```bash
 npm run test           # Unit tests (Vitest) - watch mode
-npm run test:run       # Unit tests once (252 tests)
+npm run test:run       # Unit tests once (367 tests)
 npm run test:functions # Edge Function tests
 npm run test:payment   # Payment flow tests
 ```

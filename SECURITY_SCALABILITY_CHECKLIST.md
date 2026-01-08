@@ -1,13 +1,13 @@
 # Security & Scalability Checklist
 
-> Last updated: 2026-01-05
+> Last updated: 2026-01-07
 > This document tracks the security and scalability state of LLM Navigator
 
 ---
 
 ## Security State: 🟡 MODERATE
 
-**Score: 17/25 items implemented (68%)**
+**Score: 19/25 items implemented (76%)**
 
 ### Authentication & Authorization
 
@@ -26,9 +26,9 @@
 
 | Status | Item | Priority | Notes |
 |--------|------|----------|-------|
-| ⚠️ | URL input validation | High | Basic validation only |
-| ❌ | XSS prevention (input sanitization) | High | No explicit sanitization in forms |
-| ❌ | SQL injection prevention | Medium | RLS helps, but no parameterized query audit |
+| ✅ | URL input validation | High | `sanitize.ts` - sanitizeUrl() blocks dangerous protocols (2026-01-07) |
+| ✅ | XSS prevention (input sanitization) | High | `sanitize.ts` - escapeHtml(), stripHtmlTags(), sanitizeText() (2026-01-07) |
+| ✅ | SQL injection prevention | Medium | `sanitize.ts` - isSafeInput() detects SQL patterns, sanitizeSearchQuery() (2026-01-07) |
 | ❌ | CSRF protection | Medium | Not explicitly implemented |
 | ✅ | Content Security Policy (CSP) | High | Configured in `netlify.toml` |
 
@@ -172,9 +172,11 @@
    - Files: `src/utils/costTracker.ts`, analysis storage
    - Impact: Data loss on browser clear, not scalable
 
-4. **Add Input Sanitization**
-   - Files: All form components
-   - Action: Sanitize URL inputs, prompt inputs before processing
+4. ~~**Add Input Sanitization**~~ ✅ DONE (2026-01-07)
+   - Created: `src/utils/sanitize.ts` (13 sanitization functions)
+   - Created: `src/utils/sanitize.test.ts` (115 tests)
+   - Applied to: `AuthPage.tsx`, `NewAnalysis.tsx`, `UserDashboard.tsx`
+   - Features: XSS prevention, SQL injection detection, URL validation, email sanitization
 
 5. **Implement MFA for Admin**
    - Impact: Admin accounts are high-value targets

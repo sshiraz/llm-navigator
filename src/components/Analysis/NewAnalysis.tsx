@@ -5,6 +5,7 @@ import UsageLimitsBanner from './UsageLimitsBanner';
 import { User, Analysis, AnalysisProvider } from '../../types';
 import { AnalysisEngine } from '../../utils/analysisEngine';
 import { useUsageMonitoring } from '../../utils/costTracker';
+import { sanitizeUrl, sanitizeText, sanitizeSearchQuery } from '../../utils/sanitize';
 
 // Generate a unique ID for prompts
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -85,6 +86,13 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     e.preventDefault();
     setError(null);
 
+    // Sanitize all inputs before processing
+    const sanitizedWebsite = sanitizeUrl(website);
+    const sanitizedBrandName = sanitizeText(brandName);
+    const sanitizedPrompts = prompts
+      .map(p => ({ id: p.id, text: sanitizeSearchQuery(p.text) }))
+      .filter(p => p.text.length > 0);
+
     // Store parameters in localStorage for persistence
     try {
       localStorage.setItem('lastAnalysisWebsite', website);
@@ -95,14 +103,13 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
       console.error('Error storing analysis parameters:', error);
     }
 
-    if (!website || website.trim().length === 0) {
-      setError('Please enter a website URL');
+    if (!sanitizedWebsite) {
+      setError('Please enter a valid website URL');
       return;
     }
 
-    const validPrompts = prompts.filter(p => p.text.trim().length > 0);
-    if (validPrompts.length === 0) {
-      setError('Please enter at least one prompt');
+    if (sanitizedPrompts.length === 0) {
+      setError('Please enter at least one valid prompt');
       return;
     }
 
@@ -122,12 +129,12 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
 
     setIsAnalyzing(true);
     setCurrentAnalysis({
-      website: website.trim(),
-      prompts: validPrompts,
-      brandName: brandName.trim() || undefined,
+      website: sanitizedWebsite,
+      prompts: sanitizedPrompts,
+      brandName: sanitizedBrandName || undefined,
       providers: selectedProviders
     });
-    console.log('Starting AEO analysis for:', website.trim(), validPrompts);
+    console.log('Starting AEO analysis for:', sanitizedWebsite, sanitizedPrompts);
   };
 
   // Function to check if there's a last analysis available

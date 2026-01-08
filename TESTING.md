@@ -13,7 +13,7 @@ This document provides an overview of all automated tests in the LLM Navigator p
 npm run test:run && npm run build
 ```
 
-Current test count: **252 tests** (10 test files)
+Current test count: **367 tests** (11 test files)
 
 ## Quick Reference
 
@@ -143,6 +143,32 @@ Tests the StorageManager localStorage abstraction (20 tests).
 | `getLastAnalysisWebsite` | Last website retrieval |
 | `clearAllAnalysisData` | Bulk clear operations |
 
+### Input Sanitization
+**File:** `src/utils/sanitize.test.ts`
+
+Tests the sanitization utilities for XSS/SQL injection prevention (115 tests).
+
+| Test Suite | Coverage |
+|------------|----------|
+| `escapeHtml` | HTML entity escaping, special characters, null handling |
+| `stripHtmlTags` | Tag removal, event handlers, dangerous protocols |
+| `sanitizeText` | HTML stripping, null bytes, unicode normalization |
+| `sanitizeUrl` | Protocol validation, dangerous protocol blocking, URL format |
+| `sanitizeEmail` | Email validation, HTML stripping, lowercase normalization |
+| `sanitizeSearchQuery` | SQL injection pattern removal, whitespace normalization |
+| `sanitizePassword` | Control character removal, special char preservation |
+| `sanitizeArray` | Array sanitization, empty filtering |
+| `sanitizeFormData` | Field-specific sanitization, config options |
+| `escapeRegex` | Regex special character escaping |
+| `isSafeInput` | HTML tag detection, event handler detection, SQL pattern detection |
+| **Security Attack Vectors** | XSS Prevention (11 vectors), SQL Injection (9 vectors), Unicode Bypass, Null Byte Injection, Protocol Handler Attacks (8 protocols) |
+
+**Security Coverage:**
+- Blocks `javascript:`, `vbscript:`, `data:`, `file:`, `about:` protocols
+- Detects SQL keywords: SELECT, INSERT, UPDATE, DELETE, DROP, UNION, ALTER, CREATE, TRUNCATE
+- Normalizes unicode to prevent homograph attacks
+- Removes null bytes from all inputs
+
 ### Payment Service
 **File:** `src/services/paymentService.test.ts`
 
@@ -250,11 +276,12 @@ set -a && . ./.env && set +a && npm run test:functions
 | Analysis Engine | analysisEngine.test.ts, analysisHelpers.test.ts | - |
 | Competitor Comparison | competitorComparison.test.ts | - |
 | Storage | storageManager.test.ts | - |
+| Input Sanitization | sanitize.test.ts (115 tests) | - |
 | Payment/Stripe | paymentService.test.ts | test-payment-flow.ts |
 | Edge Functions | - | test-edge-functions.ts |
 | CORS Security | - | test-edge-functions.ts |
 
-**Total: 252 tests across 10 test files**
+**Total: 367 tests across 11 test files**
 
 ---
 

@@ -3,6 +3,7 @@ import { Search, ArrowRight, Mail, Lock, User as UserIcon, Building, Globe } fro
 import { FraudPrevention } from '../../utils/fraudPrevention';
 import { AuthService } from '../../services/authService';
 import { FraudPreventionCheck, User } from '../../types';
+import { sanitizeText, sanitizeEmail, sanitizePassword, sanitizeUrl } from '../../utils/sanitize';
 
 interface AuthPageProps {
   onLogin: (user: User) => void;
@@ -50,9 +51,13 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
   const handleEmailBlur = async () => {
     if (!formData.email || isLogin) return;
 
+    // Sanitize email before fraud check
+    const sanitizedEmail = sanitizeEmail(formData.email);
+    if (!sanitizedEmail) return;
+
     setIsChecking(true);
     try {
-      const check = await FraudPrevention.checkTrialEligibility(formData.email);
+      const check = await FraudPrevention.checkTrialEligibility(sanitizedEmail);
       setFraudCheck(check);
     } catch (error) {
       console.error('Fraud check failed:', error);
@@ -66,10 +71,24 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     setIsLoading(true);
     setError(null);
 
+    // Sanitize all form inputs before processing
+    const sanitizedEmail = sanitizeEmail(formData.email);
+    const sanitizedPassword = sanitizePassword(formData.password);
+    const sanitizedName = sanitizeText(formData.name);
+    const sanitizedCompany = sanitizeText(formData.company);
+    const sanitizedWebsite = formData.website ? sanitizeUrl(formData.website) : '';
+
+    // Validate sanitized email
+    if (!sanitizedEmail) {
+      setError('Please enter a valid email address');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       if (isLogin) {
         // Login via Supabase Auth
-        const result = await AuthService.signIn(formData.email, formData.password);
+        const result = await AuthService.signIn(sanitizedEmail, sanitizedPassword);
 
         if (!result.success) {
           setError(result.error || 'Invalid email or password');
@@ -91,13 +110,13 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           return;
         }
 
-        // Sign up via Supabase Auth
+        // Sign up via Supabase Auth with sanitized inputs
         const result = await AuthService.signUp({
-          email: formData.email,
-          password: formData.password,
-          name: formData.name || 'New User',
-          company: formData.company,
-          website: formData.website
+          email: sanitizedEmail,
+          password: sanitizedPassword,
+          name: sanitizedName || 'New User',
+          company: sanitizedCompany,
+          website: sanitizedWebsite
         });
 
         if (!result.success) {

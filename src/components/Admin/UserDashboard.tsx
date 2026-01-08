@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, Search, Filter, Download, RefreshCw, CreditCard, Clock, CheckCircle, XCircle, ArrowLeft, Shield, Save, X, Trash2, Loader2, Key } from 'lucide-react';
 import { User } from '../../types';
 import { supabase } from '../../lib/supabase';
+import { sanitizeText, sanitizeEmail, sanitizePassword, sanitizeSearchQuery } from '../../utils/sanitize';
 
 export default function UserDashboard() {
   const [users, setUsers] = useState<User[]>([]);
@@ -110,14 +111,16 @@ export default function UserDashboard() {
   useEffect(() => {
     // Apply filters and search
     let result = [...users];
-    
-    // Apply search
+
+    // Apply search with sanitization
     if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(user => 
-        user.name?.toLowerCase().includes(term) || 
-        user.email?.toLowerCase().includes(term)
-      );
+      const sanitizedTerm = sanitizeSearchQuery(searchTerm).toLowerCase();
+      if (sanitizedTerm) {
+        result = result.filter(user =>
+          user.name?.toLowerCase().includes(sanitizedTerm) ||
+          user.email?.toLowerCase().includes(sanitizedTerm)
+        );
+      }
     }
     
     // Apply plan filter
@@ -211,6 +214,15 @@ export default function UserDashboard() {
   const handleSaveUser = () => {
     if (!editingUser) return;
 
+    // Sanitize form inputs
+    const sanitizedName = sanitizeText(editForm.name);
+    const sanitizedEmail = sanitizeEmail(editForm.email);
+
+    if (!sanitizedEmail) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
     try {
       // Update user in localStorage
       const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
@@ -218,17 +230,17 @@ export default function UserDashboard() {
         if (user.id === editingUser.id) {
           return {
             ...user,
-            name: editForm.name,
-            email: editForm.email,
+            name: sanitizedName,
+            email: sanitizedEmail,
             subscription: editForm.subscription,
             paymentMethodAdded: editForm.paymentMethodAdded
           };
         }
         return user;
       });
-      
+
       localStorage.setItem('users', JSON.stringify(updatedUsers));
-      
+
       // If this is the current user, update that too
       const currentUserStr = localStorage.getItem('currentUser');
       if (currentUserStr) {
@@ -236,18 +248,18 @@ export default function UserDashboard() {
         if (currentUser.id === editingUser.id) {
           const updatedCurrentUser = {
             ...currentUser,
-            name: editForm.name,
-            email: editForm.email,
+            name: sanitizedName,
+            email: sanitizedEmail,
             subscription: editForm.subscription,
             paymentMethodAdded: editForm.paymentMethodAdded
           };
           localStorage.setItem('currentUser', JSON.stringify(updatedCurrentUser));
         }
       }
-      
+
       // Refresh user list
       loadUsers();
-      
+
       // Close edit form
       setEditingUser(null);
     } catch (error) {
@@ -321,8 +333,9 @@ export default function UserDashboard() {
   const handleResetPassword = async () => {
     if (!resetPasswordUser) return;
 
-    // Validate password
-    if (!newPassword || newPassword.length < 6) {
+    // Sanitize and validate password
+    const sanitizedPassword = sanitizePassword(newPassword);
+    if (!sanitizedPassword || sanitizedPassword.length < 6) {
       setResetPasswordError('Password must be at least 6 characters');
       return;
     }
@@ -354,7 +367,7 @@ export default function UserDashboard() {
           },
           body: JSON.stringify({
             targetUserId: resetPasswordUser.id,
-            newPassword: newPassword,
+            newPassword: sanitizedPassword,
             adminUserId: currentUser.id
           })
         }

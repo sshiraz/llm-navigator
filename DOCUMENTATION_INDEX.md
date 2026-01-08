@@ -68,7 +68,7 @@
 
 | File | Purpose | When to Use |
 |------|---------|-------------|
-| `TESTING.md` | **Comprehensive test documentation** (252 tests) | Primary test reference |
+| `TESTING.md` | **Comprehensive test documentation** (367 tests) | Primary test reference |
 | `APP_TESTING_GUIDE.md` | End-to-end manual testing guide | Manual QA testing |
 
 **Requirement:** All tests must pass (0 failures) before code is ready to merge.
