@@ -5,6 +5,151 @@
 
 ---
 
+## 2026-01-09: Add API Access for Enterprise users
+
+**Commit:** `pending` - REST API for programmatic access to analysis features
+
+### Context
+
+Enterprise users needed programmatic access to run analyses and retrieve history via REST API. This was a listed feature on the pricing page but wasn't implemented.
+
+**Scope:** POST `/api/analyze` (run analysis), GET `/api/analyses` (list history), GET `/api/analyses/:id` (get single)
+
+### Changes & Reasoning
+
+#### 1. API key storage (`supabase/migrations/20260113_create_api_keys.sql`)
+
+**Security decision:** Never store plaintext API keys. Only store SHA-256 hash.
+
+```sql
+CREATE TABLE IF NOT EXISTS api_keys (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id uuid REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  key_hash text NOT NULL,           -- SHA-256 hash only
+  key_prefix text NOT NULL,         -- First 8 chars for display (llm_sk_...)
+  name text DEFAULT 'Default',
+  last_used_at timestamptz,
+  created_at timestamptz DEFAULT now(),
+  revoked_at timestamptz,           -- NULL = active, set = revoked
+  CONSTRAINT unique_key_hash UNIQUE (key_hash)
+);
+```
+
+**Why `revoked_at` instead of delete:** Allows instant revocation while preserving audit history.
+
+#### 2. Shared API auth helper (`supabase/functions/_shared/apiAuth.ts`)
+
+**Problem:** Need to validate API keys in edge functions and verify Enterprise subscription.
+
+**Solution:** Reusable validation function that:
+1. Extracts Bearer token from Authorization header
+2. Hashes the token (SHA-256 via Web Crypto API)
+3. Looks up hash in api_keys table (where revoked_at IS NULL)
+4. Joins to users table, verifies subscription = 'enterprise'
+5. Updates last_used_at timestamp
+6. Returns user info or error
+
+```typescript
+export async function validateApiKey(req: Request): Promise<{
+  success: boolean;
+  user?: { id: string; email: string; subscription: string };
+  error?: string;
+  status?: number;
+}>
+```
+
+**Why separate file:** Reusable across any API-authenticated endpoint.
+
+#### 3. API edge function (`supabase/functions/api/index.ts`)
+
+**Architecture:** Single edge function with route handling, not separate functions per endpoint.
+
+**Endpoints:**
+- `POST /api/analyze` - Validates body, calls crawl-website + check-citations, saves to DB
+- `GET /api/analyses` - Lists analyses with pagination (limit, offset)
+- `GET /api/analyses/:id` - Returns single analysis
+
+**Rate limiting:**
+- In-memory Map for simplicity (resets on cold start, acceptable for MVP)
+- 10 requests/minute per user
+- 400 analyses/month (checked against DB)
+
+```typescript
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+```
+
+**Why in-memory:** Redis would be overkill. Edge function cold starts are rare enough that the occasional reset is acceptable.
+
+#### 4. Frontend API key service (`src/services/apiKeyService.ts`)
+
+**Methods:**
+- `createApiKey()` - Generates key client-side, sends hash to server
+- `listApiKeys()` - Returns keys with prefix only (never full key)
+- `revokeApiKey()` - Sets revoked_at timestamp
+
+**Key format:** `llm_sk_{32 random alphanumeric chars}`
+
+```typescript
+const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const randomPart = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+  .map(b => chars[b % chars.length]).join('');
+return `llm_sk_${randomPart}`;
+```
+
+**Why client-side generation:** Plaintext key is shown once and never transmitted again. Only hash goes to server.
+
+#### 5. API Keys UI in AccountPage (`src/components/Account/AccountPage.tsx`)
+
+**Design decisions:**
+- Only visible for Enterprise users
+- List shows prefix + name + last used date
+- Create button opens modal with one-time key display
+- Copy button for easy clipboard access
+- Revoke with confirmation
+
+**Modal flow:**
+1. User clicks "Create API Key"
+2. Key generated client-side, hash sent to server
+3. Modal shows full key once: "Save this key - it won't be shown again"
+4. Copy button copies to clipboard
+5. Close modal - key display gone forever
+
+#### 6. API documentation page (`src/components/Docs/ApiDocs.tsx`)
+
+**Contents:**
+- Authentication section (Bearer token format)
+- Rate limits (400/month, 10/minute)
+- All three endpoints with request/response examples
+- Error codes table (400, 401, 403, 404, 429, 500)
+- Copy-to-clipboard for curl examples
+
+**Route:** `#api-docs` (linked from Account page)
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `supabase/migrations/20260113_create_api_keys.sql` | New - API keys table |
+| `supabase/functions/_shared/apiAuth.ts` | New - Shared auth helper |
+| `supabase/functions/api/index.ts` | New - API edge function |
+| `src/services/apiKeyService.ts` | New - Frontend key management |
+| `src/components/Docs/ApiDocs.tsx` | New - Documentation page |
+| `src/types/index.ts` | Added ApiKey interface |
+| `src/types/database.ts` | Added api_keys table type |
+| `src/components/Account/AccountPage.tsx` | API Keys section + modal |
+| `src/App.tsx` | Added api-docs route |
+
+### Plan Availability
+
+| Plan | API Access |
+|------|------------|
+| Trial | No |
+| Starter | No |
+| Professional | No |
+| Enterprise | Yes |
+
+---
+
 ## 2026-01-09: Add branded reports with company logo upload
 
 **Commit:** `pending` - Add company logo upload for branded PDF reports

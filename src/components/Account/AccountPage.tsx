@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { ArrowLeft, User, Mail, Building, Globe, Save, X, CheckCircle, AlertTriangle, CreditCard, Calendar, XCircle, AlertOctagon, Lock, Image, Upload, Trash2 } from 'lucide-react';
-import { User as UserType } from '../../types';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, User, Mail, Building, Globe, Save, X, CheckCircle, AlertTriangle, CreditCard, Calendar, XCircle, AlertOctagon, Lock, Image, Upload, Trash2, Key, Copy, ExternalLink, Plus } from 'lucide-react';
+import { User as UserType, ApiKey } from '../../types';
 import { getTrialStatus } from '../../utils/mockData';
 import { supabase } from '../../lib/supabase';
 import { AuthService } from '../../services/authService';
+import { ApiKeyService } from '../../services/apiKeyService';
 
 interface AccountPageProps {
   user: UserType;
@@ -41,6 +42,57 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
   // Logo upload state
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(user.companyLogoUrl || null);
+
+  // API Keys state (Enterprise only)
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [isLoadingKeys, setIsLoadingKeys] = useState(false);
+  const [showCreateKeyModal, setShowCreateKeyModal] = useState(false);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [isCreatingKey, setIsCreatingKey] = useState(false);
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
+  const [keyCopied, setKeyCopied] = useState(false);
+
+  // Load API keys for Enterprise users
+  useEffect(() => {
+    if (user.subscription === 'enterprise') {
+      loadApiKeys();
+    }
+  }, [user.subscription]);
+
+  const loadApiKeys = async () => {
+    setIsLoadingKeys(true);
+    const result = await ApiKeyService.listApiKeys(user.id);
+    if (result.success && result.keys) {
+      setApiKeys(result.keys.filter(k => !k.revokedAt)); // Only show active keys
+    }
+    setIsLoadingKeys(false);
+  };
+
+  const handleCreateApiKey = async () => {
+    setIsCreatingKey(true);
+    const result = await ApiKeyService.createApiKey(user.id, newKeyName || 'Default');
+    if (result.success && result.key) {
+      setNewlyCreatedKey(result.key);
+      await loadApiKeys();
+    }
+    setIsCreatingKey(false);
+  };
+
+  const handleRevokeKey = async (keyId: string) => {
+    if (!confirm('Are you sure you want to revoke this API key? This cannot be undone.')) {
+      return;
+    }
+    const result = await ApiKeyService.revokeApiKey(user.id, keyId);
+    if (result.success) {
+      await loadApiKeys();
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    await navigator.clipboard.writeText(text);
+    setKeyCopied(true);
+    setTimeout(() => setKeyCopied(false), 2000);
+  };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -743,7 +795,7 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
           {/* Account Security */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Account Security</h3>
-            
+
             <div className="space-y-4">
               <div>
                 <button
@@ -753,7 +805,7 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
                   Change Password
                 </button>
               </div>
-              
+
               <div className="pt-4 border-t border-gray-200">
                 <div className="text-sm text-gray-500 mb-2">Account Created</div>
                 <div className="font-medium text-gray-900">
@@ -762,8 +814,190 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
               </div>
             </div>
           </div>
+
+          {/* API Access - Enterprise only */}
+          {user.subscription === 'enterprise' && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-2">
+                  <Key className="w-5 h-5 text-indigo-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">API Access</h3>
+                </div>
+                <a
+                  href="#api-docs"
+                  className="text-sm text-indigo-600 hover:text-indigo-700 flex items-center space-x-1"
+                >
+                  <span>View Docs</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+
+              {/* API Keys List */}
+              <div className="space-y-3 mb-4">
+                {isLoadingKeys ? (
+                  <div className="text-center py-4">
+                    <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                    <p className="text-sm text-gray-500 mt-2">Loading API keys...</p>
+                  </div>
+                ) : apiKeys.length === 0 ? (
+                  <div className="text-center py-6 bg-gray-50 rounded-lg">
+                    <Key className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">No API keys yet</p>
+                    <p className="text-xs text-gray-500">Create your first API key to get started</p>
+                  </div>
+                ) : (
+                  apiKeys.map(key => (
+                    <div
+                      key={key.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <code className="text-sm font-mono text-gray-700 bg-gray-200 px-2 py-1 rounded">
+                          {key.keyPrefix}
+                        </code>
+                        <span className="text-sm text-gray-600">{key.name}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-gray-400">
+                          {key.lastUsedAt
+                            ? `Last used ${new Date(key.lastUsedAt).toLocaleDateString()}`
+                            : 'Never used'}
+                        </span>
+                        <button
+                          onClick={() => handleRevokeKey(key.id)}
+                          className="text-red-600 hover:text-red-700 text-sm font-medium"
+                        >
+                          Revoke
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Create Key Button */}
+              <button
+                onClick={() => {
+                  setNewKeyName('');
+                  setNewlyCreatedKey(null);
+                  setShowCreateKeyModal(true);
+                }}
+                className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create API Key</span>
+              </button>
+
+              {/* Usage Info */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="text-sm text-gray-500">
+                  API Rate Limit: <span className="font-medium text-gray-700">400 analyses/month</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Create API Key Modal */}
+      {showCreateKeyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            {newlyCreatedKey ? (
+              <>
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900">API Key Created</h3>
+                </div>
+
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Important:</strong> Copy this key now. You won't be able to see it again!
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2 mb-6">
+                  <code className="flex-1 text-sm font-mono bg-gray-100 p-3 rounded-lg break-all">
+                    {newlyCreatedKey}
+                  </code>
+                  <button
+                    onClick={() => copyToClipboard(newlyCreatedKey)}
+                    className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg"
+                    title="Copy to clipboard"
+                  >
+                    {keyCopied ? (
+                      <CheckCircle className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <Copy className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setShowCreateKeyModal(false);
+                    setNewlyCreatedKey(null);
+                  }}
+                  className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Done
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <Key className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900">Create API Key</h3>
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Key Name (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={newKeyName}
+                    onChange={(e) => setNewKeyName(e.target.value)}
+                    placeholder="e.g., Production, CI/CD, Testing"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    A name to help you identify this key
+                  </p>
+                </div>
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowCreateKeyModal(false)}
+                    disabled={isCreatingKey}
+                    className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCreateApiKey}
+                    disabled={isCreatingKey}
+                    className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center"
+                  >
+                    {isCreatingKey ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Creating...
+                      </>
+                    ) : (
+                      'Create Key'
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Cancel Subscription Modal */}
       {showCancelModal && (

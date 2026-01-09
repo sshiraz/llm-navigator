@@ -245,3 +245,17 @@ export interface AEOAnalysis {
     };
   };
 }
+
+// ============================================
+// API Key Types (Enterprise API Access)
+// ============================================
+
+export interface ApiKey {
+  id: string;
+  userId: string;
+  keyPrefix: string;      // First 12 chars for display (llm_sk_a1b2...)
+  name: string;           // User-friendly name
+  lastUsedAt?: string;
+  createdAt: string;
+  revokedAt?: string;     // NULL = active, set = revoked
+}

@@ -12,7 +12,7 @@
 | Category | Complete | Partial | Pending | Total |
 |----------|----------|---------|---------|-------|
 | Core Features | 15 | 1 | 3 | 19 |
-| Security | 17 | 2 | 7 | 26 |
+| Security | 17 | 3 | 6 | 26 |
 | Scalability | 8 | 1 | 9 | 18 |
 | Testing | 6 | 1 | 1 | 8 |
 | Documentation | 7 | 1 | 2 | 10 |
@@ -20,7 +20,7 @@
 | Payments | 9 | 0 | 2 | 11 |
 | User Experience | 8 | 0 | 3 | 11 |
 | Admin | 4 | 1 | 1 | 6 |
-| **Total** | **79** | **7** | **32** | **118** |
+| **Total** | **79** | **8** | **31** | **118** |
 
 **Overall Progress: 73% complete**
 
@@ -98,7 +98,7 @@
 | ✅ | Server-side API keys | AI keys in edge functions only |
 | ✅ | Webhook signature verification | Stripe webhooks validated |
 | ✅ | CORS configuration | Origin whitelist (Netlify, localhost) |
-| ❌ | Rate limiting | Returns unlimited always |
+| ⚠️ | Rate limiting | API: 10/min, 400/month. Main app: unlimited |
 | ❌ | API key rotation policy | No documented schedule |
 
 ### Headers & Transport
@@ -218,7 +218,7 @@
 | ✅ | TESTING.md | Comprehensive test documentation |
 | ✅ | BRANCH_ANALYSIS.md | Historical commit reasoning |
 | ⚠️ | Code comments | Inconsistent coverage |
-| ❌ | API documentation | No OpenAPI/Swagger |
+| ✅ | API documentation | REST API docs at #api-docs (Enterprise) |
 
 ### User Docs
 | Status | Feature | Notes |
@@ -346,7 +346,7 @@
 ## Quick Reference: Priority Items
 
 ### Critical (Security)
-1. ❌ Rate limiting - API abuse possible
+1. ⚠️ Rate limiting - API has limits, main app does not
 2. ❌ MFA for admin - High-value target
 
 ### High Priority (Scalability)
@@ -398,3 +398,7 @@
 | 2026-01-09 | Added: handle_new_user database trigger for auto profile creation |
 | 2026-01-09 | Branded reports: company logo upload to Supabase Storage, displayed on PDF exports |
 | 2026-01-09 | Added: assets storage bucket, company_logo_url field, file upload UI in Account Settings |
+| 2026-01-09 | API Access for Enterprise: REST API with POST /api/analyze, GET /api/analyses |
+| 2026-01-09 | Added: api_keys table, API edge function, apiAuth.ts shared helper |
+| 2026-01-09 | Added: ApiKeyService, API Keys UI in Account Settings (Enterprise only) |
+| 2026-01-09 | Added: ApiDocs page at #api-docs with full endpoint documentation |

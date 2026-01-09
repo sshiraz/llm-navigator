@@ -15,6 +15,7 @@ import AnalysisHistory from './components/History/AnalysisHistory';
 import LandingPage from './components/Landing/LandingPage';
 import AuthPage from './components/Auth/AuthPage';
 import PricingPage from './components/Pricing/PricingPage';
+import ApiDocs from './components/Docs/ApiDocs';
 import { Analysis, User } from './types';
 import EnvironmentStatus from './components/UI/EnvironmentStatus';
 import { mockAnalyses } from './utils/mockData';
@@ -244,7 +245,7 @@ function App() {
 
   const renderContent = () => {
     // Public pages that don't require login
-    if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account') {
+    if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account' || activeSection === 'api-docs') {
       // Special handling for admin-users - only allow access if user is admin
       if (activeSection === 'admin-users') {
         // Check if user is admin
@@ -301,6 +302,8 @@ function App() {
           return <UserDashboard />;
         case 'pricing':
           return <PricingPage currentPlan={user?.subscription || 'free'} onUpgrade={handleUpgrade} />;
+        case 'api-docs':
+          return <ApiDocs />;
         default:
           return <LandingPage onGetStarted={handleGetStarted} />;
       }
@@ -370,7 +373,7 @@ function App() {
   };
 
   // Show landing page or auth page without sidebar/header
-  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account' || activeSection === 'pricing') {
+  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account' || activeSection === 'pricing' || activeSection === 'api-docs') {
     return (
       <>
         {renderContent()}

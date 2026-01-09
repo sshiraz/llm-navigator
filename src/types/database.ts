@@ -269,6 +269,37 @@ export interface Database {
           error_code?: string;
         };
       };
+      api_keys: {
+        Row: {
+          id: string;
+          user_id: string;
+          key_hash: string;
+          key_prefix: string;
+          name: string;
+          last_used_at?: string;
+          created_at: string;
+          revoked_at?: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          key_hash: string;
+          key_prefix: string;
+          name?: string;
+          last_used_at?: string;
+          created_at?: string;
+          revoked_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          key_hash?: string;
+          key_prefix?: string;
+          name?: string;
+          last_used_at?: string;
+          revoked_at?: string;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
