@@ -18,7 +18,6 @@
 | ✅ | Email verification | Critical | Confirmation email required before login (2026-01-09) |
 | ✅ | Session persistence | High | `persistSession: true` |
 | ✅ | Row Level Security (RLS) on all tables | Critical | See `migrations/20250703064027_weathered_glitter.sql` |
-| ⚠️ | `fraud_checks` table has permissive RLS | Medium | Anyone can read - consider restricting |
 | ❌ | Multi-factor authentication (MFA) | High | Not implemented for admin accounts |
 | ❌ | Session timeout / auto-logout | Medium | No idle timeout configured |
 | ❌ | Password complexity requirements | Medium | Relying on Supabase defaults |
@@ -192,19 +191,15 @@
 
 ### Medium Priority
 
-8. **Restrict fraud_checks RLS**
-   - File: `migrations/20250703064027_weathered_glitter.sql` line 238-248
-   - Current: Public read access
-
-9. **Add Redis Caching**
+8. **Add Redis Caching**
     - Cache: Analysis results, user sessions
     - Provider: Upstash (serverless Redis)
 
-10. **Security Event Alerting**
-    - Track: Failed logins, unusual activity, fraud flags
+9. **Security Event Alerting**
+    - Track: Failed logins, unusual activity
     - Tool: Integrate with Supabase logs or external service
 
-11. **Session Timeout**
+10. **Session Timeout**
     - Add idle timeout (e.g., 30 min inactivity)
 
 ---

@@ -90,7 +90,6 @@
 | ✅ | Row Level Security (RLS) | All tables protected |
 | ✅ | User-scoped data access | Users see only their data |
 | ✅ | Admin role | isAdmin flag for admin features |
-| ⚠️ | fraud_checks table RLS | Too permissive (public read) |
 
 ### API Security
 | Status | Feature | Notes |
