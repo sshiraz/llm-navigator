@@ -304,30 +304,29 @@ const initializeDemoUser = () => {
   }
 };
 
-// Initialize demo user when this module is imported
-// Run this in a try-catch to prevent any issues with localStorage
-try {
-  initializeDemoUser();
-  
-  // Also initialize demo analyses if they don't exist
-  const initializeAnalyses = () => {
-    try {
-      // Check if analyses already exist in localStorage
-      const existingAnalyses = localStorage.getItem('analyses');
-      if (!existingAnalyses) {
-        // Store mockAnalyses in localStorage
-        localStorage.setItem('analyses', JSON.stringify(mockAnalyses));
-        console.log('Demo analyses initialized successfully');
-      }
-    } catch (error) {
-      console.error('Error initializing demo analyses:', error);
+// NOTE: Mock data initialization has been removed from auto-execution.
+// Mock data should only be used for testing, not in production.
+// The app now uses Supabase as the single source of truth for all user data.
+//
+// If you need to initialize demo data for development/testing, call:
+// - initializeDemoUser()
+// - initializeDemoAnalyses()
+// These functions are exported below for explicit use only.
+
+// Export for explicit initialization in development/testing only
+export { initializeDemoUser };
+
+export const initializeDemoAnalyses = () => {
+  try {
+    const existingAnalyses = localStorage.getItem('analyses');
+    if (!existingAnalyses) {
+      localStorage.setItem('analyses', JSON.stringify(mockAnalyses));
+      console.log('Demo analyses initialized successfully');
     }
-  };
-  
-  initializeAnalyses();
-} catch (error) {
-  console.error('Failed to initialize demo user:', error);
-}
+  } catch (error) {
+    console.error('Error initializing demo analyses:', error);
+  }
+};
 
 // Helper function to calculate trial status
 export const getTrialStatus = (user: User) => {

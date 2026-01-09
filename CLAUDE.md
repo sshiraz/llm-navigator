@@ -21,7 +21,8 @@ supabase/functions/ # Edge Functions (Deno)
 ├── check-citations/# Query AI providers
 ├── crawl-website/  # Website analysis
 ├── stripe-webhook/ # Payment events
-└── delete-user/    # Admin deletion
+├── delete-user/    # Admin deletion
+└── cleanup-auth-user/ # Cleanup orphaned auth users on signup failure
 
 scripts/            # Test scripts
 ```
@@ -193,6 +194,25 @@ localStorage.setItem('currentUser', JSON.stringify(updatedUser)); // Don't do th
 - Payment/Upgrade → PaymentService.handlePaymentSuccess() → Database updated → localStorage synced
 - Page Load → AuthService.getCurrentSession() → Supabase session checked → localStorage refreshed
 - Logout → AuthService.signOut() → Supabase session cleared → localStorage cleared
+
+### Email Verification Flow
+New users must verify their email before logging in:
+
+```
+1. User signs up → AuthService.signUp() with emailRedirectTo
+2. Supabase creates user but returns NO session (email unconfirmed)
+3. AuthPage shows "Check Your Email" screen
+4. User clicks link in email → Redirects to /#email-confirmed
+5. App.tsx detects hash → Shows "Email confirmed!" banner
+6. User can now log in
+```
+
+**Key files:**
+- `authService.ts` - signUp includes `emailRedirectTo`, returns `requiresEmailConfirmation`
+- `AuthPage.tsx` - Shows confirmation screen, resend email button, success banner
+- `App.tsx` - Detects `#email-confirmed` hash, passes props to AuthPage
+
+**Cleanup on failure:** If profile creation fails after auth user is created, `cleanup-auth-user` edge function deletes the orphaned auth user to prevent "already registered" errors.
 
 **Key files:**
 - `AuthPage.tsx` - Uses AuthService for Supabase Auth (not localStorage)

@@ -16,12 +16,26 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Helper function to handle Supabase errors
+// Helper function to handle Supabase errors with user-friendly messages
 export const handleSupabaseError = (error: any) => {
   console.error('Supabase error:', error);
+
+  // Map common database/auth errors to user-friendly messages
+  let userMessage = error.message || 'An unexpected error occurred';
+
+  if (error.message?.includes('users_email_key') || error.message?.includes('duplicate key')) {
+    userMessage = 'This email is already registered. Please sign in instead.';
+  } else if (error.message?.includes('Invalid login credentials')) {
+    userMessage = 'Invalid email or password. Please try again.';
+  } else if (error.message?.includes('Email not confirmed')) {
+    userMessage = 'Please check your email and click the confirmation link before signing in.';
+  } else if (error.message?.includes('User already registered')) {
+    userMessage = 'This email is already registered. Please sign in instead.';
+  }
+
   return {
     success: false,
-    error: error.message || 'An unexpected error occurred'
+    error: userMessage
   };
 };
 

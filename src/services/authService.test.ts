@@ -233,6 +233,7 @@ describe('AuthService', () => {
             company: undefined,
             website: undefined,
           },
+          emailRedirectTo: expect.stringContaining('#email-confirmed'),
         },
       });
     });
@@ -263,6 +264,7 @@ describe('AuthService', () => {
             company: newUserData.company,
             website: newUserData.website,
           },
+          emailRedirectTo: expect.stringContaining('#email-confirmed'),
         },
       });
     });

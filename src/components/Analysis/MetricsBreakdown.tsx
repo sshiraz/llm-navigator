@@ -67,7 +67,7 @@ export default function MetricsBreakdown({ analysis, competitors = [], previousA
   // Calculate trend between current and previous score
   const getTrend = (current: number, previous: number | undefined): { change: number; direction: 'up' | 'down' | 'same' } => {
     if (previous === undefined) return { change: 0, direction: 'same' };
-    const change = current - previous;
+    const change = Math.round(current) - Math.round(previous);
     if (change > 0) return { change, direction: 'up' };
     if (change < 0) return { change: Math.abs(change), direction: 'down' };
     return { change: 0, direction: 'same' };
@@ -259,12 +259,13 @@ export default function MetricsBreakdown({ analysis, competitors = [], previousA
 
                     {metricsInfo.map((metric) => {
                       const score = analysisItem.metrics[metric.key];
+                      const roundedScore = Math.round(score);
                       const previousScore = isUser && previousAnalysis ? previousAnalysis.metrics[metric.key] : undefined;
                       return (
                         <td key={metric.key} className="px-4 py-4 text-center">
                           <div className="flex items-center justify-center">
-                            <div className={`inline-flex items-center justify-center w-12 h-8 rounded text-sm font-bold ${getScoreBackground(score)} ${getScoreColor(score)}`}>
-                              {score}
+                            <div className={`inline-flex items-center justify-center w-12 h-8 rounded text-sm font-bold ${getScoreBackground(roundedScore)} ${getScoreColor(roundedScore)}`}>
+                              {roundedScore}
                             </div>
                             {isUser && renderTrend(score, previousScore)}
                           </div>

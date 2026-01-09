@@ -259,37 +259,83 @@ export class AnalysisService {
     }
   }
 
+  // Normalize website URL for comparison (handles http/https, www, trailing slash variations)
+  private static normalizeWebsiteForComparison(website: string): string {
+    return website
+      .toLowerCase()
+      .replace(/^https?:\/\//, '')  // Remove protocol
+      .replace(/^www\./, '')         // Remove www.
+      .replace(/\/+$/, '');          // Remove trailing slashes
+  }
+
+  // Generate URL variations for database lookup
+  private static getWebsiteVariations(website: string): string[] {
+    const normalized = this.normalizeWebsiteForComparison(website);
+    return [
+      website,                           // Original
+      normalized,                        // Just domain
+      `www.${normalized}`,              // With www
+      `https://${normalized}`,          // With https
+      `https://www.${normalized}`,      // With https and www
+      `https://${normalized}/`,         // With https and trailing slash
+      `https://www.${normalized}/`,     // Full form
+      `http://${normalized}`,           // With http
+      `http://www.${normalized}`,       // With http and www
+    ];
+  }
+
   // Get previous analysis for a website (for trend comparison)
   // Returns the second most recent analysis (the one before current)
+  // Now handles URL variations (http/https, www, trailing slash)
+  // Checks both Supabase and localStorage
   static async getPreviousAnalysisForWebsite(userId: string, website: string, currentAnalysisId?: string): Promise<Analysis | null> {
     try {
-      let query = supabase
+      // Get all URL variations to search for
+      const variations = this.getWebsiteVariations(website);
+      const normalizedWebsite = this.normalizeWebsiteForComparison(website);
+
+      // First, try Supabase
+      const { data, error } = await supabase
         .from('analyses')
         .select('*')
         .eq('user_id', userId)
-        .eq('website', website)
+        .in('website', variations)
         .order('created_at', { ascending: false })
-        .limit(2);
+        .limit(10);
 
-      // If we have the current analysis ID, exclude it
-      if (currentAnalysisId) {
-        query = query.neq('id', currentAnalysisId);
+      let allAnalyses: Analysis[] = [];
+
+      if (!error && data && data.length > 0) {
+        allAnalyses = data.map(rowToAnalysis);
       }
 
-      const { data, error } = await query;
+      // Also check localStorage (fallback storage)
+      const localAnalyses = this.getFromLocalStorage(userId);
+      if (localAnalyses.length > 0) {
+        // Filter localStorage analyses for matching website (normalized comparison)
+        const matchingLocal = localAnalyses.filter(a => {
+          const normalizedLocal = this.normalizeWebsiteForComparison(a.website);
+          return normalizedLocal === normalizedWebsite;
+        });
 
-      if (error) {
-        console.error('Error fetching previous analysis:', error);
+        // Merge with Supabase results, avoiding duplicates
+        for (const local of matchingLocal) {
+          if (!allAnalyses.some(a => a.id === local.id)) {
+            allAnalyses.push(local);
+          }
+        }
+      }
+
+      // Sort by date (newest first)
+      allAnalyses.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      if (allAnalyses.length === 0) {
         return null;
       }
 
-      // If we excluded current ID, return the first result (most recent excluding current)
-      // Otherwise, skip the first (current) and return the second (previous)
-      if (currentAnalysisId) {
-        return data && data.length > 0 ? rowToAnalysis(data[0]) : null;
-      } else {
-        return data && data.length > 1 ? rowToAnalysis(data[1]) : null;
-      }
+      // Filter out current analysis and return the most recent previous one
+      const previous = allAnalyses.find(a => a.id !== currentAnalysisId);
+      return previous || null;
     } catch (err: any) {
       console.error('Exception fetching previous analysis:', err);
       return null;
@@ -297,13 +343,17 @@ export class AnalysisService {
   }
 
   // Get analysis history for a website (all analyses, sorted by date)
+  // Handles URL variations (http/https, www, trailing slash)
   static async getWebsiteAnalysisHistory(userId: string, website: string, limit = 10): Promise<Analysis[]> {
     try {
+      // Get all URL variations to search for
+      const variations = this.getWebsiteVariations(website);
+
       const { data, error } = await supabase
         .from('analyses')
         .select('*')
         .eq('user_id', userId)
-        .eq('website', website)
+        .in('website', variations)
         .order('created_at', { ascending: false })
         .limit(limit);
 

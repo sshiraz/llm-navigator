@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, ArrowRight, Mail, Lock, User as UserIcon, Building, Globe } from 'lucide-react';
+import { Search, ArrowRight, Mail, Lock, User as UserIcon, Building, Globe, CheckCircle, RefreshCw } from 'lucide-react';
 import { FraudPrevention } from '../../utils/fraudPrevention';
 import { AuthService } from '../../services/authService';
 import { FraudPreventionCheck, User } from '../../types';
@@ -7,6 +7,8 @@ import { sanitizeText, sanitizeEmail, sanitizePassword, sanitizeUrl } from '../.
 
 interface AuthPageProps {
   onLogin: (user: User) => void;
+  emailJustConfirmed?: boolean;
+  onConfirmationAcknowledged?: () => void;
 }
 
 // Convert Supabase profile (snake_case) to User type (camelCase)
@@ -30,7 +32,7 @@ function profileToUser(profile: any): User {
   };
 }
 
-export default function AuthPage({ onLogin }: AuthPageProps) {
+export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAcknowledged }: AuthPageProps) {
   // Check URL for signup parameter (e.g., #auth?signup=true)
   const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
   const startWithSignup = urlParams.get('signup') === 'true';
@@ -47,6 +49,30 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
   const [isChecking, setIsChecking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Email confirmation states
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState('');
+  const [isResending, setIsResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
+
+  const handleResendEmail = async () => {
+    setIsResending(true);
+    setResendSuccess(false);
+    try {
+      const result = await AuthService.resendConfirmationEmail(confirmationEmail);
+      if (result.success) {
+        setResendSuccess(true);
+        setTimeout(() => setResendSuccess(false), 5000);
+      } else {
+        setError(result.error || 'Failed to resend email');
+      }
+    } catch (err) {
+      setError('Failed to resend confirmation email');
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   const handleEmailBlur = async () => {
     if (!formData.email || isLogin) return;
@@ -125,6 +151,14 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           return;
         }
 
+        // Check if email confirmation is required
+        if (result.data.requiresEmailConfirmation) {
+          setConfirmationEmail(sanitizedEmail);
+          setShowEmailConfirmation(true);
+          setIsLoading(false);
+          return;
+        }
+
         const user = profileToUser(result.data.profile);
 
         // Store current user in localStorage for app state
@@ -140,12 +174,89 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
     }
   };
 
+  // Show email confirmation screen
+  if (showEmailConfirmation) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"></div>
+
+        <div className="relative w-full max-w-md bg-transparent">
+          {/* Logo */}
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center space-x-3 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                <Search className="w-7 h-7 text-white" />
+              </div>
+              <div className="text-left">
+                <h1 className="text-2xl font-bold text-white">LLM Navigator</h1>
+                <p className="text-sm text-blue-200">Answer Engine Optimization</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-2xl p-8 text-center">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Mail className="w-8 h-8 text-blue-600" />
+            </div>
+
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Check Your Email</h2>
+            <p className="text-gray-600 mb-6">
+              We sent a confirmation link to<br />
+              <strong className="text-gray-900">{confirmationEmail}</strong>
+            </p>
+
+            <p className="text-sm text-gray-500 mb-6">
+              Click the link in the email to activate your account and start your free trial.
+            </p>
+
+            {resendSuccess && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                <div className="flex items-center justify-center space-x-2 text-green-800">
+                  <CheckCircle className="w-4 h-4" />
+                  <span className="text-sm">Confirmation email sent!</span>
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={handleResendEmail}
+              disabled={isResending}
+              className="w-full py-3 px-4 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-all flex items-center justify-center space-x-2 mb-4"
+            >
+              {isResending ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Sending...</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Resend Confirmation Email</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={() => {
+                setShowEmailConfirmation(false);
+                setIsLogin(true);
+                setFormData({ name: '', email: '', password: '', company: '', website: '' });
+              }}
+              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+            >
+              Back to Sign In
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
       {/* Background Pattern */}
-      {/* Background Pattern */}
       <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"></div>
-      
+
       <div className="relative w-full max-w-md bg-transparent">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -159,6 +270,16 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
             </div>
           </div>
         </div>
+
+        {/* Email Confirmed Success Banner */}
+        {emailJustConfirmed && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center space-x-2 text-green-800">
+              <CheckCircle className="w-5 h-5" />
+              <span className="font-medium">Email confirmed! You can now sign in.</span>
+            </div>
+          </div>
+        )}
 
         {/* Error Message */}
         {error && (

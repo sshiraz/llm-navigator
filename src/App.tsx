@@ -25,11 +25,12 @@ import { StorageManager } from './utils/storageManager';
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [activeSection, setActiveSection] = useState(() => {
-    // Check URL hash for initial section
-    const hash = window.location.hash.slice(1);
+    // Check URL hash for initial section (strip query params)
+    const hash = window.location.hash.slice(1).split('?')[0];
     return hash || 'landing';
   });
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
+  const [emailJustConfirmed, setEmailJustConfirmed] = useState(false);
 
   // Check if user is admin
   const isAdmin = user && isUserAdmin(user);
@@ -48,15 +49,27 @@ function App() {
   // Listen for hash changes to handle browser back/forward buttons
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.slice(1);
-      if (hash) {
-        setActiveSection(hash);
+      const fullHash = window.location.hash.slice(1);
+      const section = fullHash.split('?')[0]; // Strip query params for section matching
+
+      // Check for email confirmation callback
+      // Supabase returns: #access_token=xxx&type=signup or we redirect to #email-confirmed
+      if (fullHash.includes('email-confirmed') ||
+          (fullHash.includes('access_token') && fullHash.includes('type=signup'))) {
+        setEmailJustConfirmed(true);
+        // Redirect to auth page so user can sign in
+        window.location.hash = '#auth';
+        return;
+      }
+
+      if (section) {
+        setActiveSection(section);
       } else {
         setActiveSection('landing');
       }
 
       // If we're on the analysis-results page, try to load the analysis from storage
-      if (hash === 'analysis-results') {
+      if (section === 'analysis-results') {
         const storedAnalysis = StorageManager.getCurrentAnalysis();
         if (storedAnalysis) {
           setCurrentAnalysis(storedAnalysis);
@@ -250,7 +263,13 @@ function App() {
         case 'landing':
           return <LandingPage onGetStarted={handleGetStarted} />;
         case 'auth':
-          return <AuthPage onLogin={handleLogin} />;
+          return (
+            <AuthPage
+              onLogin={handleLogin}
+              emailJustConfirmed={emailJustConfirmed}
+              onConfirmationAcknowledged={() => setEmailJustConfirmed(false)}
+            />
+          );
         case 'account':
           return user ? (
             <AccountPage
@@ -262,7 +281,13 @@ function App() {
                 StorageManager.setCurrentUser(updatedUser);
               }}
             />
-          ) : <AuthPage onLogin={handleLogin} />;
+          ) : (
+            <AuthPage
+              onLogin={handleLogin}
+              emailJustConfirmed={emailJustConfirmed}
+              onConfirmationAcknowledged={() => setEmailJustConfirmed(false)}
+            />
+          );
         case 'contact':
           return <ContactPage />;
         case 'privacy':
@@ -280,7 +305,13 @@ function App() {
 
     // Protected routes that require login
     if (!user && ['dashboard', 'new-analysis', 'analysis-results', 'pricing', 'competitor-strategy', 'history'].includes(activeSection)) {
-      return <AuthPage onLogin={handleLogin} />;
+      return (
+        <AuthPage
+          onLogin={handleLogin}
+          emailJustConfirmed={emailJustConfirmed}
+          onConfirmationAcknowledged={() => setEmailJustConfirmed(false)}
+        />
+      );
     }
 
     switch (activeSection) {

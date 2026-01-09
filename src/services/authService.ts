@@ -11,6 +11,7 @@ function clearUserLocalStorage() {
     'costTracker',
     'analysisHistory',
     'recentAnalyses',
+    'users', // Clear mock users list - Supabase is source of truth
   ];
 
   keysToRemove.forEach(key => {
@@ -38,7 +39,7 @@ export class AuthService {
     try {
       // Check fraud prevention first
       const fraudCheck = await FraudPrevention.checkTrialEligibility(userData.email);
-      
+
       if (!fraudCheck.isAllowed && !userData.skipTrial) {
         return {
           success: false,
@@ -46,7 +47,7 @@ export class AuthService {
         };
       }
 
-      // Create auth user
+      // Create auth user with email redirect for confirmation
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
@@ -55,7 +56,8 @@ export class AuthService {
             name: userData.name,
             company: userData.company,
             website: userData.website
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/#email-confirmed`
         }
       });
 
@@ -69,6 +71,10 @@ export class AuthService {
           error: 'Failed to create user account'
         };
       }
+
+      // Check if email confirmation is required
+      // When email confirmation is enabled, Supabase returns user but NOT session
+      const requiresEmailConfirmation = authData.user && !authData.session;
 
       // Create user profile
       const subscription = userData.skipTrial ? (userData.subscription || 'starter') : 'trial';
@@ -90,6 +96,24 @@ export class AuthService {
         .single();
 
       if (profileError) {
+        // Profile creation failed - clean up the orphaned auth user
+        console.error('Profile creation failed, attempting to clean up auth user:', profileError);
+        try {
+          // Call edge function to delete the orphaned auth user
+          await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cleanup-auth-user`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({ userId: authData.user.id })
+            }
+          );
+        } catch (cleanupError) {
+          console.error('Failed to cleanup orphaned auth user:', cleanupError);
+        }
         return handleSupabaseError(profileError);
       }
 
@@ -108,10 +132,34 @@ export class AuthService {
       // Clear any cached data from previous users
       clearUserLocalStorage();
 
+      // Return with email confirmation status
       return handleSupabaseSuccess({
         user: authData.user,
-        profile: profileData
+        profile: profileData,
+        requiresEmailConfirmation,
+        email: userData.email
       });
+    } catch (error) {
+      return handleSupabaseError(error);
+    }
+  }
+
+  // Resend confirmation email
+  static async resendConfirmationEmail(email: string) {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/#email-confirmed`
+        }
+      });
+
+      if (error) {
+        return handleSupabaseError(error);
+      }
+
+      return handleSupabaseSuccess({ sent: true });
     } catch (error) {
       return handleSupabaseError(error);
     }
