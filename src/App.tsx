@@ -340,6 +340,7 @@ function App() {
           <AnalysisResults
             analysis={currentAnalysis}
             onBack={() => setActiveSection('new-analysis')}
+            logoUrl={user?.companyLogoUrl}
           />
         ) : null;
 

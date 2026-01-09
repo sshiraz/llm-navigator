@@ -15,6 +15,8 @@ export interface User {
   stripeSubscriptionId?: string;
   cancelAtPeriodEnd?: boolean;
   subscriptionEndsAt?: string;
+  // Branding (Professional/Enterprise plans)
+  companyLogoUrl?: string;
 }
 
 export interface Project {

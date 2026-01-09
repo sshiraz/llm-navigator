@@ -14,6 +14,7 @@ export interface DatabaseUser {
   device_fingerprint?: string;
   ip_address?: string;
   payment_method_added?: boolean;
+  company_logo_url?: string;
   created_at: string;
   updated_at: string;
 }
@@ -30,6 +31,7 @@ export function userToDatabase(user: User): DatabaseUser {
     device_fingerprint: user.deviceFingerprint,
     ip_address: user.ipAddress,
     payment_method_added: user.paymentMethodAdded,
+    company_logo_url: user.companyLogoUrl,
     created_at: user.createdAt,
     updated_at: new Date().toISOString() // Always update the updated_at field
   };
@@ -47,6 +49,7 @@ export function databaseToUser(dbUser: DatabaseUser): User {
     deviceFingerprint: dbUser.device_fingerprint,
     ipAddress: dbUser.ip_address,
     paymentMethodAdded: dbUser.payment_method_added,
+    companyLogoUrl: dbUser.company_logo_url,
     createdAt: dbUser.created_at
   };
 }
@@ -54,7 +57,7 @@ export function databaseToUser(dbUser: DatabaseUser): User {
 // Partial update mapping for User
 export function userUpdateToDatabase(updates: Partial<User>): Partial<DatabaseUser> {
   const dbUpdates: Partial<DatabaseUser> = {};
-  
+
   if (updates.id !== undefined) dbUpdates.id = updates.id;
   if (updates.email !== undefined) dbUpdates.email = updates.email;
   if (updates.name !== undefined) dbUpdates.name = updates.name;
@@ -64,10 +67,11 @@ export function userUpdateToDatabase(updates: Partial<User>): Partial<DatabaseUs
   if (updates.deviceFingerprint !== undefined) dbUpdates.device_fingerprint = updates.deviceFingerprint;
   if (updates.ipAddress !== undefined) dbUpdates.ip_address = updates.ipAddress;
   if (updates.paymentMethodAdded !== undefined) dbUpdates.payment_method_added = updates.paymentMethodAdded;
-  
+  if (updates.companyLogoUrl !== undefined) dbUpdates.company_logo_url = updates.companyLogoUrl;
+
   // Always update the updated_at field when making changes
   dbUpdates.updated_at = new Date().toISOString();
-  
+
   return dbUpdates;
 }
 
@@ -80,6 +84,7 @@ export const fieldMappers = {
     deviceFingerprint: 'device_fingerprint',
     ipAddress: 'ip_address',
     paymentMethodAdded: 'payment_method_added',
+    companyLogoUrl: 'company_logo_url',
     createdAt: 'created_at',
     updatedAt: 'updated_at'
   },

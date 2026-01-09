@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, User, Mail, Building, Globe, Save, X, CheckCircle, AlertTriangle, CreditCard, Calendar, XCircle, AlertOctagon, Lock } from 'lucide-react';
+import { ArrowLeft, User, Mail, Building, Globe, Save, X, CheckCircle, AlertTriangle, CreditCard, Calendar, XCircle, AlertOctagon, Lock, Image, Upload, Trash2 } from 'lucide-react';
 import { User as UserType } from '../../types';
 import { getTrialStatus } from '../../utils/mockData';
 import { supabase } from '../../lib/supabase';
@@ -17,7 +17,8 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
     name: user.name,
     email: user.email,
     company: '',
-    website: ''
+    website: '',
+    companyLogoUrl: user.companyLogoUrl || ''
   });
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -36,6 +37,68 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordStatus, setPasswordStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [passwordMessage, setPasswordMessage] = useState('');
+
+  // Logo upload state
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(user.companyLogoUrl || null);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file (PNG, JPG, etc.)');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('File size must be less than 2MB');
+      return;
+    }
+
+    setIsUploadingLogo(true);
+
+    try {
+      // Create a unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-logo-${Date.now()}.${fileExt}`;
+      const filePath = `company-logos/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('assets')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        alert('Failed to upload logo. Please try again.');
+        return;
+      }
+
+      // Get the public URL
+      const { data: urlData } = supabase.storage
+        .from('assets')
+        .getPublicUrl(filePath);
+
+      const publicUrl = urlData.publicUrl;
+
+      // Update form data and preview
+      setFormData({ ...formData, companyLogoUrl: publicUrl });
+      setLogoPreview(publicUrl);
+    } catch (error) {
+      console.error('Logo upload failed:', error);
+      alert('Failed to upload logo. Please try again.');
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setFormData({ ...formData, companyLogoUrl: '' });
+    setLogoPreview(null);
+  };
 
   const trialStatus = getTrialStatus(user);
   const isPaidPlan = ['starter', 'professional', 'enterprise'].includes(user.subscription);
@@ -141,20 +204,26 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
     e.preventDefault();
     setIsSaving(true);
     setSaveStatus('idle');
-    
+
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Update profile
-      onUpdateProfile({
+
+      // Update profile (including company logo for Professional/Enterprise)
+      const updates: Partial<UserType> = {
         name: formData.name,
-        // Don't update email for demo
-      });
-      
+      };
+
+      // Only include logo URL for Professional/Enterprise users
+      if (['professional', 'enterprise'].includes(user.subscription)) {
+        updates.companyLogoUrl = formData.companyLogoUrl || undefined;
+      }
+
+      onUpdateProfile(updates);
+
       setIsSaving(false);
       setSaveStatus('success');
-      
+
       // Reset form after success
       setTimeout(() => {
         setSaveStatus('idle');
@@ -417,7 +486,72 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
                     />
                   </div>
                 </div>
-                
+
+                {/* Company Logo - Professional/Enterprise only */}
+                {['professional', 'enterprise'].includes(user.subscription) && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Company Logo
+                      <span className="ml-2 text-xs text-indigo-600 font-normal">(for branded PDF reports)</span>
+                    </label>
+
+                    {logoPreview ? (
+                      <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <img
+                              src={logoPreview}
+                              alt="Company logo preview"
+                              className="max-h-12 max-w-[150px] object-contain"
+                              onError={() => setLogoPreview(null)}
+                            />
+                            <span className="text-sm text-gray-600">Logo uploaded</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleRemoveLogo}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Remove logo"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                        <input
+                          type="file"
+                          id="logo-upload"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          className="hidden"
+                          disabled={isUploadingLogo}
+                        />
+                        <label
+                          htmlFor="logo-upload"
+                          className="cursor-pointer flex flex-col items-center"
+                        >
+                          {isUploadingLogo ? (
+                            <>
+                              <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2"></div>
+                              <span className="text-sm text-gray-600">Uploading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                              <span className="text-sm font-medium text-blue-600">Click to upload logo</span>
+                              <span className="text-xs text-gray-500 mt-1">PNG, JPG up to 2MB</span>
+                            </>
+                          )}
+                        </label>
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-500 mt-2">
+                      Recommended size: 200x50px. Your logo will appear on PDF reports.
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex space-x-4">
                   <button
                     type="button"

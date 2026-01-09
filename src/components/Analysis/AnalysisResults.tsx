@@ -9,9 +9,10 @@ import { AnalysisService } from '../../services/analysisService';
 interface AnalysisResultsProps {
   analysis: Analysis;
   onBack: () => void;
+  logoUrl?: string;
 }
 
-export default function AnalysisResults({ analysis, onBack }: AnalysisResultsProps) {
+export default function AnalysisResults({ analysis, onBack, logoUrl }: AnalysisResultsProps) {
   const reportRef = useRef<HTMLDivElement>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [previousAnalysis, setPreviousAnalysis] = useState<Analysis | null>(null);
@@ -64,7 +65,7 @@ export default function AnalysisResults({ analysis, onBack }: AnalysisResultsPro
   const handleDownloadPDF = async () => {
     if (reportRef.current) {
       console.log('Generating PDF report for analysis:', analysis.id);
-      await generatePDFReport(reportRef.current, analysis);
+      await generatePDFReport(reportRef.current, analysis, logoUrl);
     }
   };
 

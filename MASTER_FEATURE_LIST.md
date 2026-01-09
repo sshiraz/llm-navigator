@@ -396,3 +396,5 @@
 | 2026-01-09 | Simplified signup: removed fraud prevention, replaced edge functions with DB trigger |
 | 2026-01-09 | Deleted: fraudPrevention.ts, create-user-profile/, cleanup-auth-user/ |
 | 2026-01-09 | Added: handle_new_user database trigger for auto profile creation |
+| 2026-01-09 | Branded reports: company logo upload to Supabase Storage, displayed on PDF exports |
+| 2026-01-09 | Added: assets storage bucket, company_logo_url field, file upload UI in Account Settings |

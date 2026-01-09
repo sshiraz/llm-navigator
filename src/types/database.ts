@@ -74,6 +74,7 @@ export interface Database {
           device_fingerprint?: string;
           ip_address?: string;
           payment_method_added?: boolean;
+          company_logo_url?: string;
           created_at: string;
           updated_at: string;
         };
@@ -87,6 +88,7 @@ export interface Database {
           device_fingerprint?: string;
           ip_address?: string;
           payment_method_added?: boolean;
+          company_logo_url?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -100,6 +102,7 @@ export interface Database {
           device_fingerprint?: string;
           ip_address?: string;
           payment_method_added?: boolean;
+          company_logo_url?: string;
           updated_at?: string;
         };
       };

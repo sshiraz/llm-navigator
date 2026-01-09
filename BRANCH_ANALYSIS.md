@@ -5,6 +5,205 @@
 
 ---
 
+## 2026-01-09: Add branded reports with company logo upload
+
+**Commit:** `pending` - Add company logo upload for branded PDF reports
+
+### Context
+
+Professional and Enterprise users can now upload a company logo that appears on their PDF report exports. This "branded reports" feature was on the roadmap and is a differentiator for paid plans.
+
+### Changes & Reasoning
+
+#### 1. Add `company_logo_url` field to users table (`supabase/migrations/20260111_add_company_logo.sql`)
+
+**Why:** Need to persist the logo URL in the user's profile so it's available whenever they export a PDF.
+
+```sql
+ALTER TABLE public.users
+ADD COLUMN IF NOT EXISTS company_logo_url TEXT;
+```
+
+#### 2. Create Supabase Storage bucket (`supabase/migrations/20260112_create_storage_bucket.sql`)
+
+**Problem:** Need somewhere to store uploaded logo files. Can't use "public" as bucket name (reserved).
+
+**Solution:** Created `assets` bucket with RLS policies:
+```sql
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('assets', 'assets', true);
+
+-- Policies restrict uploads to company-logos/ folder
+-- Public read access so logos render in PDFs
+```
+
+**Why public bucket:** Logos need to be accessible without authentication for PDF generation. The policies restrict uploads to authenticated users only.
+
+#### 3. File upload handler (`src/components/Account/AccountPage.tsx`)
+
+**Problem:** User wanted to browse and upload local files, not paste a URL.
+
+**Solution:** Added file input with validation:
+- Accept only images (`image/*`)
+- Max 2MB file size
+- Upload to `assets/company-logos/{userId}-logo-{timestamp}.{ext}`
+- Get public URL after upload
+
+```typescript
+const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  // Validate type and size
+  const { error } = await supabase.storage
+    .from('assets')
+    .upload(filePath, file, { upsert: true });
+  // Get public URL and save to form
+};
+```
+
+**Why upsert:** Allows replacing existing logo without delete + upload.
+
+#### 4. Upload UI with preview (`src/components/Account/AccountPage.tsx`)
+
+**Design choices:**
+- Drag-and-drop style dashed border (familiar pattern)
+- Shows upload spinner during upload
+- Preview of uploaded logo with trash button to remove
+- Only visible for Professional/Enterprise users
+
+#### 5. Pass logo to PDF generator (`src/utils/pdfGenerator.ts`)
+
+**Changes:**
+- Added `logoUrl` parameter to `generatePDFReport()`
+- Load image as base64 (required for jsPDF)
+- Position in header area (top-right, max 40mm x 15mm)
+
+```typescript
+const loadImageAsBase64 = async (url: string): Promise<string | null> => {
+  const response = await fetch(url);
+  const blob = await response.blob();
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.readAsDataURL(blob);
+  });
+};
+```
+
+**Why base64:** jsPDF `addImage()` requires base64 data, not URLs.
+
+#### 6. Update types and field mappers
+
+- Added `companyLogoUrl?: string` to User interface
+- Added `company_logo_url` to database types
+- Added mapping in `fieldMappers.ts`
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `supabase/migrations/20260111_add_company_logo.sql` | New - DB column |
+| `supabase/migrations/20260112_create_storage_bucket.sql` | New - Storage setup |
+| `src/types/index.ts` | Added companyLogoUrl to User |
+| `src/types/database.ts` | Added company_logo_url |
+| `src/utils/fieldMappers.ts` | Added field mapping |
+| `src/utils/pdfGenerator.ts` | Added logo support |
+| `src/components/Account/AccountPage.tsx` | File upload UI |
+| `src/components/Analysis/AnalysisResults.tsx` | Pass logoUrl prop |
+| `src/App.tsx` | Pass user's logo to AnalysisResults |
+
+### Plan Availability
+
+| Plan | Company Logo |
+|------|--------------|
+| Trial | No |
+| Starter | No |
+| Professional | Yes |
+| Enterprise | Yes |
+
+---
+
+## 2026-01-09: Simplify signup flow - remove fraud prevention
+
+**Commit:** `pending` - Remove fraud prevention, use DB trigger for profile creation
+
+### Context
+
+The signup flow had grown complex with fraud prevention checks (device fingerprinting, IP tracking, disposable email blocking) and edge functions for profile creation. This complexity wasn't justified because:
+
+1. **Trial users only see simulated data** - no real API costs if someone creates multiple trials
+2. **Edge functions add latency** - HTTP calls during signup slow it down
+3. **Database triggers are more reliable** - atomic with auth user creation
+
+### Changes & Reasoning
+
+#### 1. Create database trigger (`supabase/migrations/20260110_simplify_signup_trigger.sql`)
+
+**Solution:** Auto-create profile when auth user is created:
+```sql
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.users (id, email, name, subscription, trial_ends_at)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'name', 'New User'),
+    'trial',
+    NOW() + INTERVAL '14 days'
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+```
+
+**Why SECURITY DEFINER:** Trigger needs to bypass RLS to insert into users table.
+
+**Why trigger over edge function:**
+- Atomic - profile created in same transaction as auth user
+- No HTTP latency
+- No failure scenarios where auth exists but profile doesn't
+
+#### 2. Simplify authService.ts
+
+**Removed:**
+- FraudPrevention import and calls
+- Edge function calls (create-user-profile, cleanup-auth-user)
+- fraud_checks insert
+
+**Kept:**
+- Pre-check for existing email (good UX)
+- Email confirmation flow
+- resendConfirmationEmail()
+
+#### 3. Clean up AuthPage.tsx
+
+**Removed:**
+- FraudPrevention import
+- fraudCheckResult state
+- handleEmailBlur (was checking email on blur)
+- Fraud check result display
+
+#### 4. Delete unused files
+
+| Deleted | Reason |
+|---------|--------|
+| `src/utils/fraudPrevention.ts` | No longer used |
+| `supabase/functions/create-user-profile/` | Replaced by trigger |
+| `supabase/functions/cleanup-auth-user/` | Not needed |
+
+### Result
+
+- ~400 fewer lines of code
+- Faster signup (no edge function HTTP calls)
+- More reliable (trigger is atomic)
+- Simpler to maintain
+
+---
+
 ## 2026-01-09: Implement email verification for new user signups
 
 **Commit:** `pending` - Add email verification with edge function for profile creation

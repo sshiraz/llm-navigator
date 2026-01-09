@@ -1,6 +1,37 @@
 import jsPDF from 'jspdf';
 import { Analysis } from '../types';
 
+// Helper to load image as base64 for PDF embedding
+const loadImageAsBase64 = (url: string): Promise<string | null> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          const dataURL = canvas.toDataURL('image/png');
+          resolve(dataURL);
+        } else {
+          resolve(null);
+        }
+      } catch (e) {
+        console.warn('Failed to load logo image:', e);
+        resolve(null);
+      }
+    };
+    img.onerror = () => {
+      console.warn('Failed to load logo from URL:', url);
+      resolve(null);
+    };
+    img.src = url;
+  });
+};
+
 // Helper to convert score to confidence level
 const getAIConfidence = (score: number): string => {
   if (score >= 75) return 'High';
@@ -60,7 +91,7 @@ const generateDetailedInsights = (analysis: Analysis): string[] => {
   return insights;
 };
 
-export const generatePDFReport = async (element: HTMLElement, analysis: Analysis) => {
+export const generatePDFReport = async (element: HTMLElement, analysis: Analysis, logoUrl?: string) => {
   try {
     // Show loading state
     const loadingDiv = document.createElement('div');
@@ -82,6 +113,12 @@ export const generatePDFReport = async (element: HTMLElement, analysis: Analysis
     `;
     document.body.appendChild(loadingDiv);
 
+    // Load logo if provided
+    let logoBase64: string | null = null;
+    if (logoUrl) {
+      logoBase64 = await loadImageAsBase64(logoUrl);
+    }
+
     // Create PDF
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pageWidth = 210;
@@ -99,9 +136,23 @@ export const generatePDFReport = async (element: HTMLElement, analysis: Analysis
     };
 
     // ========== PAGE 1: Title & Overview ==========
+    let headerY = 20;
+
+    // Add company logo if available
+    if (logoBase64) {
+      try {
+        // Add logo at top-right corner (max 40mm wide, 15mm tall)
+        const logoMaxWidth = 40;
+        const logoMaxHeight = 15;
+        pdf.addImage(logoBase64, 'PNG', pageWidth - margin - logoMaxWidth, headerY, logoMaxWidth, logoMaxHeight);
+      } catch (e) {
+        console.warn('Failed to add logo to PDF:', e);
+      }
+    }
+
     pdf.setFontSize(24);
     pdf.setTextColor(31, 41, 55);
-    pdf.text('LLM Navigator Analysis Report', margin, 30);
+    pdf.text('AI Visibility Analysis Report', margin, 30);
 
     pdf.setFontSize(12);
     pdf.setTextColor(75, 85, 99);
