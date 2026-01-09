@@ -7,7 +7,7 @@
 
 ## 2026-01-09: Pricing page cleanup and tier differentiation
 
-**Commit:** `pending` - Clean up pricing page features to be accurate and differentiated
+**Commit:** `4a6a3c7` - Clean up pricing page features to be accurate and differentiated
 
 ### Context
 
@@ -89,7 +89,7 @@ All tiers now show the same core features in the same order:
 
 ## 2026-01-09: Add API Access for Enterprise users
 
-**Commit:** `pending` - REST API for programmatic access to analysis features
+**Commit:** `7eefb4e` - REST API for programmatic access to analysis features
 
 ### Context
 
@@ -234,7 +234,7 @@ return `llm_sk_${randomPart}`;
 
 ## 2026-01-09: Add branded reports with company logo upload
 
-**Commit:** `pending` - Add company logo upload for branded PDF reports
+**Commit:** `4b66251` - Add company logo upload for branded PDF reports
 
 ### Context
 
@@ -351,7 +351,7 @@ const loadImageAsBase64 = async (url: string): Promise<string | null> => {
 
 ## 2026-01-09: Simplify signup flow - remove fraud prevention
 
-**Commit:** `pending` - Remove fraud prevention, use DB trigger for profile creation
+**Commit:** `34df0e4` - Remove fraud prevention, use DB trigger for profile creation
 
 ### Context
 
@@ -433,7 +433,7 @@ CREATE TRIGGER on_auth_user_created
 
 ## 2026-01-09: Implement email verification for new user signups
 
-**Commit:** `pending` - Add email verification with edge function for profile creation
+**Commit:** `874ae98` - Add email verification with edge function for profile creation
 
 ### Context
 
@@ -706,7 +706,7 @@ For email verification to work, these settings must be configured in Supabase Da
 
 ## 2026-01-09: Simplify signup flow - Remove fraud prevention, use database trigger
 
-**Commit:** `pending` - Simplify signup: replace edge functions with DB trigger, remove fraud prevention
+**Commit:** `34df0e4` - Simplify signup: replace edge functions with DB trigger, remove fraud prevention
 
 ### Context
 
@@ -836,7 +836,7 @@ static async signUp(userData: {
 
 ## 2026-01-07: Add historical score tracking for trend comparison
 
-**Commit:** `pending` - Add historical score tracking to show improvement trends
+**Commit:** `2d197fa` - Add historical score tracking to show improvement trends
 
 ### Context
 
