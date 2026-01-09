@@ -5,9 +5,8 @@
 const ALLOWED_ORIGINS = [
   // Production
   'https://lucent-elf-359aef.netlify.app',
-  // Add your custom domain when configured:
-  // 'https://yourdomain.com',
-  // 'https://www.yourdomain.com',
+  'https://llmsearchinsight.com',
+  'https://www.llmsearchinsight.com',
 
   // Development
   'http://localhost:5173',

@@ -5,6 +5,54 @@
 
 ---
 
+## 2026-01-09: Custom domain setup - llmsearchinsight.com
+
+**Commit:** `pending` - Add custom domain to CORS whitelist
+
+### Context
+
+Setting up custom domain `llmsearchinsight.com` to replace the default Netlify URL (`lucent-elf-359aef.netlify.app`). This requires updating CORS configuration in edge functions to allow requests from the new domain.
+
+### Changes & Reasoning
+
+#### 1. Update CORS whitelist (`supabase/functions/_shared/cors.ts`)
+
+Added new domain origins:
+```typescript
+const ALLOWED_ORIGINS = [
+  // Production
+  'https://lucent-elf-359aef.netlify.app',
+  'https://llmsearchinsight.com',      // New primary domain
+  'https://www.llmsearchinsight.com',  // www redirect
+  // Development
+  'http://localhost:5173',
+  // ...
+];
+```
+
+**Why both www and non-www:** Even though we redirect www → non-www, some requests might originate from either. Better to whitelist both than have CORS errors.
+
+**Why keep Netlify URL:** Keeps the original URL working during transition and as a fallback.
+
+### Manual Steps Required
+
+After code deployment:
+
+1. **Netlify:** Add custom domain in dashboard
+2. **Name.com DNS:**
+   - A record: `@` → `75.2.60.5`
+   - CNAME: `www` → `llmsearchinsight.com`
+3. **Supabase Auth:** Update Site URL and Redirect URLs
+4. **Deploy edge functions:** `npx supabase functions deploy --all`
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `supabase/functions/_shared/cors.ts` | Added llmsearchinsight.com to whitelist |
+
+---
+
 ## 2026-01-09: Pricing page cleanup and tier differentiation
 
 **Commit:** `4a6a3c7` - Clean up pricing page features to be accurate and differentiated
