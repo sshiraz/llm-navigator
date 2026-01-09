@@ -99,15 +99,6 @@ export const fieldMappers = {
     userId: 'user_id',
     analysisId: 'analysis_id',
     errorCode: 'error_code'
-  },
-  
-  // Fraud Check field mappings
-  fraudCheck: {
-    deviceFingerprint: 'device_fingerprint',
-    ipAddress: 'ip_address',
-    riskScore: 'risk_score',
-    isAllowed: 'is_allowed',
-    createdAt: 'created_at'
   }
 };
 

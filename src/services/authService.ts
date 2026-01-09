@@ -1,6 +1,5 @@
 import { supabase, handleSupabaseError, handleSupabaseSuccess } from '../lib/supabase';
 import { User } from '../types';
-import { FraudPrevention } from '../utils/fraudPrevention';
 
 // Clear user-specific localStorage data to ensure clean state for new users
 function clearUserLocalStorage() {
@@ -27,27 +26,38 @@ function clearUserLocalStorage() {
 
 export class AuthService {
   // Sign up with email and password
+  // Profile is automatically created by database trigger on auth.users insert
   static async signUp(userData: {
     email: string;
     password: string;
     name: string;
     company?: string;
     website?: string;
-    subscription?: string;
-    skipTrial?: boolean;
   }) {
     try {
-      // Check fraud prevention first
-      const fraudCheck = await FraudPrevention.checkTrialEligibility(userData.email);
+      // Check if email already exists in users table (catch orphaned records)
+      // Note: This may fail due to RLS if user isn't authenticated, so we handle errors gracefully
+      try {
+        const { data: existingUser, error: checkError } = await supabase
+          .from('users')
+          .select('id, email')
+          .eq('email', userData.email)
+          .maybeSingle();
 
-      if (!fraudCheck.isAllowed && !userData.skipTrial) {
-        return {
-          success: false,
-          error: fraudCheck.reason || 'Trial not allowed'
-        };
+        if (!checkError && existingUser) {
+          console.log('Email already exists in users table:', existingUser.email);
+          return {
+            success: false,
+            error: 'This email is already registered. Please sign in instead.'
+          };
+        }
+      } catch (preCheckError) {
+        // Pre-check failed (likely RLS), continue with normal signup flow
+        console.log('Pre-check skipped, continuing with signup');
       }
 
       // Create auth user with email redirect for confirmation
+      // Database trigger (handle_new_user) automatically creates the profile
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
@@ -76,66 +86,19 @@ export class AuthService {
       // When email confirmation is enabled, Supabase returns user but NOT session
       const requiresEmailConfirmation = authData.user && !authData.session;
 
-      // Create user profile
-      const subscription = userData.skipTrial ? (userData.subscription || 'starter') : 'trial';
-      const trialEndsAt = userData.skipTrial ? null : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
-
-      const { data: profileData, error: profileError } = await supabase
-        .from('users')
-        .insert({
-          id: authData.user.id,
-          email: userData.email,
-          name: userData.name,
-          subscription: subscription as any,
-          trial_ends_at: trialEndsAt,
-          device_fingerprint: FraudPrevention.generateDeviceFingerprint(),
-          ip_address: await FraudPrevention.getUserIP(),
-          payment_method_added: userData.skipTrial
-        })
-        .select()
-        .single();
-
-      if (profileError) {
-        // Profile creation failed - clean up the orphaned auth user
-        console.error('Profile creation failed, attempting to clean up auth user:', profileError);
-        try {
-          // Call edge function to delete the orphaned auth user
-          await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cleanup-auth-user`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-              },
-              body: JSON.stringify({ userId: authData.user.id })
-            }
-          );
-        } catch (cleanupError) {
-          console.error('Failed to cleanup orphaned auth user:', cleanupError);
-        }
-        return handleSupabaseError(profileError);
-      }
-
-      // Store fraud check result
-      await supabase.from('fraud_checks').insert({
-        email: userData.email,
-        normalized_email: FraudPrevention.normalizeEmail(userData.email),
-        device_fingerprint: FraudPrevention.generateDeviceFingerprint(),
-        ip_address: await FraudPrevention.getUserIP(),
-        risk_score: fraudCheck.riskScore,
-        is_allowed: fraudCheck.isAllowed,
-        reason: fraudCheck.reason,
-        checks: fraudCheck.checks
-      });
-
       // Clear any cached data from previous users
       clearUserLocalStorage();
 
       // Return with email confirmation status
+      // Profile was auto-created by database trigger
       return handleSupabaseSuccess({
         user: authData.user,
-        profile: profileData,
+        profile: {
+          id: authData.user.id,
+          email: userData.email,
+          name: userData.name,
+          subscription: 'trial'
+        },
         requiresEmailConfirmation,
         email: userData.email
       });

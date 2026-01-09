@@ -1,6 +1,6 @@
 # Master Feature List
 
-> Last updated: 2026-01-06
+> Last updated: 2026-01-09
 > Single source of truth for all features, organized by category.
 >
 > Legend: ✅ Complete | ⚠️ Partial | ❌ Not Started | 🔄 In Progress
@@ -12,7 +12,7 @@
 | Category | Complete | Partial | Pending | Total |
 |----------|----------|---------|---------|-------|
 | Core Features | 15 | 1 | 3 | 19 |
-| Security | 16 | 2 | 7 | 25 |
+| Security | 17 | 2 | 7 | 26 |
 | Scalability | 8 | 1 | 9 | 18 |
 | Testing | 6 | 1 | 1 | 8 |
 | Documentation | 7 | 1 | 2 | 10 |
@@ -20,7 +20,7 @@
 | Payments | 9 | 0 | 2 | 11 |
 | User Experience | 8 | 0 | 3 | 11 |
 | Admin | 4 | 1 | 1 | 6 |
-| **Total** | **78** | **7** | **32** | **117** |
+| **Total** | **79** | **7** | **32** | **118** |
 
 **Overall Progress: 73% complete**
 
@@ -75,6 +75,7 @@
 | Status | Feature | Notes |
 |--------|---------|-------|
 | ✅ | Email/password auth | Via Supabase Auth |
+| ✅ | Email verification | Confirmation email required, profile via DB trigger |
 | ✅ | Password hashing | Bcrypt (Supabase managed) |
 | ✅ | JWT tokens | Auto-refresh enabled |
 | ✅ | Session persistence | Survives page refresh |
@@ -114,12 +115,13 @@
 ### Fraud Prevention
 | Status | Feature | Notes |
 |--------|---------|-------|
-| ✅ | Email normalization | Catches +alias and dots |
-| ✅ | Device fingerprinting | Canvas-based |
-| ✅ | IP address tracking | Via ipify.org |
-| ✅ | Disposable email blocking | Common domains blocked |
-| ✅ | Risk scoring | Composite score from checks |
-| ⚠️ | Client-side fingerprinting | Can be spoofed |
+| ❌ | Email normalization | Removed - trial users see simulated data only |
+| ❌ | Device fingerprinting | Removed - unnecessary complexity |
+| ❌ | IP address tracking | Removed - unnecessary complexity |
+| ❌ | Disposable email blocking | Removed - trial abuse has no real cost |
+| ❌ | Risk scoring | Removed - simplified signup flow |
+
+> **Note (2026-01-09):** Fraud prevention was removed because trial users only see simulated data (no real API costs). The complexity wasn't justified.
 
 ### Compliance
 | Status | Feature | Notes |
@@ -381,6 +383,9 @@
 | 2026-01-05 | BRANCH_ANALYSIS.md created (commit history reasoning) |
 | 2026-01-05 | CLAUDE.md rewritten per blog best practices |
 | 2026-01-05 | Documentation cleanup (13 redundant files deleted) |
+| 2026-01-09 | Email verification for new signups (Security) |
+| 2026-01-09 | create-user-profile Edge Function (bypasses RLS during signup) |
+| 2026-01-09 | 8 new automated tests for email verification flow |
 | 2026-01-05 | Back to Home navigation fix (4 components → dashboard) |
 | 2026-01-05 | localStorage cleanup on auth (prevents data leakage) |
 | 2026-01-06 | Remove abandoned Projects feature |
@@ -389,3 +394,6 @@
 | 2026-01-06 | Add Demo Mode banner for simulated data |
 | 2026-01-06 | Rename "Check My Citations" → "Run AI Visibility Analysis" |
 | 2026-01-06 | Add analysisEngine.test.ts (16 tests for real vs simulated) |
+| 2026-01-09 | Simplified signup: removed fraud prevention, replaced edge functions with DB trigger |
+| 2026-01-09 | Deleted: fraudPrevention.ts, create-user-profile/, cleanup-auth-user/ |
+| 2026-01-09 | Added: handle_new_user database trigger for auto profile creation |

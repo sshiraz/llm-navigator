@@ -3,17 +3,6 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AuthPage from './AuthPage';
 
-// Mock FraudPrevention
-vi.mock('../../utils/fraudPrevention', () => ({
-  FraudPrevention: {
-    checkTrialEligibility: vi.fn().mockResolvedValue({
-      isAllowed: true,
-      riskScore: 0,
-      reason: null,
-    }),
-  },
-}));
-
 // Helper to create a delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -388,6 +377,101 @@ describe('AuthPage Component', () => {
       await user.click(screen.getByRole('button', { name: /sign in/i }));
 
       expect(screen.getByText('Signing In...')).toBeInTheDocument();
+    });
+  });
+
+  describe('Email Confirmation Flow', () => {
+    it('should show email confirmed banner when emailJustConfirmed prop is true', () => {
+      const mockOnConfirmationAcknowledged = vi.fn();
+      render(
+        <AuthPage
+          onLogin={mockOnLogin}
+          emailJustConfirmed={true}
+          onConfirmationAcknowledged={mockOnConfirmationAcknowledged}
+        />
+      );
+
+      expect(screen.getByText(/email confirmed/i)).toBeInTheDocument();
+      expect(screen.getByText(/you can now sign in/i)).toBeInTheDocument();
+    });
+
+    it('should not show email confirmed banner when emailJustConfirmed is false', () => {
+      render(<AuthPage onLogin={mockOnLogin} emailJustConfirmed={false} />);
+
+      expect(screen.queryByText(/email confirmed/i)).not.toBeInTheDocument();
+    });
+
+    it('should show Check Your Email screen after signup requiring confirmation', async () => {
+      // Override the signUp mock to return requiresEmailConfirmation
+      const { AuthService } = await import('../../services/authService');
+      vi.mocked(AuthService.signUp).mockResolvedValueOnce({
+        success: true,
+        data: {
+          requiresEmailConfirmation: true,
+          email: 'newuser@example.com',
+        },
+      });
+
+      const user = userEvent.setup();
+      render(<AuthPage onLogin={mockOnLogin} />);
+
+      // Switch to signup mode
+      await user.click(screen.getByText("Don't have an account? Start your free trial"));
+
+      // Fill out the form
+      await user.type(screen.getByPlaceholderText('John Doe'), 'New User');
+      await user.type(screen.getByPlaceholderText('john@company.com'), 'newuser@example.com');
+      await user.type(screen.getByPlaceholderText('Create a password'), 'password123');
+
+      // Submit the form
+      await user.click(screen.getByRole('button', { name: /start free trial/i }));
+
+      // Wait for the "Check Your Email" screen
+      await waitFor(() => {
+        expect(screen.getByText(/check your email/i)).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('newuser@example.com')).toBeInTheDocument();
+    });
+
+    it('should have Back to Sign In button on email confirmation screen', async () => {
+      // Override the signUp mock to return requiresEmailConfirmation
+      const { AuthService } = await import('../../services/authService');
+      vi.mocked(AuthService.signUp).mockResolvedValueOnce({
+        success: true,
+        data: {
+          requiresEmailConfirmation: true,
+          email: 'backtest@example.com',
+        },
+      });
+
+      const user = userEvent.setup();
+      render(<AuthPage onLogin={mockOnLogin} />);
+
+      // Switch to signup mode
+      await user.click(screen.getByText("Don't have an account? Start your free trial"));
+
+      // Fill and submit form
+      await user.type(screen.getByPlaceholderText('John Doe'), 'Test User');
+      await user.type(screen.getByPlaceholderText('john@company.com'), 'backtest@example.com');
+      await user.type(screen.getByPlaceholderText('Create a password'), 'password123');
+      await user.click(screen.getByRole('button', { name: /start free trial/i }));
+
+      // Wait for email confirmation screen
+      await waitFor(() => {
+        expect(screen.getByText(/check your email/i)).toBeInTheDocument();
+      });
+
+      // Click back to sign in
+      const backButton = screen.getByRole('button', { name: /back to sign in/i });
+      expect(backButton).toBeInTheDocument();
+
+      await user.click(backButton);
+
+      // Should return to login form
+      await waitFor(() => {
+        expect(screen.getByText('Welcome Back')).toBeInTheDocument();
+      });
     });
   });
 });

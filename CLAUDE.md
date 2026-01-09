@@ -22,7 +22,8 @@ supabase/functions/ # Edge Functions (Deno)
 ├── crawl-website/  # Website analysis
 ├── stripe-webhook/ # Payment events
 ├── delete-user/    # Admin deletion
-└── cleanup-auth-user/ # Cleanup orphaned auth users on signup failure
+├── cleanup-auth-user/ # Cleanup orphaned auth users on signup failure
+└── create-user-profile/ # Create profile bypassing RLS (for email confirmation flow)
 
 scripts/            # Test scripts
 ```
@@ -200,19 +201,29 @@ New users must verify their email before logging in:
 
 ```
 1. User signs up → AuthService.signUp() with emailRedirectTo
-2. Supabase creates user but returns NO session (email unconfirmed)
-3. AuthPage shows "Check Your Email" screen
-4. User clicks link in email → Redirects to /#email-confirmed
-5. App.tsx detects hash → Shows "Email confirmed!" banner
-6. User can now log in
+2. Supabase creates auth user but returns NO session (email unconfirmed)
+3. create-user-profile edge function creates profile (bypasses RLS)
+4. AuthPage shows "Check Your Email" screen
+5. User clicks link in email → Redirects to /#email-confirmed
+6. App.tsx detects hash → Shows "Email confirmed!" banner
+7. User can now log in
 ```
 
+**Why edge function for profile creation?**
+When email confirmation is enabled, Supabase's `signUp()` returns NO session. Without a session, `auth.uid()` is NULL, so RLS policies block direct inserts to the `users` table. The `create-user-profile` edge function uses the service role key to bypass RLS.
+
 **Key files:**
-- `authService.ts` - signUp includes `emailRedirectTo`, returns `requiresEmailConfirmation`
+- `authService.ts` - signUp calls `create-user-profile` edge function, returns `requiresEmailConfirmation`
 - `AuthPage.tsx` - Shows confirmation screen, resend email button, success banner
 - `App.tsx` - Detects `#email-confirmed` hash, passes props to AuthPage
+- `supabase/functions/create-user-profile/` - Creates profile with service role (bypasses RLS)
 
-**Cleanup on failure:** If profile creation fails after auth user is created, `cleanup-auth-user` edge function deletes the orphaned auth user to prevent "already registered" errors.
+**Edge functions for auth flow:**
+- `create-user-profile` - Creates profile when no session exists (email confirmation enabled)
+- `cleanup-auth-user` - Deletes orphaned auth user if profile creation fails
+
+**Handling orphaned records:**
+Profile creation uses `upsert` with `onConflict: 'email'` to handle orphaned records from failed signups. If an email exists in `users` table but auth user was deleted, the upsert updates the record with the new auth user ID.
 
 **Key files:**
 - `AuthPage.tsx` - Uses AuthService for Supabase Auth (not localStorage)

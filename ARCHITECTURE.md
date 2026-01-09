@@ -1,6 +1,6 @@
 # LLM Navigator Architecture
 
-> Last updated: 2026-01-07
+> Last updated: 2026-01-09
 
 ## Tech Stack
 
@@ -55,8 +55,7 @@ llm-navigator/
 │   │   ├── sanitize.ts         # Input sanitization (XSS, SQL injection prevention)
 │   │   ├── storageManager.ts   # localStorage abstraction
 │   │   ├── costTracker.ts      # Usage limits & costs
-│   │   ├── stripeUtils.ts      # Stripe API helpers
-│   │   └── fraudPrevention.ts  # Trial abuse prevention
+│   │   └── stripeUtils.ts      # Stripe API helpers
 │   │
 │   ├── types/               # TypeScript interfaces
 │   └── lib/
@@ -142,7 +141,6 @@ AnalysisResults.tsx (display)
 | `src/utils/storageManager.ts` | localStorage abstraction layer |
 | `src/utils/costTracker.ts` | Usage limits, cost calculations |
 | `src/utils/stripeUtils.ts` | Stripe checkout and subscription helpers |
-| `src/utils/fraudPrevention.ts` | Trial abuse detection (email, fingerprint, IP) |
 
 ### Services
 | File | Purpose |
@@ -193,6 +191,8 @@ PERPLEXITY_API_KEY=pplx-xxx
 
 ### Authentication
 - Supabase Auth with JWT tokens
+- Email verification required before login
+- Profile auto-created via database trigger (`handle_new_user`)
 - Admin role via `is_admin` flag in users table
 - Row Level Security (RLS) on all tables
 
@@ -207,7 +207,7 @@ PERPLEXITY_API_KEY=pplx-xxx
 
 ```bash
 npm run test           # Unit tests (Vitest) - watch mode
-npm run test:run       # Unit tests once (367 tests)
+npm run test:run       # Unit tests once (375 tests)
 npm run test:functions # Edge Function tests
 npm run test:payment   # Payment flow tests
 ```

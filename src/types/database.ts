@@ -60,14 +60,6 @@ type ApiTokens = {
   embeddings: number;
 };
 
-type FraudChecks = {
-  emailSimilarity: boolean;
-  deviceFingerprint: boolean;
-  ipAddress: boolean;
-  browserPattern: boolean;
-  timePattern: boolean;
-};
-
 export interface Database {
   public: {
     Tables: {
@@ -272,49 +264,6 @@ export interface Database {
           provider?: AnalysisProvider;
           success?: boolean;
           error_code?: string;
-        };
-      };
-      fraud_checks: {
-        Row: {
-          id: string;
-          email: string;
-          normalized_email: string;
-          device_fingerprint: string;
-          ip_address: string;
-          risk_score: number;
-          is_allowed: boolean;
-          reason?: string;
-          checks: {
-            emailSimilarity: boolean;
-            deviceFingerprint: boolean;
-            ipAddress: boolean;
-            browserPattern: boolean;
-            timePattern: boolean;
-          };
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          email: string;
-          normalized_email: string;
-          device_fingerprint: string;
-          ip_address: string;
-          risk_score: number;
-          is_allowed: boolean;
-          reason?: string;
-          checks: FraudChecks;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          email?: string;
-          normalized_email?: string;
-          device_fingerprint?: string;
-          ip_address?: string;
-          risk_score?: number;
-          is_allowed?: boolean;
-          reason?: string;
-          checks?: FraudChecks;
         };
       };
     };

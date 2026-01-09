@@ -7,6 +7,7 @@ const {
   mockSignOut,
   mockGetSession,
   mockOnAuthStateChange,
+  mockResend,
   mockFrom
 } = vi.hoisted(() => ({
   mockSignUp: vi.fn(),
@@ -16,6 +17,7 @@ const {
   mockOnAuthStateChange: vi.fn(() => ({
     data: { subscription: { unsubscribe: vi.fn() } },
   })),
+  mockResend: vi.fn(),
   mockFrom: vi.fn(),
 }));
 
@@ -28,6 +30,7 @@ vi.mock('../lib/supabase', () => ({
       signOut: mockSignOut,
       getSession: mockGetSession,
       onAuthStateChange: mockOnAuthStateChange,
+      resend: mockResend,
     },
     from: mockFrom,
   },
@@ -39,21 +42,6 @@ vi.mock('../lib/supabase', () => ({
     success: true,
     data,
   }),
-}));
-
-// Mock fraud prevention to avoid external calls
-vi.mock('../utils/fraudPrevention', () => ({
-  FraudPrevention: {
-    checkTrialEligibility: vi.fn().mockResolvedValue({
-      isAllowed: true,
-      riskScore: 0,
-      reason: null,
-      checks: {},
-    }),
-    normalizeEmail: vi.fn((email: string) => email.toLowerCase()),
-    generateDeviceFingerprint: vi.fn().mockReturnValue('test-fingerprint'),
-    getUserIP: vi.fn().mockResolvedValue('127.0.0.1'),
-  },
 }));
 
 // Import after mocking
@@ -87,6 +75,7 @@ const resetMocks = () => {
   mockSignInWithPassword.mockReset();
   mockSignOut.mockReset();
   mockGetSession.mockReset();
+  mockResend.mockReset();
   mockFrom.mockReset();
   createdTestUsers.length = 0;
 };
@@ -102,16 +91,18 @@ const setupSuccessfulSignUp = (userData: { email: string; id: string }) => {
     error: null,
   });
 
+  // Mock pre-check for existing user - return null (no existing user)
+  // Profile is created by database trigger, not by the service
   mockFrom.mockReturnValue({
-    insert: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue({
-          data: { ...mockUserProfile, id: userData.id, email: userData.email },
+    select: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: null,
           error: null,
         }),
       }),
     }),
-    select: vi.fn(),
+    insert: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
   });
@@ -276,6 +267,21 @@ describe('AuthService', () => {
         name: 'Fail User',
       };
 
+      // Mock pre-check: no existing user
+      mockFrom.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: null,
+              error: { code: 'PGRST116', message: 'No rows found' },
+            }),
+          }),
+        }),
+        insert: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      });
+
       mockSignUp.mockResolvedValue({
         data: { user: null, session: null },
         error: { message: 'Password should be at least 6 characters' },
@@ -294,15 +300,96 @@ describe('AuthService', () => {
         name: 'Duplicate User',
       };
 
-      mockSignUp.mockResolvedValue({
-        data: { user: null, session: null },
-        error: { message: 'User already registered' },
+      // Mock pre-check: user already exists in users table
+      mockFrom.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: { id: 'existing-id', email: existingUserData.email },
+              error: null,
+            }),
+          }),
+        }),
+        insert: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
       });
 
       const result = await AuthService.signUp(existingUserData);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('User already registered');
+      expect(result.error).toBe('This email is already registered. Please sign in instead.');
+    });
+
+    it('should return requiresEmailConfirmation when no session is returned', async () => {
+      const newUserData = {
+        email: 'needsconfirm@test.com',
+        password: 'securePassword123',
+        name: 'Needs Confirmation User',
+      };
+
+      // Mock pre-check: no existing user
+      mockFrom.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: null,
+              error: null,
+            }),
+          }),
+        }),
+        insert: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      });
+
+      // Mock signUp returning user but NO session (email confirmation required)
+      // Profile is created by database trigger automatically
+      mockSignUp.mockResolvedValue({
+        data: {
+          user: { id: 'confirm-user-id', email: newUserData.email },
+          session: null, // No session = email confirmation required
+        },
+        error: null,
+      });
+
+      const result = await AuthService.signUp(newUserData);
+
+      expect(result.success).toBe(true);
+      expect(result.data.requiresEmailConfirmation).toBe(true);
+      expect(result.data.email).toBe(newUserData.email);
+    });
+  });
+
+  describe('resendConfirmationEmail', () => {
+    beforeEach(() => {
+      resetMocks();
+    });
+
+    it('should successfully resend confirmation email', async () => {
+      mockResend.mockResolvedValue({ error: null });
+
+      const result = await AuthService.resendConfirmationEmail('test@example.com');
+
+      expect(result.success).toBe(true);
+      expect(mockResend).toHaveBeenCalledWith({
+        type: 'signup',
+        email: 'test@example.com',
+        options: {
+          emailRedirectTo: expect.stringContaining('#email-confirmed'),
+        },
+      });
+    });
+
+    it('should handle resend error', async () => {
+      mockResend.mockResolvedValue({
+        error: { message: 'Rate limit exceeded' }
+      });
+
+      const result = await AuthService.resendConfirmationEmail('test@example.com');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Rate limit exceeded');
     });
   });
 

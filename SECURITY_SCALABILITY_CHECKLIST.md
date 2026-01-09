@@ -1,13 +1,13 @@
 # Security & Scalability Checklist
 
-> Last updated: 2026-01-07
+> Last updated: 2026-01-09
 > This document tracks the security and scalability state of LLM Navigator
 
 ---
 
 ## Security State: 🟡 MODERATE
 
-**Score: 19/25 items implemented (76%)**
+**Score: 20/26 items implemented (77%)**
 
 ### Authentication & Authorization
 
@@ -15,6 +15,7 @@
 |--------|------|----------|-------|
 | ✅ | Password hashing (bcrypt via Supabase Auth) | Critical | Managed by Supabase |
 | ✅ | JWT-based authentication | Critical | Auto-refresh enabled |
+| ✅ | Email verification | Critical | Confirmation email required before login (2026-01-09) |
 | ✅ | Session persistence | High | `persistSession: true` |
 | ✅ | Row Level Security (RLS) on all tables | Critical | See `migrations/20250703064027_weathered_glitter.sql` |
 | ⚠️ | `fraud_checks` table has permissive RLS | Medium | Anyone can read - consider restricting |

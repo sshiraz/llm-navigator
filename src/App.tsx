@@ -48,6 +48,9 @@ function App() {
 
   // Listen for hash changes to handle browser back/forward buttons
   useEffect(() => {
+    // Clear stale 'users' localStorage key - Supabase is the source of truth
+    localStorage.removeItem('users');
+
     const handleHashChange = () => {
       const fullHash = window.location.hash.slice(1);
       const section = fullHash.split('?')[0]; // Strip query params for section matching

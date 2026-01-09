@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Search, ArrowRight, Mail, Lock, User as UserIcon, Building, Globe, CheckCircle, RefreshCw } from 'lucide-react';
-import { FraudPrevention } from '../../utils/fraudPrevention';
 import { AuthService } from '../../services/authService';
-import { FraudPreventionCheck, User } from '../../types';
+import { User } from '../../types';
 import { sanitizeText, sanitizeEmail, sanitizePassword, sanitizeUrl } from '../../utils/sanitize';
 
 interface AuthPageProps {
@@ -45,8 +44,6 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
     company: '',
     website: ''
   });
-  const [fraudCheck, setFraudCheck] = useState<FraudPreventionCheck | null>(null);
-  const [isChecking, setIsChecking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,24 +68,6 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
       setError('Failed to resend confirmation email');
     } finally {
       setIsResending(false);
-    }
-  };
-
-  const handleEmailBlur = async () => {
-    if (!formData.email || isLogin) return;
-
-    // Sanitize email before fraud check
-    const sanitizedEmail = sanitizeEmail(formData.email);
-    if (!sanitizedEmail) return;
-
-    setIsChecking(true);
-    try {
-      const check = await FraudPrevention.checkTrialEligibility(sanitizedEmail);
-      setFraudCheck(check);
-    } catch (error) {
-      console.error('Fraud check failed:', error);
-    } finally {
-      setIsChecking(false);
     }
   };
 
@@ -129,13 +108,6 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
 
         onLogin(user);
       } else {
-        // Check fraud prevention for trials
-        if (fraudCheck && !fraudCheck.isAllowed) {
-          setError(fraudCheck.reason || 'Trial not allowed');
-          setIsLoading(false);
-          return;
-        }
-
         // Sign up via Supabase Auth with sanitized inputs
         const result = await AuthService.signUp({
           email: sanitizedEmail,
@@ -340,32 +312,10 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  onBlur={handleEmailBlur}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="john@company.com"
                 />
               </div>
-              
-              {isChecking && (
-                <div className="mt-2 flex items-center space-x-2 text-sm text-gray-600">
-                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Checking eligibility...</span>
-                </div>
-              )}
-              
-              {fraudCheck && !isLogin && (
-                <div className="mt-2">
-                  {fraudCheck.isAllowed ? (
-                    <div className="text-sm text-emerald-600">
-                      ✓ Trial approved
-                    </div>
-                  ) : (
-                    <div className="text-sm text-red-600">
-                      ⚠ {fraudCheck.reason}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
             <div>
@@ -423,7 +373,7 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
 
             <button
               type="submit"
-              disabled={isLoading || (!isLogin && fraudCheck && !fraudCheck.isAllowed)}
+              disabled={isLoading}
               className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-2"
             >
               {isLoading ? (
@@ -445,7 +395,6 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
             <button
               onClick={() => {
                 setIsLogin(!isLogin);
-                setFraudCheck(null);
                 setFormData({ name: '', email: '', password: '', company: '', website: '' });
               }}
               className="text-blue-600 hover:text-blue-700 font-medium"

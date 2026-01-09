@@ -134,19 +134,6 @@ export interface TrialStatus {
   limitations: string[];
 }
 
-export interface FraudPreventionCheck {
-  isAllowed: boolean;
-  reason?: string;
-  riskScore: number;
-  checks: {
-    emailSimilarity: boolean;
-    deviceFingerprint: boolean;
-    ipAddress: boolean;
-    browserPattern: boolean;
-    timePattern: boolean;
-  };
-}
-
 export interface ApiUsage {
   userId: string;
   analysisId: string;

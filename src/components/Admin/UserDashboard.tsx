@@ -211,7 +211,7 @@ export default function UserDashboard() {
     });
   };
 
-  const handleSaveUser = () => {
+  const handleSaveUser = async () => {
     if (!editingUser) return;
 
     // Sanitize form inputs
@@ -224,24 +224,24 @@ export default function UserDashboard() {
     }
 
     try {
-      // Update user in localStorage
-      const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-      const updatedUsers = storedUsers.map((user: User) => {
-        if (user.id === editingUser.id) {
-          return {
-            ...user,
-            name: sanitizedName,
-            email: sanitizedEmail,
-            subscription: editForm.subscription,
-            paymentMethodAdded: editForm.paymentMethodAdded
-          };
-        }
-        return user;
-      });
+      // Update user in Supabase
+      const { error } = await supabase
+        .from('users')
+        .update({
+          name: sanitizedName,
+          email: sanitizedEmail,
+          subscription: editForm.subscription,
+          payment_method_added: editForm.paymentMethodAdded
+        })
+        .eq('id', editingUser.id);
 
-      localStorage.setItem('users', JSON.stringify(updatedUsers));
+      if (error) {
+        console.error('Error updating user in Supabase:', error);
+        alert(`Failed to update user: ${error.message}`);
+        return;
+      }
 
-      // If this is the current user, update that too
+      // If this is the current user, update localStorage currentUser
       const currentUserStr = localStorage.getItem('currentUser');
       if (currentUserStr) {
         const currentUser = JSON.parse(currentUserStr);

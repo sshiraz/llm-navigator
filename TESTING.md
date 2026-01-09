@@ -1,6 +1,6 @@
 # Testing Guide
 
-> Last updated: 2026-01-07
+> Last updated: 2026-01-09
 
 This document provides an overview of all automated tests in the LLM Navigator project.
 
@@ -13,7 +13,7 @@ This document provides an overview of all automated tests in the LLM Navigator p
 npm run test:run && npm run build
 ```
 
-Current test count: **367 tests** (11 test files)
+Current test count: **375 tests** (11 test files)
 
 ## Quick Reference
 
@@ -39,12 +39,13 @@ Tests the AuthService class for user authentication flows.
 
 | Test Suite | Coverage |
 |------------|----------|
-| `signUp` | New user registration, validation errors, duplicate emails |
+| `signUp` | New user registration, validation errors, duplicate emails, email confirmation required |
 | `signIn` | Successful login, wrong password, non-existent user |
 | `signOut` | Logout, error handling |
 | `getCurrentSession` | Active session retrieval, no session |
 | `updateProfile` | Profile updates, error handling |
 | `onAuthStateChange` | Auth state listener setup |
+| `resendConfirmationEmail` | Resend confirmation email, error handling |
 | `Auth Flow Integration` | Complete sign up → sign in → sign out flow |
 
 ### Components
@@ -58,6 +59,7 @@ Tests the AuthService class for user authentication flows.
 | Signup Mode | Name/company/website fields, Terms of Service, trial info |
 | Mode Toggle | Switching between login/signup, form field clearing |
 | Form Validation | Required attributes, input types |
+| Email Confirmation Flow | Email confirmed banner, Check Your Email screen, Back to Sign In button |
 | Loading State | Spinner during submission |
 
 #### AnalysisForm

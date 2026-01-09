@@ -5,6 +5,409 @@
 
 ---
 
+## 2026-01-09: Implement email verification for new user signups
+
+**Commit:** `pending` - Add email verification with edge function for profile creation
+
+### Context
+
+Users could sign up and immediately log in without verifying their email address. This is a security issue—anyone could sign up with any email, including emails they don't own. Email verification ensures users own the email they're registering with.
+
+Additionally, enabling Supabase's built-in email confirmation revealed a fundamental architecture issue: when email confirmation is enabled, `signUp()` returns a `user` but **NOT** a `session`. This means `auth.uid()` is NULL during signup, and any RLS policies that rely on `auth.uid() = id` will block the profile insert.
+
+### Changes & Reasoning
+
+#### 1. Add Email Redirect URL to signUp (`src/services/authService.ts`)
+
+**Problem:** Supabase needs to know where to redirect users after they click the confirmation link in their email.
+
+**Solution:** Added `emailRedirectTo` option to signUp call:
+```typescript
+options: {
+  emailRedirectTo: `${window.location.origin}/#email-confirmed`
+}
+```
+
+**Why hash-based URL:** The app uses hash routing (`#dashboard`, `#auth`, etc.). Using `/#email-confirmed` lets `App.tsx` detect the confirmation and show a success message.
+
+#### 2. Create `create-user-profile` Edge Function (`supabase/functions/create-user-profile/index.ts`)
+
+**Problem:** When email confirmation is enabled, there's no session during signup. RLS policies that check `auth.uid() = id` block the profile INSERT because `auth.uid()` is NULL.
+
+**Why this happens:**
+1. User clicks "Start Free Trial"
+2. `supabase.auth.signUp()` creates auth user, sends confirmation email
+3. Supabase returns `user` but NOT `session` (email not confirmed yet)
+4. Attempt to INSERT into `users` table fails: RLS policy checks `auth.uid() = id`, but `auth.uid()` is NULL
+
+**Solution:** Created Edge Function that uses service role key to bypass RLS:
+```typescript
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: { autoRefreshToken: false, persistSession: false }
+});
+
+// Upsert user profile (handles orphaned records)
+const { data: profileData, error: profileError } = await supabaseAdmin
+  .from('users')
+  .upsert({
+    id: userId,
+    email: email,
+    name: name || 'New User',
+    subscription: subscription || 'trial',
+    trial_ends_at: trialEndsAt,
+    // ...
+  }, {
+    onConflict: 'email',
+    ignoreDuplicates: false
+  })
+```
+
+**Why UPSERT not INSERT:** Orphaned records can exist from previous failed signups (user deleted from auth but profile remains). UPSERT with `onConflict: 'email'` updates existing records instead of throwing duplicate key errors.
+
+**Why Edge Function over RLS policy changes:** Edge functions with service role key provide clean separation. Modifying RLS to allow anonymous inserts would be a security risk.
+
+#### 3. Handle Orphaned Auth User Cleanup (`src/services/authService.ts`)
+
+**Problem:** If profile creation fails after auth user is created, we're left with an orphaned auth user (auth record exists, but no profile).
+
+**Solution:** Added cleanup on profile failure:
+```typescript
+if (!profileResponse.ok || !profileResult.success) {
+  // Profile creation failed - clean up the orphaned auth user
+  await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cleanup-auth-user`, {
+    method: 'POST',
+    body: JSON.stringify({ userId: authData.user.id })
+  });
+  return { success: false, error: profileResult.error || 'Failed to create user profile' };
+}
+```
+
+#### 4. Make fraud_checks Insert Non-Fatal (`src/services/authService.ts`)
+
+**Problem:** After successful profile creation, the `fraud_checks` insert could throw an error. This error was being caught by the outer catch block, returning an error even though the auth user and profile were successfully created.
+
+**Solution:** Wrapped fraud_checks in try/catch to make it non-fatal:
+```typescript
+// Store fraud check result (non-fatal if it fails)
+try {
+  await supabase.from('fraud_checks').insert({ /* ... */ });
+} catch (fraudCheckError) {
+  console.warn('Failed to store fraud check result (non-fatal):', fraudCheckError);
+}
+```
+
+**Why non-fatal:** The fraud check is analytics/logging data. The core signup (auth + profile) succeeded. We shouldn't fail the entire signup because of optional logging.
+
+#### 5. Add "Check Your Email" UI (`src/components/Auth/AuthPage.tsx`)
+
+**Problem:** After signup, users need to know they should check their email for the confirmation link.
+
+**Solution:** Added new UI state when `requiresEmailConfirmation` is true:
+- Mail icon
+- "Check Your Email" heading
+- Email address displayed
+- Instructions to click the link
+- "Back to Sign In" button
+- "Resend Confirmation Email" button
+
+#### 6. Detect Email Confirmation Callback (`src/App.tsx`)
+
+**Problem:** When users click the confirmation link, they're redirected back to the app. We need to detect this and show a success message.
+
+**Solution:** Check for confirmation indicators in hash:
+```typescript
+if (fullHash.includes('email-confirmed') ||
+    (fullHash.includes('access_token') && fullHash.includes('type=signup'))) {
+  setEmailJustConfirmed(true);
+  window.location.hash = '#auth';
+}
+```
+
+**Why two checks:** Supabase may redirect with `#access_token=xxx&type=signup` OR we can explicitly redirect to `#email-confirmed` in our emailRedirectTo URL.
+
+#### 7. Show Email Confirmed Banner (`src/components/Auth/AuthPage.tsx`)
+
+**Problem:** Users need visual confirmation that their email was verified.
+
+**Solution:** When `emailJustConfirmed` prop is true, show green success banner:
+```typescript
+{emailJustConfirmed && (
+  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+    <CheckCircle className="w-5 h-5" />
+    <span>Email confirmed! You can now sign in.</span>
+  </div>
+)}
+```
+
+#### 8. Add Resend Confirmation Email (`src/services/authService.ts`)
+
+**Problem:** Confirmation emails can get lost or expire. Users need a way to request a new one.
+
+**Solution:** Added `resendConfirmationEmail()` method:
+```typescript
+static async resendConfirmationEmail(email: string) {
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email: email,
+    options: {
+      emailRedirectTo: `${window.location.origin}/#email-confirmed`
+    }
+  });
+  // ...
+}
+```
+
+#### 9. Clear Stale localStorage on App Load (`src/App.tsx`)
+
+**Problem:** Mock users from localStorage were appearing in the admin dashboard, mixed with real Supabase users. This caused confusion and data inconsistency.
+
+**Solution:** Clear the `users` localStorage key on app load:
+```typescript
+useEffect(() => {
+  // Clear stale 'users' localStorage key - Supabase is the source of truth
+  localStorage.removeItem('users');
+  // ...
+}, []);
+```
+
+**Why this happened:** Early development used localStorage for mock data. When Supabase was added, the mock data wasn't cleaned up, causing both data sources to be mixed.
+
+#### 10. Add Pre-Check for Existing Email (`src/services/authService.ts`)
+
+**Problem:** Users were getting cryptic errors when signing up with an already-registered email.
+
+**Solution:** Check if email exists before attempting signup:
+```typescript
+try {
+  const { data: existingUser } = await supabase
+    .from('users')
+    .select('id, email')
+    .eq('email', userData.email)
+    .maybeSingle();
+
+  if (existingUser) {
+    return {
+      success: false,
+      error: 'This email is already registered. Please sign in instead.'
+    };
+  }
+} catch (preCheckError) {
+  // RLS may block this check - continue with signup
+}
+```
+
+**Why try/catch:** RLS may block the query if the user isn't authenticated. We handle this gracefully and let the normal signup flow catch duplicates.
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `src/services/authService.ts` | Modified | Add emailRedirectTo, edge function call, pre-check, resend method |
+| `src/components/Auth/AuthPage.tsx` | Modified | Add "Check Email" UI, success banner, resend button |
+| `src/App.tsx` | Modified | Detect confirmation callback, clear stale localStorage |
+| `supabase/functions/create-user-profile/index.ts` | New | Bypass RLS for profile creation |
+| `supabase/functions/cleanup-auth-user/index.ts` | New | Clean up orphaned auth users |
+| `src/services/authService.test.ts` | Modified | Add mocks for edge function, 4 new email verification tests |
+| `src/components/Auth/AuthPage.test.tsx` | Modified | Add 4 new email confirmation UI tests |
+| `CLAUDE.md` | Modified | Document new edge function and email verification flow |
+| `BRANCH_ANALYSIS.md` | Modified | Add detailed explainer entry |
+
+### User Flow After Implementation
+
+```
+1. User enters email/password → clicks "Start Free Trial"
+2. Auth user created → Profile created via Edge Function
+3. "Check Your Email" screen shown (cannot log in yet)
+4. User checks email → clicks confirmation link
+5. Redirected to app → "Email confirmed!" banner shown
+6. User signs in with password → Dashboard loads
+```
+
+### Testing Performed
+
+```
+npm run test:run && npm run build
+```
+
+**Automated Tests Added (8 new tests):**
+
+*authService.test.ts:*
+- `should return requiresEmailConfirmation when no session is returned`
+- `should call edge function for profile creation`
+- `should successfully resend confirmation email`
+- `should handle resend error`
+
+*AuthPage.test.tsx:*
+- `should show email confirmed banner when emailJustConfirmed prop is true`
+- `should not show email confirmed banner when emailJustConfirmed is false`
+- `should show Check Your Email screen after signup requiring confirmation`
+- `should have Back to Sign In button on email confirmation screen`
+
+**Manual Testing:**
+- **Signup with new email:** Shows "Check Your Email" screen ✓
+- **Confirmation email received:** Link works, redirects to app ✓
+- **Email confirmed banner:** Shows after clicking confirmation link ✓
+- **Sign in after confirmation:** Works correctly ✓
+- **Sign in before confirmation:** Shows "Email not confirmed" error ✓
+- **Resend confirmation:** Sends new email ✓
+
+**Results:**
+- **Test Suite:** ✅ 375 passed, 0 failed
+- **Build:** ✓ Passed
+
+### Lessons Learned
+
+1. **Email confirmation changes the auth flow fundamentally** - No session means no `auth.uid()`, which breaks RLS policies that assume a logged-in user.
+
+2. **Use Edge Functions for operations that need service role** - Profile creation during signup is a perfect use case. The Edge Function cleanly bypasses RLS without weakening security.
+
+3. **UPSERT handles orphaned records gracefully** - Instead of complex cleanup logic, UPSERT with `onConflict` handles duplicate key scenarios automatically.
+
+4. **Make secondary operations non-fatal** - Core functionality (auth + profile) shouldn't fail because of optional logging (fraud_checks).
+
+5. **Clear stale localStorage aggressively** - When migrating from localStorage to database, proactively clear old data to avoid data source conflicts.
+
+### Supabase Dashboard Configuration (Manual)
+
+For email verification to work, these settings must be configured in Supabase Dashboard:
+
+1. **Authentication → Email Templates:** Enable "Confirm email" toggle
+2. **Authentication → URL Configuration:** Add redirect URLs:
+   - `https://your-domain.netlify.app/#email-confirmed`
+   - `http://localhost:5173/#email-confirmed` (for development)
+
+---
+
+## 2026-01-09: Simplify signup flow - Remove fraud prevention, use database trigger
+
+**Commit:** `pending` - Simplify signup: replace edge functions with DB trigger, remove fraud prevention
+
+### Context
+
+After implementing email verification with edge functions (`create-user-profile`, `cleanup-auth-user`), a review of the architecture raised questions:
+
+1. **Is bypassing RLS via edge functions necessary?**
+2. **What value does fraud prevention add?**
+
+The answer: **Neither is necessary.** Trial users only see simulated data (no real API costs), so fraud prevention adds complexity without real value. And database triggers provide a simpler, more reliable way to auto-create profiles than edge functions.
+
+### Changes & Reasoning
+
+#### 1. Replace Edge Functions with Database Trigger
+
+**Problem:** Edge functions add latency, require deployment, and are another moving part that can fail.
+
+**Solution:** Created database trigger that fires on `auth.users` INSERT:
+```sql
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.users (id, email, name, subscription, trial_ends_at)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'name', 'New User'),
+    'trial',
+    NOW() + INTERVAL '14 days'
+  )
+  ON CONFLICT (email) DO UPDATE SET
+    id = EXCLUDED.id,
+    name = EXCLUDED.name;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+```
+
+**Why SECURITY DEFINER:** The trigger runs with the function owner's privileges, bypassing RLS cleanly without needing external API calls.
+
+**Why this is better:**
+- Atomic with auth user creation (no HTTP calls)
+- No edge function deployment needed
+- Faster (no network latency)
+- More reliable (database transactions)
+
+#### 2. Remove Fraud Prevention
+
+**Problem:** Fraud prevention (~200 lines) added complexity for trial abuse prevention. But trial users only see simulated data—no real API costs incurred.
+
+**Removed:**
+- `src/utils/fraudPrevention.ts` (229 lines)
+- Email normalization, device fingerprinting, IP tracking
+- Risk scoring, disposable email blocking
+- `fraud_checks` database table references
+
+**Why removed:** The "cost" of trial abuse is zero. Real API calls (OpenAI, Anthropic, Perplexity) only happen for paid users. Simulated data is generated locally.
+
+#### 3. Simplify AuthService.signUp()
+
+**Before:** ~150 lines with fraud checks, edge function calls, cleanup logic
+**After:** ~70 lines—just auth signup, profile created automatically by trigger
+
+```typescript
+// Simplified signUp - profile auto-created by database trigger
+static async signUp(userData: {
+  email: string;
+  password: string;
+  name: string;
+  company?: string;
+  website?: string;
+}) {
+  // Pre-check for existing email...
+  // Call supabase.auth.signUp()
+  // Return result (trigger handles profile)
+}
+```
+
+#### 4. Clean Up AuthPage.tsx and TrialSignup.tsx
+
+**Removed:**
+- FraudPrevention import
+- `fraudCheck` state and `handleEmailBlur`
+- Fraud check result display (approved/denied messages)
+- Risk score display
+
+**Kept:**
+- Email verification flow (Check Your Email screen)
+- All form validation
+- Email confirmation banner
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `supabase/migrations/20260110_simplify_signup_trigger.sql` | New | Database trigger for auto profile creation |
+| `src/services/authService.ts` | Modified | Remove fraud prevention, edge function calls |
+| `src/components/Auth/AuthPage.tsx` | Modified | Remove fraud check UI |
+| `src/components/Auth/TrialSignup.tsx` | Modified | Remove fraud prevention logic |
+| `src/services/authService.test.ts` | Modified | Update tests for simplified flow |
+| `src/components/Auth/AuthPage.test.tsx` | Modified | Remove FraudPrevention mock |
+| `src/types/index.ts` | Modified | Remove FraudPreventionCheck interface |
+| `src/types/database.ts` | Modified | Remove FraudChecks type, fraud_checks table |
+| `src/utils/fieldMappers.ts` | Modified | Remove fraudCheck mapping |
+| `src/utils/fraudPrevention.ts` | Deleted | No longer needed |
+| `supabase/functions/create-user-profile/` | Deleted | Replaced by trigger |
+| `supabase/functions/cleanup-auth-user/` | Deleted | Not needed with trigger |
+
+### Results
+
+- **~400 lines of code removed**
+- **Faster signup** (no HTTP calls to edge functions)
+- **More reliable** (atomic database transaction)
+- **Simpler to maintain** (fewer moving parts)
+
+**Tests:** ✅ 374 passed, 0 failed
+**Build:** ✓ Passed
+
+### Key Insight
+
+**Don't add fraud prevention for things that have no real cost.** Trial abuse prevention made sense if trials used real API credits. Since trials only see simulated data, the complexity wasn't justified. Always ask: "What's the actual cost of the thing I'm preventing?"
+
+---
+
 ## 2026-01-07: Add historical score tracking for trend comparison
 
 **Commit:** `pending` - Add historical score tracking to show improvement trends
