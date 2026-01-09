@@ -5,6 +5,88 @@
 
 ---
 
+## 2026-01-09: Pricing page cleanup and tier differentiation
+
+**Commit:** `pending` - Clean up pricing page features to be accurate and differentiated
+
+### Context
+
+The pricing page had vague marketing terms ("Advanced reporting & analytics", "Standard optimization recommendations") and referenced features that don't exist (projects, users, team collaboration). Cleaned up to be honest and show clear value progression.
+
+### Changes & Reasoning
+
+#### 1. Removed non-existent features
+
+**Removed:**
+- "3 projects maximum" / "Unlimited projects" / "Unlimited projects & users" - Projects feature was abandoned
+- "Team collaboration features" - Not implemented
+- "Custom integrations" - Not implemented
+- "Dedicated account manager" - Not offering this
+- "Advanced analytics dashboard" - Vague, not a distinct feature
+
+**Why:** Pricing page should only list features that actually exist.
+
+#### 2. Replaced vague terms with specific features
+
+| Before | After |
+|--------|-------|
+| Standard optimization recommendations | AEO recommendations |
+| Basic competitor insights | 1 competitor per analysis |
+| Advanced competitor strategy | 3 competitors per analysis |
+| Advanced reporting & analytics | (removed - not distinct) |
+
+**Why:** Specific, measurable features are more honest and help users understand what they're getting.
+
+#### 3. Added competitor limits as differentiator
+
+```
+Starter:      1 competitor per analysis
+Professional: 3 competitors per analysis
+Enterprise:   Unlimited competitors per analysis
+```
+
+**Why:** Creates clear upgrade path - agencies tracking multiple competitors need higher tiers.
+
+#### 4. Standardized feature lists
+
+All tiers now show the same core features in the same order:
+1. AI analyses per month (volume)
+2. Website crawling & schema detection
+3. AI citation tracking
+4. Competitors per analysis (differentiated)
+5. AEO recommendations
+6. Analysis history
+7. Support level (Email vs Priority email)
+8. PDF reports (basic vs Branded)
+
+**Why:** Makes comparison easier, shows what's common vs different.
+
+#### 5. Added "coming soon" features for Enterprise
+
+- Visual trend charts (coming soon)
+- Scheduled analyses (coming soon)
+
+**Why:** Justifies higher price point while being transparent about current state.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/utils/planConfig.ts` | Updated all feature arrays |
+
+### Final Tier Structure
+
+| Feature | Starter $29 | Professional $99 | Enterprise $299 |
+|---------|-------------|------------------|-----------------|
+| Analyses/month | 10 | 50 | 400 |
+| Competitors | 1 | 3 | Unlimited |
+| Support | Email | Priority email | Priority email |
+| Reports | PDF | Branded PDF | Branded PDF |
+| API access | No | No | Yes |
+| Coming soon | - | - | Trend charts, Scheduled |
+
+---
+
 ## 2026-01-09: Add API Access for Enterprise users
 
 **Commit:** `pending` - REST API for programmatic access to analysis features

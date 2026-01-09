@@ -402,3 +402,6 @@
 | 2026-01-09 | Added: api_keys table, API edge function, apiAuth.ts shared helper |
 | 2026-01-09 | Added: ApiKeyService, API Keys UI in Account Settings (Enterprise only) |
 | 2026-01-09 | Added: ApiDocs page at #api-docs with full endpoint documentation |
+| 2026-01-09 | Pricing page cleanup: removed references to projects/users, added accurate feature descriptions |
+| 2026-01-09 | Pricing tiers now show competitor limits (1/3/unlimited), clearer differentiation |
+| 2026-01-09 | Enterprise: added "Visual trend charts" and "Scheduled analyses" as coming soon features |

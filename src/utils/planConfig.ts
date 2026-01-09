@@ -23,10 +23,11 @@ export const PLAN_CONFIGS: PlanConfig[] = [
     icon: Star,
     features: [
       '10 AI analyses per month',
-      '3 projects maximum',
-      'Real website crawling',
-      'Basic competitor insights',
-      'Standard optimization recommendations',
+      'Website crawling & schema detection',
+      'AI citation tracking',
+      '1 competitor per analysis',
+      'AEO recommendations',
+      'Analysis history',
       'Email support',
       'PDF reports'
     ],
@@ -42,13 +43,13 @@ export const PLAN_CONFIGS: PlanConfig[] = [
     icon: Zap,
     features: [
       '50 AI analyses per month',
-      'Unlimited projects',
-      'Advanced competitor strategy',
-      'Multiple AI models (GPT-4, Claude)',
-      'Priority support',
-      'Advanced reporting & analytics',
-      'White-label PDF reports',
-      'Team collaboration features'
+      'Website crawling & schema detection',
+      'AI citation tracking',
+      '3 competitors per analysis',
+      'AEO recommendations',
+      'Analysis history',
+      'Priority email support',
+      'Branded PDF reports'
     ],
     popular: true,
     buttonText: 'Start Free Trial',
@@ -63,14 +64,16 @@ export const PLAN_CONFIGS: PlanConfig[] = [
     icon: Crown,
     features: [
       '400 AI analyses per month',
-      'Unlimited projects & users',
-      'All AI models (GPT-4, Claude 3 Opus, Perplexity)',
-      'Custom branding & white-labeling',
-      'Priority email & phone support',
-      'Advanced analytics dashboard',
+      'Website crawling & schema detection',
+      'AI citation tracking',
+      'Unlimited competitors per analysis',
+      'AEO recommendations',
+      'Analysis history',
+      'Priority email support',
+      'Branded PDF reports',
       'API access',
-      'Custom integrations',
-      'Dedicated account manager'
+      'Visual trend charts (coming soon)',
+      'Scheduled analyses (coming soon)'
     ],
     popular: false,
     buttonText: 'Start Free Trial'
