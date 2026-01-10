@@ -7,7 +7,7 @@
 
 ## 2026-01-10: Expired confirmation link error handling
 
-**Commit:** `pending` - Handle expired/reused email confirmation links gracefully
+**Commit:** `99e095c` - Handle expired/reused email confirmation links gracefully
 
 ### Context
 
@@ -83,7 +83,7 @@ Added `onLinkErrorAcknowledged` callback so users can dismiss the banner without
 
 ## 2026-01-09: Custom domain setup - llmsearchinsight.com
 
-**Commit:** `pending` - Add custom domain to CORS whitelist
+**Commit:** `2c4e20f` - Add custom domain to CORS whitelist
 
 ### Context
 
