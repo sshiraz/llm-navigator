@@ -5,6 +5,82 @@
 
 ---
 
+## 2026-01-10: Expired confirmation link error handling
+
+**Commit:** `pending` - Handle expired/reused email confirmation links gracefully
+
+### Context
+
+When a user clicked an email confirmation link a second time (after it was already used), they were silently redirected to the dashboard with no feedback. This was confusing - users expected either a success message or an error explaining the link was invalid.
+
+### Problem
+
+Supabase Auth returns error information in the URL hash when a confirmation link fails:
+```
+#error=otp_expired&error_description=Email+link+is+invalid+or+has+expired
+```
+
+The app only checked for successful confirmations (`access_token` in hash) but ignored error cases.
+
+### Solution
+
+1. **App.tsx:** Added error detection before success detection in hash change handler
+2. **AuthPage.tsx:** Added amber warning banner to display the error with dismiss button
+
+### Changes & Reasoning
+
+#### 1. Error detection in App.tsx
+
+```typescript
+// Check for email confirmation errors (expired/already used links)
+if (fullHash.includes('error=')) {
+  const hashParams = new URLSearchParams(fullHash.replace('#', ''));
+  const errorCode = hashParams.get('error');
+  const errorDesc = hashParams.get('error_description');
+
+  if (errorCode === 'otp_expired' || errorCode === 'access_denied') {
+    setConfirmationLinkError('This confirmation link has expired or already been used.');
+  } else if (errorDesc) {
+    setConfirmationLinkError(decodeURIComponent(errorDesc.replace(/\+/g, ' ')));
+  }
+  window.location.hash = '#auth';
+  return;
+}
+```
+
+**Why check error BEFORE success:** Order matters. If we checked success first and found no `access_token`, we'd never reach the error handling.
+
+**Why decode error_description:** Supabase URL-encodes spaces as `+`, which looks ugly in UI.
+
+#### 2. Amber warning banner (not red error)
+
+Used amber/yellow styling instead of red because:
+- It's not a system error (user did nothing wrong)
+- It's informational - link worked once, just can't be reused
+- Less alarming than a red error banner
+
+#### 3. Dismiss button
+
+Added `onLinkErrorAcknowledged` callback so users can dismiss the banner without it persisting.
+
+### Error Types Handled
+
+| Error Code | Message Shown |
+|------------|---------------|
+| `otp_expired` | "This confirmation link has expired or already been used." |
+| `access_denied` | "This confirmation link has expired or already been used." |
+| Other (with description) | Shows Supabase's error_description |
+| Other (no description) | "This link is no longer valid." |
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/App.tsx` | Added `confirmationLinkError` state, error detection in hash handler |
+| `src/components/Auth/AuthPage.tsx` | Added error banner UI, new props for error handling |
+
+---
+
 ## 2026-01-09: Custom domain setup - llmsearchinsight.com
 
 **Commit:** `pending` - Add custom domain to CORS whitelist

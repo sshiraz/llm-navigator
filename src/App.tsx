@@ -32,6 +32,7 @@ function App() {
   });
   const [currentAnalysis, setCurrentAnalysis] = useState<Analysis | null>(null);
   const [emailJustConfirmed, setEmailJustConfirmed] = useState(false);
+  const [confirmationLinkError, setConfirmationLinkError] = useState<string | null>(null);
 
   // Check if user is admin
   const isAdmin = user && isUserAdmin(user);
@@ -56,11 +57,30 @@ function App() {
       const fullHash = window.location.hash.slice(1);
       const section = fullHash.split('?')[0]; // Strip query params for section matching
 
+      // Check for email confirmation errors (expired/already used links)
+      // Supabase returns: #error=otp_expired&error_description=...
+      if (fullHash.includes('error=')) {
+        const hashParams = new URLSearchParams(fullHash.replace('#', ''));
+        const errorCode = hashParams.get('error');
+        const errorDesc = hashParams.get('error_description');
+
+        if (errorCode === 'otp_expired' || errorCode === 'access_denied') {
+          setConfirmationLinkError('This confirmation link has expired or already been used. Please request a new one.');
+        } else if (errorDesc) {
+          setConfirmationLinkError(decodeURIComponent(errorDesc.replace(/\+/g, ' ')));
+        } else {
+          setConfirmationLinkError('This link is no longer valid.');
+        }
+        window.location.hash = '#auth';
+        return;
+      }
+
       // Check for email confirmation callback
       // Supabase returns: #access_token=xxx&type=signup or we redirect to #email-confirmed
       if (fullHash.includes('email-confirmed') ||
           (fullHash.includes('access_token') && fullHash.includes('type=signup'))) {
         setEmailJustConfirmed(true);
+        setConfirmationLinkError(null);
         // Redirect to auth page so user can sign in
         window.location.hash = '#auth';
         return;
@@ -272,6 +292,8 @@ function App() {
               onLogin={handleLogin}
               emailJustConfirmed={emailJustConfirmed}
               onConfirmationAcknowledged={() => setEmailJustConfirmed(false)}
+              confirmationLinkError={confirmationLinkError}
+              onLinkErrorAcknowledged={() => setConfirmationLinkError(null)}
             />
           );
         case 'account':
@@ -290,6 +312,8 @@ function App() {
               onLogin={handleLogin}
               emailJustConfirmed={emailJustConfirmed}
               onConfirmationAcknowledged={() => setEmailJustConfirmed(false)}
+              confirmationLinkError={confirmationLinkError}
+              onLinkErrorAcknowledged={() => setConfirmationLinkError(null)}
             />
           );
         case 'contact':
@@ -316,6 +340,8 @@ function App() {
           onLogin={handleLogin}
           emailJustConfirmed={emailJustConfirmed}
           onConfirmationAcknowledged={() => setEmailJustConfirmed(false)}
+          confirmationLinkError={confirmationLinkError}
+          onLinkErrorAcknowledged={() => setConfirmationLinkError(null)}
         />
       );
     }

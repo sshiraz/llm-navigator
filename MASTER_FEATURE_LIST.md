@@ -406,3 +406,5 @@
 | 2026-01-09 | Pricing tiers now show competitor limits (1/3/unlimited), clearer differentiation |
 | 2026-01-09 | Enterprise: added "Visual trend charts" and "Scheduled analyses" as coming soon features |
 | 2026-01-09 | Added llmsearchinsight.com to CORS whitelist for custom domain setup |
+| 2026-01-10 | Custom domain live: llmsearchinsight.com with SSL |
+| 2026-01-10 | Expired confirmation link handling: shows error instead of silent redirect |
