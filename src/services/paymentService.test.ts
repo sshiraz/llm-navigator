@@ -420,11 +420,11 @@ describe('PaymentService', () => {
         error: null,
       });
 
-      const result = await PaymentService.cancelSubscription('sub_123');
+      const result = await PaymentService.cancelSubscription('user_123', 'sub_123');
 
       expect(result.success).toBe(true);
       expect(mockFunctionsInvoke).toHaveBeenCalledWith('cancel-subscription', {
-        body: { subscriptionId: 'sub_123' },
+        body: { userId: 'user_123', subscriptionId: 'sub_123' },
       });
     });
 
@@ -433,7 +433,7 @@ describe('PaymentService', () => {
         error: { message: 'Subscription not found' },
       });
 
-      const result = await PaymentService.cancelSubscription('sub_123');
+      const result = await PaymentService.cancelSubscription('user_123', 'sub_123');
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Subscription not found');

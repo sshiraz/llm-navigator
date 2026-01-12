@@ -434,6 +434,18 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session, 
   }
 
   try {
+    // Check if user is an admin - admins have automatic enterprise and shouldn't be modified by Stripe webhooks
+    const { data: userData } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (userData?.is_admin) {
+      console.log("👑 User is admin - skipping checkout update (admin accounts have automatic enterprise)");
+      return;
+    }
+
     // Update user subscription and store Stripe IDs
     console.log("💾 Updating user subscription from checkout session...");
     const { data: updatedUser, error: userError } = await supabase
@@ -782,13 +794,13 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, supab
   console.log("📋 Processing subscription change:", subscription.id);
   console.log("📋 Subscription status:", subscription.status);
   console.log("📋 Subscription metadata:", subscription.metadata || {});
-  
+
   // Check if this is a live mode subscription
   const isLiveMode = subscription.livemode === true;
   if (isLiveMode) {
     console.log("🔴 LIVE MODE SUBSCRIPTION - Processing real subscription");
   }
-  
+
   const userId = subscription.metadata.userId;
   const plan = subscription.metadata.plan;
 
@@ -798,18 +810,38 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, supab
   }
 
   try {
+    // Check if user is an admin - admins have automatic enterprise and shouldn't be modified by Stripe webhooks
+    const { data: userData } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (userData?.is_admin) {
+      console.log("👑 User is admin - skipping subscription change (admin accounts have automatic enterprise)");
+      return;
+    }
+
     // Determine the plan based on subscription status
     let subscriptionStatus = 'free';
     if (subscription.status === 'active' || subscription.status === 'trialing') {
       subscriptionStatus = plan || 'starter'; // Default to starter if plan not specified
     }
-    
+
     console.log(`📋 Setting subscription status to: ${subscriptionStatus}`);
-    
+
+    // Calculate next billing date from current_period_end
+    const currentPeriodEnd = subscription.current_period_end
+      ? new Date(subscription.current_period_end * 1000).toISOString()
+      : null;
+
+    console.log(`📋 Next billing date: ${currentPeriodEnd}`);
+
     const { error } = await supabase
       .from('users')
       .update({
         subscription: subscriptionStatus,
+        current_period_end: currentPeriodEnd,
         updated_at: new Date().toISOString(),
       })
       .eq("id", userId);
@@ -858,6 +890,18 @@ async function handleSubscriptionCancellation(subscription: Stripe.Subscription,
   }
 
   try {
+    // Check if user is an admin - admins have automatic enterprise and shouldn't be modified by Stripe webhooks
+    const { data: userData } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (userData?.is_admin) {
+      console.log("👑 User is admin - skipping cancellation (admin accounts have automatic enterprise)");
+      return;
+    }
+
     // Revert to 'trial' instead of 'free' - trial gives simulated data access
     const { error } = await supabase
       .from('users')

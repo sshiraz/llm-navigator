@@ -76,10 +76,10 @@ serve(async (req) => {
 
     console.log("✅ Admin verified:", adminUser.email);
 
-    // Get the user to delete
+    // Get the user to delete (including Stripe subscription info)
     const { data: userToDelete, error: userError } = await supabaseAdmin
       .from('users')
-      .select('id, email, is_admin')
+      .select('id, email, is_admin, stripe_subscription_id, stripe_customer_id')
       .eq('id', userIdToDelete)
       .single();
 
@@ -101,6 +101,46 @@ serve(async (req) => {
     }
 
     console.log("🗑️ Deleting user:", userToDelete.email);
+
+    // Cancel Stripe subscription if exists
+    if (userToDelete.stripe_subscription_id) {
+      console.log("💳 Cancelling Stripe subscription:", userToDelete.stripe_subscription_id);
+
+      const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+      if (stripeSecretKey) {
+        try {
+          const response = await fetch(
+            `https://api.stripe.com/v1/subscriptions/${userToDelete.stripe_subscription_id}`,
+            {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${stripeSecretKey}`,
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+            }
+          );
+
+          if (response.ok) {
+            console.log("✅ Stripe subscription cancelled");
+          } else {
+            const errorData = await response.json();
+            // Don't fail the whole operation if subscription is already cancelled or doesn't exist
+            if (errorData.error?.code === 'resource_missing') {
+              console.log("ℹ️ Stripe subscription already cancelled or doesn't exist");
+            } else {
+              console.warn("⚠️ Failed to cancel Stripe subscription:", errorData.error?.message);
+            }
+          }
+        } catch (stripeError) {
+          console.warn("⚠️ Error calling Stripe API:", stripeError);
+          // Continue with deletion even if Stripe call fails
+        }
+      } else {
+        console.warn("⚠️ STRIPE_SECRET_KEY not set, skipping subscription cancellation");
+      }
+    } else {
+      console.log("ℹ️ No Stripe subscription to cancel");
+    }
 
     // Delete related data first (due to foreign key constraints)
     // Delete analyses
@@ -131,6 +171,16 @@ serve(async (req) => {
 
     if (paymentsError) {
       console.warn("⚠️ Error deleting payments:", paymentsError);
+    }
+
+    // Delete API keys
+    const { error: apiKeysError } = await supabaseAdmin
+      .from('api_keys')
+      .delete()
+      .eq('user_id', userIdToDelete);
+
+    if (apiKeysError) {
+      console.warn("⚠️ Error deleting API keys:", apiKeysError);
     }
 
     // Delete from users table

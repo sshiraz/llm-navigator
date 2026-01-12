@@ -181,7 +181,8 @@ function App() {
             stripeCustomerId: profile.stripe_customer_id,
             stripeSubscriptionId: profile.stripe_subscription_id,
             cancelAtPeriodEnd: profile.cancel_at_period_end,
-            subscriptionEndsAt: profile.subscription_ends_at
+            subscriptionEndsAt: profile.subscription_ends_at,
+            currentPeriodEnd: profile.current_period_end
           };
 
           // Update storage cache with fresh data

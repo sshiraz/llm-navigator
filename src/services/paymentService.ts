@@ -138,11 +138,12 @@ export class PaymentService {
 
   // Cancel subscription
   static async cancelSubscription(
-    subscriptionId: string
+    userId: string,
+    subscriptionId?: string
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const { error } = await supabase.functions.invoke('cancel-subscription', {
-        body: { subscriptionId }
+        body: { userId, subscriptionId }
       });
 
       if (error) {

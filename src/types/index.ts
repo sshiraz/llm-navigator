@@ -15,6 +15,7 @@ export interface User {
   stripeSubscriptionId?: string;
   cancelAtPeriodEnd?: boolean;
   subscriptionEndsAt?: string;
+  currentPeriodEnd?: string; // Next billing date
   // Branding (Professional/Enterprise plans)
   companyLogoUrl?: string;
 }

@@ -154,6 +154,7 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
 
   const trialStatus = getTrialStatus(user);
   const isPaidPlan = ['starter', 'professional', 'enterprise'].includes(user.subscription);
+  const isAdmin = user.isAdmin === true;
 
   const handleChangePassword = async () => {
     // Validate passwords match
@@ -372,34 +373,66 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
                 </div>
               )}
               
-              <div>
-                <div className="text-sm text-gray-500 mb-1">Payment Method</div>
-                <div className="flex items-center space-x-2">
-                  {user.paymentMethodAdded ? (
-                    <>
-                      <CreditCard className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-medium text-gray-900">
-                        •••• 4242 (Visa)
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm font-medium text-gray-500">
-                        No payment method
-                      </span>
-                    </>
-                  )}
+              {!isAdmin && (
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">Payment Method</div>
+                  <div className="flex items-center space-x-2">
+                    {user.paymentMethodAdded ? (
+                      <>
+                        <CreditCard className="w-4 h-4 text-green-600" />
+                        <span className="text-sm font-medium text-gray-900">
+                          •••• 4242 (Visa)
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm font-medium text-gray-500">
+                          No payment method
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
               
-              <div>
-                <div className="text-sm text-gray-500 mb-1">Billing Cycle</div>
-                <div className="text-sm font-medium text-gray-900">
-                  {user.subscription === 'trial' ? 'N/A (Trial)' : 'Monthly'}
+              {!isAdmin && (
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">Billing Cycle</div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {user.subscription === 'trial' ? 'N/A (Trial)' : 'Monthly'}
+                  </div>
                 </div>
-              </div>
-              
+              )}
+
+              {!isAdmin && isPaidPlan && user.currentPeriodEnd && !user.cancelAtPeriodEnd && (
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">Next Billing Date</div>
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-medium text-gray-900">
+                      {new Date(user.currentPeriodEnd).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {isAdmin && (
+                <div>
+                  <div className="text-sm text-gray-500 mb-1">Account Type</div>
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                    <span className="text-sm font-medium text-green-700">
+                      Admin Account (No billing)
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <div className="text-sm text-gray-500 mb-1">Member Since</div>
                 <div className="text-sm font-medium text-gray-900">
@@ -408,7 +441,7 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
               </div>
             </div>
             
-            {user.subscription !== 'enterprise' && (
+            {!isAdmin && user.subscription !== 'enterprise' && (
               <div className="mt-6">
                 <button
                   onClick={() => window.location.hash = '#pricing'}
@@ -418,8 +451,8 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
                 </button>
               </div>
             )}
-            
-            {isPaidPlan && !user.cancelAtPeriodEnd && (
+
+            {!isAdmin && isPaidPlan && !user.cancelAtPeriodEnd && (
               <div className="mt-3">
                 <button
                   onClick={() => setShowCancelModal(true)}

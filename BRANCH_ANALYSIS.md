@@ -5,6 +5,241 @@
 
 ---
 
+## 2026-01-12: Admin accounts auto-enterprise (no billing)
+
+**Commit:** `pending` - Auto-assign enterprise to admin accounts, hide billing UI
+
+### Context
+
+Admin accounts should receive automatic enterprise access without being billed:
+1. When a user is made admin, they should get enterprise plan automatically
+2. Admin accounts shouldn't show billing-related UI (payment method, billing cycle, etc.)
+3. Stripe webhooks shouldn't modify admin subscription status
+
+### Changes & Reasoning
+
+#### 1. Database trigger for auto-enterprise assignment
+
+**SQL Migration:**
+
+```sql
+-- Trigger function to auto-assign enterprise when is_admin = true
+CREATE OR REPLACE FUNCTION handle_admin_enterprise()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- If is_admin changed to true, set enterprise subscription
+  IF NEW.is_admin = true AND (OLD.is_admin IS NULL OR OLD.is_admin = false) THEN
+    NEW.subscription = 'enterprise';
+    NEW.payment_method_added = true;
+  END IF;
+  -- Prevent admins from being downgraded from enterprise
+  IF NEW.is_admin = true AND NEW.subscription != 'enterprise' THEN
+    NEW.subscription = 'enterprise';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Drop existing trigger if exists, then create
+DROP TRIGGER IF EXISTS on_admin_enterprise ON users;
+CREATE TRIGGER on_admin_enterprise
+  BEFORE UPDATE ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION handle_admin_enterprise();
+```
+
+**Why trigger:** Ensures enterprise status is always enforced at database level, even if code changes or API is called directly. Single source of truth.
+
+**Why prevent downgrade:** Even if Stripe webhook tries to change admin subscription, the trigger forces it back to enterprise.
+
+#### 2. Hide billing UI for admin accounts
+
+**File:** `src/components/Account/AccountPage.tsx`
+
+```typescript
+const isAdmin = user.isAdmin === true;
+
+// Hide Payment Method, Billing Cycle, Next Billing Date for admins
+{!isAdmin && <PaymentMethodSection />}
+
+// Show "Admin Account (No billing)" badge instead
+{isAdmin && <AdminAccountBadge />}
+
+// Hide "Upgrade Plan" and "Cancel Subscription" buttons for admins
+{!isAdmin && user.subscription !== 'enterprise' && <UpgradeButton />}
+{!isAdmin && isPaidPlan && <CancelButton />}
+```
+
+**Why hide:** Admins have automatic enterprise - showing payment UI would be confusing and potentially lead to unnecessary Stripe subscriptions.
+
+#### 3. Skip admin users in Stripe webhooks
+
+**File:** `supabase/functions/stripe-webhook/index.ts`
+
+```typescript
+// In handleSubscriptionChange, handleCheckoutSessionCompleted, handleSubscriptionCancellation
+const { data: userData } = await supabase
+  .from('users')
+  .select('is_admin')
+  .eq('id', userId)
+  .maybeSingle();
+
+if (userData?.is_admin) {
+  console.log("👑 User is admin - skipping subscription change");
+  return;
+}
+```
+
+**Why check in webhook:** Even if an admin somehow goes through Stripe checkout, the webhook shouldn't modify their subscription. Defense in depth with the database trigger.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/Account/AccountPage.tsx` | Hide billing UI for admins, show "Admin Account" badge |
+| `supabase/functions/stripe-webhook/index.ts` | Skip admin users in subscription handlers |
+
+### Database Migration Required
+
+Run in Supabase SQL Editor:
+
+```sql
+CREATE OR REPLACE FUNCTION handle_admin_enterprise()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.is_admin = true AND (OLD.is_admin IS NULL OR OLD.is_admin = false) THEN
+    NEW.subscription = 'enterprise';
+    NEW.payment_method_added = true;
+  END IF;
+  IF NEW.is_admin = true AND NEW.subscription != 'enterprise' THEN
+    NEW.subscription = 'enterprise';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS on_admin_enterprise ON users;
+CREATE TRIGGER on_admin_enterprise
+  BEFORE UPDATE ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION handle_admin_enterprise();
+```
+
+---
+
+## 2026-01-12: Subscription management improvements
+
+**Commit:** `pending` - Cancel Stripe subscription on user deletion, display next billing date
+
+### Context
+
+Three gaps were identified in subscription management:
+1. Admin deleting a user didn't cancel their Stripe subscription (orphaned subscriptions)
+2. Users couldn't see when their next billing date would be
+3. `PaymentService.cancelSubscription()` was missing required `userId` parameter
+
+### Changes & Reasoning
+
+#### 1. Cancel Stripe subscription when admin deletes user
+
+**File:** `supabase/functions/delete-user/index.ts`
+
+```typescript
+// Fetch stripe_subscription_id before deletion
+const { data: userToDelete } = await supabaseAdmin
+  .from('users')
+  .select('id, email, is_admin, stripe_subscription_id, stripe_customer_id')
+  .eq('id', userIdToDelete)
+  .single();
+
+// Cancel subscription via Stripe API
+if (userToDelete.stripe_subscription_id) {
+  await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${stripeSecretKey}` }
+  });
+}
+```
+
+**Why DELETE not update:** Using DELETE immediately cancels the subscription. Using `cancel_at_period_end: true` would leave it active until period end, but the user is being deleted now.
+
+**Why graceful error handling:** If subscription is already cancelled or doesn't exist (`resource_missing`), continue with user deletion. Don't fail the whole operation.
+
+**Also added:** Delete `api_keys` for the user (was missing).
+
+#### 2. Display next billing date in Account Settings
+
+**Files:**
+- `src/types/index.ts` - Added `currentPeriodEnd` field
+- `supabase/functions/stripe-webhook/index.ts` - Store `current_period_end` on subscription events
+- `src/App.tsx` - Load `currentPeriodEnd` from profile
+- `src/components/Account/AccountPage.tsx` - Display in Subscription Details
+
+```typescript
+// In stripe-webhook handleSubscriptionChange()
+const currentPeriodEnd = subscription.current_period_end
+  ? new Date(subscription.current_period_end * 1000).toISOString()
+  : null;
+
+await supabase.from('users').update({
+  current_period_end: currentPeriodEnd,
+  // ...
+});
+```
+
+**Why store in database:** Could fetch from Stripe API on-demand, but adds latency. Better to cache it and update via webhooks.
+
+**Why only show for active subscriptions:** Hidden when `cancelAtPeriodEnd` is true because the subscription won't renew.
+
+#### 3. Fix PaymentService.cancelSubscription signature
+
+**File:** `src/services/paymentService.ts`
+
+```typescript
+// Before (broken - missing userId)
+static async cancelSubscription(subscriptionId: string)
+
+// After (fixed)
+static async cancelSubscription(userId: string, subscriptionId?: string)
+```
+
+**Why:** The `cancel-subscription` edge function requires `userId` in the request body. The old signature would fail with "Missing userId" error.
+
+### Deletion Order
+
+When admin deletes a user, operations happen in this order:
+1. Cancel Stripe subscription (if exists)
+2. Delete analyses
+3. Delete projects
+4. Delete payments
+5. Delete API keys
+6. Delete from users table
+7. Delete from Supabase Auth
+
+**Why this order:** Stripe cancellation first prevents any new charges. Database tables deleted before users table due to foreign key constraints.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `supabase/functions/delete-user/index.ts` | Add Stripe cancellation, delete api_keys |
+| `supabase/functions/stripe-webhook/index.ts` | Store `current_period_end` on subscription events |
+| `src/types/index.ts` | Add `currentPeriodEnd` field to User |
+| `src/App.tsx` | Load `currentPeriodEnd` from profile |
+| `src/components/Account/AccountPage.tsx` | Display "Next Billing Date" |
+| `src/services/paymentService.ts` | Fix `cancelSubscription` to require `userId` |
+| `src/services/paymentService.test.ts` | Update tests for new signature |
+
+### Database Migration Required
+
+Add `current_period_end` column to users table:
+
+```sql
+ALTER TABLE users ADD COLUMN current_period_end timestamptz;
+```
+
+---
+
 ## 2026-01-12: Enable live Stripe payments
 
 **Commit:** `pending` - Enable live payments with production Stripe keys

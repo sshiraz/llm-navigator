@@ -19,8 +19,8 @@
 | DevOps | 5 | 0 | 4 | 9 |
 | Payments | 9 | 0 | 2 | 11 |
 | User Experience | 8 | 0 | 3 | 11 |
-| Admin | 4 | 1 | 1 | 6 |
-| **Total** | **79** | **8** | **31** | **118** |
+| Admin | 5 | 1 | 1 | 7 |
+| **Total** | **80** | **8** | **31** | **119** |
 
 **Overall Progress: 73% complete**
 
@@ -339,6 +339,7 @@
 ### Admin Actions
 | Status | Feature | Notes |
 |--------|---------|-------|
+| ✅ | Auto-enterprise for admins | Admins get enterprise plan, no billing |
 | ❌ | User impersonation | Not implemented |
 
 ---
@@ -409,3 +410,6 @@
 | 2026-01-10 | Custom domain live: llmsearchinsight.com with SSL |
 | 2026-01-10 | Expired confirmation link handling: shows error instead of silent redirect |
 | 2026-01-12 | Live payments enabled: switched from test mode to production Stripe |
+| 2026-01-12 | Admin user deletion now cancels Stripe subscription automatically |
+| 2026-01-12 | Next billing date displayed in Account Settings for paid plans |
+| 2026-01-12 | Admin accounts: automatic enterprise plan, no billing UI, webhook protection |
