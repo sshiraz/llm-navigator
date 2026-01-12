@@ -408,3 +408,4 @@
 | 2026-01-09 | Added llmsearchinsight.com to CORS whitelist for custom domain setup |
 | 2026-01-10 | Custom domain live: llmsearchinsight.com with SSL |
 | 2026-01-10 | Expired confirmation link handling: shows error instead of silent redirect |
+| 2026-01-12 | Live payments enabled: switched from test mode to production Stripe |

@@ -5,6 +5,104 @@
 
 ---
 
+## 2026-01-12: Enable live Stripe payments
+
+**Commit:** `pending` - Enable live payments with production Stripe keys
+
+### Context
+
+The application was running in test mode with Stripe test keys (`pk_test_`, `sk_test_`). This commit switches to production mode to process real payments.
+
+### Prerequisites Completed (Stripe Dashboard)
+
+1. **Live products created** with correct pricing:
+   - Starter: $29/month (`price_1RgwZiCjH1LpHt8CBPejppR9`)
+   - Professional: $99/month (`price_1RgwYQCjH1LpHt8CPrKsgwLr`)
+   - Enterprise: $299/month (`price_1ReVLmCjH1LpHt8C8tqU5e96`)
+
+2. **Webhook endpoint configured**:
+   - URL: `https://jgkdzaoajbzmuuajpndv.supabase.co/functions/v1/stripe-webhook`
+   - Events: `checkout.session.completed`, `customer.subscription.created/updated/deleted`, `invoice.payment_failed`, `payment_intent.succeeded`
+
+### Changes & Reasoning
+
+#### 1. Netlify environment variables updated
+
+| Variable | Change |
+|----------|--------|
+| `VITE_STRIPE_PUBLISHABLE_KEY` | `pk_test_...` → `pk_live_...` |
+| `VITE_STRIPE_STARTER_PRICE_ID` | Test price → Live price |
+| `VITE_STRIPE_PROFESSIONAL_PRICE_ID` | Test price → Live price |
+| `VITE_STRIPE_ENTERPRISE_PRICE_ID` | Test price → Live price |
+
+**Why environment variables:** Keeps secrets out of code, allows different values per environment.
+
+#### 2. Supabase secrets updated
+
+```bash
+npx supabase secrets set STRIPE_SECRET_KEY=sk_live_...
+npx supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
+**Why separate webhook secret:** Stripe uses this to sign webhook payloads. Our `stripe-webhook` edge function verifies signatures to prevent spoofed webhooks.
+
+#### 3. Safety flag changed (`isLiveMode = true`)
+
+```typescript
+// src/utils/liveMode.ts
+export const isLiveMode = true;
+
+// src/utils/stripeUtils.ts
+export const isLiveMode = true;
+```
+
+**Why hardcoded flag:** Defense in depth. Even if someone accidentally deploys with live keys, this flag must also be `true` for certain live-mode behaviors (UI warnings, disabling test features).
+
+**Why two files:** Historical reasons - both are imported in different places. Could be consolidated but works fine as-is.
+
+#### 4. Edge functions redeployed
+
+All payment-related edge functions redeployed to pick up new secrets:
+- `stripe-webhook`
+- `create-subscription`
+- `create-payment-intent`
+- `cancel-subscription`
+
+### Live Mode Detection
+
+The system has multiple layers of live mode detection:
+
+| Layer | Detection Method |
+|-------|------------------|
+| Frontend | `isLiveMode` flag + `pk_live_` prefix check |
+| Edge functions | `sk_live_` prefix on `STRIPE_SECRET_KEY` |
+| Database | `live_mode` boolean on `payment_logs` table |
+
+### Rollback Plan
+
+To revert to test mode:
+1. Change `isLiveMode` back to `false` in both files
+2. Update Netlify env vars to `pk_test_` keys and test price IDs
+3. Update Supabase secrets to `sk_test_` key
+4. Redeploy edge functions
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/utils/liveMode.ts` | `isLiveMode = false` → `isLiveMode = true` |
+| `src/utils/stripeUtils.ts` | `isLiveMode = false` → `isLiveMode = true` |
+
+### External Configuration
+
+| Service | Setting |
+|---------|---------|
+| Netlify | 4 environment variables updated |
+| Supabase | 2 secrets set via CLI |
+| Stripe | Webhook endpoint + 6 events configured |
+
+---
+
 ## 2026-01-10: Expired confirmation link error handling
 
 **Commit:** `99e095c` - Handle expired/reused email confirmation links gracefully

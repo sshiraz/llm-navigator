@@ -9,7 +9,8 @@ const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 export const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
 // Check if we're in live mode
-export const isLiveMode = false; // Force test mode for safety
+// LIVE MODE ENABLED - Real payments will be processed
+export const isLiveMode = true;
 
 // Log a warning if using live keys
 if (stripePublishableKey?.startsWith('pk_live_')) {
