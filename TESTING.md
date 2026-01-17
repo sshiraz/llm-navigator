@@ -1,6 +1,6 @@
 # Testing Guide
 
-> Last updated: 2026-01-09
+> Last updated: 2026-01-16
 
 This document provides an overview of all automated tests in the LLM Navigator project.
 
@@ -13,7 +13,7 @@ This document provides an overview of all automated tests in the LLM Navigator p
 npm run test:run && npm run build
 ```
 
-Current test count: **375 tests** (11 test files)
+Current test count: **434 tests** (15 test files)
 
 ## Quick Reference
 
@@ -199,6 +199,52 @@ Tests data consistency between Performance Snapshot and Competitor Strategy (24 
 
 **Purpose:** Ensures both UI components (Performance Snapshot in analysis results, Competitor Strategy page) display the same competitor data extracted from `analysis.citationResults`.
 
+### GDPR & Privacy Components
+
+#### Cookie Consent
+**File:** `src/components/Legal/CookieConsent.test.tsx`
+
+Tests the cookie consent banner and helper functions (9 tests).
+
+| Test Suite | Coverage |
+|------------|----------|
+| Initial Display | Timer delay, stored consent (accept/decline) |
+| Consent Storage | localStorage accept/decline storage |
+| `hasCookieConsent` | Returns true/false based on stored consent, handles invalid JSON |
+| `resetCookieConsent` | Removes consent from localStorage |
+
+#### Privacy Policy
+**File:** `src/components/Legal/PrivacyPolicy.test.tsx`
+
+Tests the privacy policy page with GDPR sections (14 tests).
+
+| Test Suite | Coverage |
+|------------|----------|
+| Header Section | Title, date, back button navigation |
+| GDPR Rights Section | Data export explanation, account deletion, CCPA section |
+| Cookies Section | Consent options (accept/decline) |
+| Data Retention Section | Retention policies display |
+| Quick Links Section | Export, delete, terms links |
+| Dark Theme | Correct styling classes |
+
+#### Account Page GDPR Features
+**File:** `src/components/Account/AccountPage.gdpr.test.tsx`
+
+Tests data export and account deletion features (17 tests).
+
+| Test Suite | Coverage |
+|------------|----------|
+| Account Security & Privacy | Section heading, change password button |
+| Data Export | Export section display, download button |
+| Account Deletion | Delete button, modal open/close, DELETE confirmation, edge function call, error handling |
+| Account Created | Display of account creation date |
+| Admin Restrictions | Export/delete visibility for admins |
+
+**GDPR Compliance Features Tested:**
+- Right to data portability (data export as JSON)
+- Right to be forgotten (account deletion with confirmation)
+- Cookie consent mechanism
+
 ---
 
 ## Integration Tests (Scripts)
@@ -273,17 +319,18 @@ set -a && . ./.env && set +a && npm run test:functions
 | Area | Unit Tests | Integration Tests |
 |------|------------|-------------------|
 | Authentication | authService.test.ts | - |
-| UI Components | AuthPage, AnalysisForm, UserDashboard | - |
+| UI Components | AuthPage, AnalysisForm, UserDashboard, FreeReportPage | - |
 | Navigation | navigation.test.tsx | - |
 | Analysis Engine | analysisEngine.test.ts, analysisHelpers.test.ts | - |
 | Competitor Comparison | competitorComparison.test.ts | - |
 | Storage | storageManager.test.ts | - |
 | Input Sanitization | sanitize.test.ts (115 tests) | - |
 | Payment/Stripe | paymentService.test.ts | test-payment-flow.ts |
+| GDPR/Privacy | CookieConsent, PrivacyPolicy, AccountPage.gdpr | - |
 | Edge Functions | - | test-edge-functions.ts |
 | CORS Security | - | test-edge-functions.ts |
 
-**Total: 367 tests across 11 test files**
+**Total: 434 tests across 15 test files**
 
 ---
 

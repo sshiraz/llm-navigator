@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, Mail, Building, Globe, Save, X, CheckCircle, AlertTriangle, CreditCard, Calendar, XCircle, AlertOctagon, Lock, Image, Upload, Trash2, Key, Copy, ExternalLink, Plus } from 'lucide-react';
+import { ArrowLeft, User, Mail, Building, Globe, Save, X, CheckCircle, AlertTriangle, CreditCard, Calendar, XCircle, AlertOctagon, Lock, Image, Upload, Trash2, Key, Copy, ExternalLink, Plus, Download, Shield } from 'lucide-react';
 import { User as UserType, ApiKey } from '../../types';
 import { getTrialStatus } from '../../utils/mockData';
 import { supabase } from '../../lib/supabase';
@@ -51,6 +51,18 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
   const [isCreatingKey, setIsCreatingKey] = useState(false);
   const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
   const [keyCopied, setKeyCopied] = useState(false);
+
+  // Data export state
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportStatus, setExportStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [exportMessage, setExportMessage] = useState('');
+
+  // Delete account state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteStatus, setDeleteStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [deleteMessage, setDeleteMessage] = useState('');
 
   // Load API keys for Enterprise users
   useEffect(() => {
@@ -198,6 +210,105 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
       setPasswordMessage('An unexpected error occurred');
     } finally {
       setIsChangingPassword(false);
+    }
+  };
+
+  // Handle data export (GDPR right to data portability)
+  const handleExportData = async () => {
+    setIsExporting(true);
+    setExportStatus('idle');
+    setExportMessage('');
+
+    try {
+      // Fetch all user data from Supabase
+      const [profileResult, analysesResult, projectsResult] = await Promise.all([
+        supabase.from('users').select('*').eq('id', user.id).single(),
+        supabase.from('analyses').select('*').eq('user_id', user.id),
+        supabase.from('projects').select('*').eq('user_id', user.id)
+      ]);
+
+      // Compile all data
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          createdAt: user.createdAt,
+          subscription: user.subscription
+        },
+        profile: profileResult.data,
+        analyses: analysesResult.data || [],
+        projects: projectsResult.data || []
+      };
+
+      // Create and download JSON file
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `llm-navigator-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setExportStatus('success');
+      setExportMessage('Your data has been exported successfully!');
+
+      // Reset status after 3 seconds
+      setTimeout(() => {
+        setExportStatus('idle');
+        setExportMessage('');
+      }, 3000);
+    } catch (error) {
+      console.error('Export error:', error);
+      setExportStatus('error');
+      setExportMessage('Failed to export data. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Handle account deletion (GDPR right to be forgotten)
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') {
+      setDeleteStatus('error');
+      setDeleteMessage('Please type DELETE to confirm');
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteStatus('idle');
+    setDeleteMessage('');
+
+    try {
+      // Call edge function to delete all user data
+      const { data, error } = await supabase.functions.invoke('delete-account', {
+        body: { userId: user.id }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        setDeleteStatus('success');
+        setDeleteMessage('Your account has been deleted. Redirecting...');
+
+        // Sign out and redirect after 2 seconds
+        setTimeout(async () => {
+          await AuthService.signOut();
+          window.location.hash = '';
+          window.location.reload();
+        }, 2000);
+      } else {
+        throw new Error(data.error || 'Failed to delete account');
+      }
+    } catch (error) {
+      console.error('Delete account error:', error);
+      setDeleteStatus('error');
+      setDeleteMessage(error instanceof Error ? error.message : 'Failed to delete account. Please contact support.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -827,15 +938,76 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
 
           {/* Account Security */}
           <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
-            <h3 className="text-lg font-semibold text-white mb-6">Account Security</h3>
+            <div className="flex items-center space-x-2 mb-6">
+              <Shield className="w-5 h-5 text-indigo-400" />
+              <h3 className="text-lg font-semibold text-white">Account Security & Privacy</h3>
+            </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Password */}
               <div>
+                <h4 className="text-sm font-medium text-slate-300 mb-2">Password</h4>
                 <button
                   onClick={() => setShowPasswordModal(true)}
                   className="px-4 py-2 border border-slate-600 text-slate-300 rounded-lg hover:bg-slate-700 transition-colors"
                 >
                   Change Password
+                </button>
+              </div>
+
+              {/* Data Export - GDPR Right to Data Portability */}
+              <div className="pt-4 border-t border-slate-700">
+                <h4 className="text-sm font-medium text-slate-300 mb-2">Export Your Data</h4>
+                <p className="text-sm text-slate-500 mb-3">
+                  Download a copy of all your data (profile, analyses, projects) in JSON format.
+                </p>
+                {exportStatus === 'success' && (
+                  <div className="bg-green-900/30 border border-green-700 rounded-lg p-3 mb-3">
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="w-4 h-4 text-green-400" />
+                      <span className="text-sm text-green-300">{exportMessage}</span>
+                    </div>
+                  </div>
+                )}
+                {exportStatus === 'error' && (
+                  <div className="bg-red-900/30 border border-red-700 rounded-lg p-3 mb-3">
+                    <div className="flex items-center space-x-2">
+                      <XCircle className="w-4 h-4 text-red-400" />
+                      <span className="text-sm text-red-300">{exportMessage}</span>
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={handleExportData}
+                  disabled={isExporting}
+                  className="flex items-center space-x-2 px-4 py-2 border border-slate-600 text-slate-300 rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50"
+                >
+                  {isExporting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-slate-300 border-t-transparent rounded-full animate-spin"></div>
+                      <span>Exporting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      <span>Download My Data</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Delete Account - GDPR Right to be Forgotten */}
+              <div className="pt-4 border-t border-slate-700">
+                <h4 className="text-sm font-medium text-red-400 mb-2">Delete Account</h4>
+                <p className="text-sm text-slate-500 mb-3">
+                  Permanently delete your account and all associated data. This action cannot be undone.
+                </p>
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="flex items-center space-x-2 px-4 py-2 border border-red-700 text-red-400 rounded-lg hover:bg-red-900/30 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Delete My Account</span>
                 </button>
               </div>
 
@@ -1200,6 +1372,92 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
                       </>
                     ) : (
                       'Change Password'
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-xl shadow-2xl max-w-md w-full p-6 border border-slate-700">
+            {deleteStatus === 'success' ? (
+              <div className="text-center">
+                <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">Account Deleted</h3>
+                <p className="text-slate-400">{deleteMessage}</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-red-900/50 flex items-center justify-center">
+                    <AlertOctagon className="w-5 h-5 text-red-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white">Delete Account</h3>
+                </div>
+
+                <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-red-200">
+                    <strong>Warning:</strong> This action is permanent and cannot be undone. All your data will be permanently deleted, including:
+                  </p>
+                  <ul className="text-sm text-red-200 mt-2 ml-4 list-disc space-y-1">
+                    <li>Your profile and account information</li>
+                    <li>All analyses and reports</li>
+                    <li>All projects and history</li>
+                    <li>API keys and usage data</li>
+                  </ul>
+                </div>
+
+                <p className="text-slate-400 mb-4">
+                  To confirm deletion, type <span className="font-mono font-bold text-white">DELETE</span> below:
+                </p>
+
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value.toUpperCase())}
+                  placeholder="Type DELETE to confirm"
+                  className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-red-500 focus:border-transparent mb-4"
+                />
+
+                {deleteStatus === 'error' && (
+                  <div className="bg-red-900/30 border border-red-700 rounded-lg p-3 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <XCircle className="w-4 h-4 text-red-400" />
+                      <p className="text-sm text-red-300">{deleteMessage}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setDeleteStatus('idle');
+                      setDeleteMessage('');
+                      setDeleteConfirmText('');
+                    }}
+                    disabled={isDeleting}
+                    className="flex-1 px-4 py-3 border border-slate-600 text-slate-300 rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={isDeleting || deleteConfirmText !== 'DELETE'}
+                    className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Deleting...
+                      </>
+                    ) : (
+                      'Delete My Account'
                     )}
                   </button>
                 </div>

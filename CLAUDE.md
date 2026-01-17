@@ -22,6 +22,8 @@ supabase/functions/ # Edge Functions (Deno)
 ├── crawl-website/  # Website analysis
 ├── stripe-webhook/ # Payment events
 ├── delete-user/    # Admin deletion
+├── delete-account/ # User self-deletion (GDPR)
+├── cleanup-data/   # Admin data retention cleanup
 ├── cleanup-auth-user/ # Cleanup orphaned auth users on signup failure
 └── create-user-profile/ # Create profile bypassing RLS (for email confirmation flow)
 
@@ -156,6 +158,35 @@ The UI shows:
 - ✅ Admin dashboard (EnvironmentStatus component)
 - ✅ Admin user management page
 - ❌ Customer-facing pages (pricing, checkout) - don't show warnings to customers
+
+### GDPR & Privacy Compliance
+
+The app implements key GDPR and CCPA requirements:
+
+| Feature | Location | Description |
+|---------|----------|-------------|
+| Cookie Consent | `CookieConsent.tsx` | Banner on first visit, stores preference in localStorage |
+| Data Export | Account Settings | Download all user data as JSON (profile, analyses, projects) |
+| Account Deletion | Account Settings | Self-service deletion with "DELETE" confirmation |
+| Data Retention | `cleanup_sensitive_data()` | Auto-delete fraud data after 90 days, nullify IPs after 30 days |
+
+**Key files:**
+- `src/components/Legal/CookieConsent.tsx` - Cookie consent banner
+- `src/components/Legal/PrivacyPolicy.tsx` - Updated with GDPR rights
+- `src/components/Account/AccountPage.tsx` - Export & delete features
+- `supabase/functions/delete-account/` - User self-deletion edge function
+- `supabase/functions/cleanup-data/` - Admin data cleanup edge function
+- `supabase/migrations/20260116_security_fixes.sql` - RLS fixes + cleanup function
+
+**Edge functions:**
+- `delete-account` - Users delete their own account (verifies ownership)
+- `cleanup-data` - Admin-only, triggers `cleanup_sensitive_data()` RPC
+- `delete-user` - Admin deletes other users (different from self-deletion)
+
+**Test coverage:**
+- `src/components/Legal/CookieConsent.test.tsx` - Cookie consent banner tests
+- `src/components/Legal/PrivacyPolicy.test.tsx` - Privacy policy GDPR sections
+- `src/components/Account/AccountPage.gdpr.test.tsx` - Data export & account deletion
 
 ## Key Patterns
 
@@ -294,6 +325,10 @@ serve(async (req) => {
 | Payment handling | `supabase/functions/stripe-webhook/index.ts` |
 | CORS config | `supabase/functions/_shared/cors.ts` |
 | Types | `src/types/index.ts` |
+| Cookie consent | `src/components/Legal/CookieConsent.tsx` |
+| Privacy policy | `src/components/Legal/PrivacyPolicy.tsx` |
+| Account deletion | `supabase/functions/delete-account/index.ts` |
+| Data cleanup | `supabase/functions/cleanup-data/index.ts` |
 
 ## Related Docs
 

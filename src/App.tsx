@@ -17,6 +17,7 @@ import AuthPage from './components/Auth/AuthPage';
 import PricingPage from './components/Pricing/PricingPage';
 import ApiDocs from './components/Docs/ApiDocs';
 import FreeReportPage from './components/FreeReport/FreeReportPage';
+import CookieConsent from './components/Legal/CookieConsent';
 import { Analysis, User } from './types';
 import EnvironmentStatus from './components/UI/EnvironmentStatus';
 import { mockAnalyses } from './utils/mockData';
@@ -407,6 +408,7 @@ function App() {
     return (
       <>
         {renderContent()}
+        <CookieConsent />
       </>
     );
   }
@@ -422,6 +424,7 @@ function App() {
           {renderContent()}
         </main>
       </div>
+      <CookieConsent />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FileText } from 'lucide-react';
 
 export default function TermsOfService() {
   const goBack = () => {
@@ -7,28 +7,35 @@ export default function TermsOfService() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-900">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-12">
+      <div className="bg-slate-800 border-b border-slate-700 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <button 
+          <button
             onClick={goBack}
-            className="inline-flex items-center space-x-2 text-blue-100 hover:text-white mb-6 transition-colors"
+            className="inline-flex items-center space-x-2 text-slate-400 hover:text-white mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Home</span>
           </button>
-          
-          <h1 className="text-4xl font-bold mb-4">Terms of Service</h1>
-          <p className="text-xl text-blue-100 max-w-3xl">
-            Last Updated: May 15, 2025
-          </p>
+
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 rounded-lg bg-indigo-900/50 flex items-center justify-center">
+              <FileText className="w-6 h-6 text-indigo-400" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-white">Terms of Service</h1>
+              <p className="text-slate-400 mt-1">
+                Last Updated: January 16, 2026
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          <div className="prose prose-lg max-w-none">
+        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-8">
+          <div className="prose prose-lg prose-invert max-w-none prose-headings:text-white prose-p:text-slate-300 prose-li:text-slate-300 prose-strong:text-white prose-a:text-indigo-400 hover:prose-a:text-indigo-300">
             <h2>1. Agreement to Terms</h2>
             <p>
               These Terms of Service ("Terms") constitute a legally binding agreement between you and LLM Navigator ("we," "our," or "us") governing your access to and use of our website, products, and services (collectively, the "Services").
@@ -168,6 +175,33 @@ export default function TermsOfService() {
             <p>
               Email: <a href="mailto:info@convologix.com">info@convologix.com</a>
             </p>
+          </div>
+        </div>
+
+        {/* Quick Links */}
+        <div className="mt-8 bg-indigo-900/30 border border-indigo-700 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-indigo-300 mb-3">Related Documents</h3>
+          <div className="flex flex-wrap gap-4">
+            <a
+              href="#privacy"
+              className="text-indigo-400 hover:text-indigo-300 underline"
+            >
+              Privacy Policy
+            </a>
+            <span className="text-slate-600">|</span>
+            <a
+              href="#account"
+              className="text-indigo-400 hover:text-indigo-300 underline"
+            >
+              Account Settings
+            </a>
+            <span className="text-slate-600">|</span>
+            <a
+              href="#contact"
+              className="text-indigo-400 hover:text-indigo-300 underline"
+            >
+              Contact Us
+            </a>
           </div>
         </div>
       </div>
