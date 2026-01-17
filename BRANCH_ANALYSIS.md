@@ -7,7 +7,7 @@
 
 ## 2026-01-17: Free Report Enhancements - Abuse Prevention, Detailed Email, Tests
 
-**Commit:** `pending` - Enhance free report with abuse prevention, detailed email, and explainer
+**Commit:** `6d2c38d` - Enhance free report with abuse prevention, detailed email, and explainer
 
 ### Context
 
@@ -115,7 +115,7 @@ CREATE POLICY "Allow read for abuse check" ON free_report_leads
 
 ## 2026-01-17: Security Audit and Critical Vulnerability Fixes
 
-**Commit:** `pending` - Fix critical security vulnerabilities in Edge Functions
+**Commit:** `822b7ae` - Fix critical security vulnerabilities in Edge Functions
 
 ### Context
 
@@ -253,7 +253,7 @@ npx supabase functions deploy delete-user
 
 ## 2026-01-12: Free Report lead generation page
 
-**Commit:** `pending` - Add free AI visibility report for lead capture
+**Commit:** `6d2c38d` - Add free AI visibility report for lead capture (completed with enhancements)
 
 ### Context
 
@@ -376,7 +376,7 @@ CREATE POLICY "Allow public inserts" ON free_report_leads
 
 ## 2026-01-12: Admin accounts auto-enterprise (no billing)
 
-**Commit:** `pending` - Auto-assign enterprise to admin accounts, hide billing UI
+**Commit:** `a403c81` - Auto-assign enterprise to admin accounts, hide billing UI
 
 ### Context
 
@@ -498,7 +498,7 @@ CREATE TRIGGER on_admin_enterprise
 
 ## 2026-01-12: Subscription management improvements
 
-**Commit:** `pending` - Cancel Stripe subscription on user deletion, display next billing date
+**Commit:** `4e15bd2` - Cancel Stripe subscription on user deletion, display next billing date
 
 ### Context
 
@@ -611,7 +611,7 @@ ALTER TABLE users ADD COLUMN current_period_end timestamptz;
 
 ## 2026-01-12: Enable live Stripe payments
 
-**Commit:** `pending` - Enable live payments with production Stripe keys
+**Commit:** `01a8f0d` - Enable live payments with production Stripe keys
 
 ### Context
 
@@ -3994,7 +3994,7 @@ The app needed a dedicated pricing page that users could access from the landing
 
 ## 2026-01-16: Add security compliance features (2FA, audit logging, DPA)
 
-**Commit:** `pending` - Add 2FA, audit logging, and DPA for security compliance
+**Commit:** `5e3aa52` - Add 2FA, audit logging, and DPA for security compliance
 
 ### Context
 
