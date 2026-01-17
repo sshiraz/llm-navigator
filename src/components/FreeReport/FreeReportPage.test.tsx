@@ -3,26 +3,66 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import FreeReportPage from './FreeReportPage';
 
-// Mock supabase
+// Mock supabase with chainable query builder
+const createMockQueryBuilder = (selectData: any[] = []) => {
+  const builder = {
+    select: vi.fn(() => builder),
+    insert: vi.fn(() => Promise.resolve({ error: null })),
+    eq: vi.fn(() => builder),
+    gte: vi.fn(() => builder),
+    limit: vi.fn(() => Promise.resolve({ data: selectData, error: null })),
+  };
+  // For domain check (no limit call, returns directly from gte)
+  builder.gte.mockImplementation(() => {
+    return {
+      ...builder,
+      then: (resolve: any) => resolve({ data: selectData, error: null }),
+    };
+  });
+  return builder;
+};
+
+let mockQueryBuilder = createMockQueryBuilder([]);
+
 vi.mock('../../lib/supabase', () => ({
   supabase: {
     functions: {
       invoke: vi.fn(),
     },
-    from: vi.fn(() => ({
-      insert: vi.fn(() => Promise.resolve({ error: null })),
-    })),
+    from: vi.fn(() => mockQueryBuilder),
   },
 }));
 
 // Import after mock
 import { supabase } from '../../lib/supabase';
 
+// Helper to create mock results for 5 queries
+const createMockResults = (overrides: Partial<{
+  isCited: boolean;
+  citationContext: string;
+  competitorsCited: { domain: string; context: string }[];
+}>[] = []) => {
+  const defaultResult = {
+    isCited: false,
+    competitorsCited: [],
+    response: 'AI response text',
+  };
+
+  // Create 5 results (one per query type)
+  return Array(5).fill(null).map((_, i) => ({
+    ...defaultResult,
+    ...overrides[i],
+  }));
+};
+
 describe('FreeReportPage Component', () => {
   const mockOnGetStarted = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset to default (no abuse detected)
+    mockQueryBuilder = createMockQueryBuilder([]);
+    vi.mocked(supabase.from).mockReturnValue(mockQueryBuilder as any);
   });
 
   describe('Initial Render', () => {
@@ -93,7 +133,7 @@ describe('FreeReportPage Component', () => {
     it('shows loading state during analysis', async () => {
       // Mock slow response
       vi.mocked(supabase.functions.invoke).mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({ data: { success: true, data: { results: [] } }, error: null }), 1000))
+        () => new Promise((resolve) => setTimeout(() => resolve({ data: { success: true, data: { results: createMockResults() } }, error: null }), 1000))
       );
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
@@ -108,7 +148,8 @@ describe('FreeReportPage Component', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/Analyzing your website/i)).toBeInTheDocument();
+        // Shows dynamic status messages (starts with eligibility check, then crawling, etc.)
+        expect(screen.getByText(/Checking eligibility|Crawling website|Querying AI providers/i)).toBeInTheDocument();
       });
     });
 
@@ -117,15 +158,16 @@ describe('FreeReportPage Component', () => {
         data: {
           success: true,
           data: {
-            results: [{
-              isCited: true,
-              citationContext: 'Example.com is a great resource for...',
-              competitorsCited: [
-                { domain: 'competitor1.com', context: 'mentioned as alternative' },
-                { domain: 'competitor2.com', context: 'also recommended' },
-              ],
-              response: 'Full AI response here',
-            }],
+            results: createMockResults([
+              {
+                isCited: true,
+                citationContext: 'Example.com is a great resource for...',
+                competitorsCited: [
+                  { domain: 'competitor1.com', context: 'mentioned as alternative' },
+                  { domain: 'competitor2.com', context: 'also recommended' },
+                ],
+              },
+            ]),
           },
         },
         error: null,
@@ -143,7 +185,8 @@ describe('FreeReportPage Component', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/You Were Cited!/i)).toBeInTheDocument();
+        // With 1/5 cited, shows 20% citation rate
+        expect(screen.getByText(/20%/i)).toBeInTheDocument();
       });
 
       // Check score is displayed
@@ -155,13 +198,14 @@ describe('FreeReportPage Component', () => {
         data: {
           success: true,
           data: {
-            results: [{
-              isCited: false,
-              competitorsCited: [
-                { domain: 'competitor1.com', context: 'mentioned' },
-              ],
-              response: 'Full AI response here',
-            }],
+            results: createMockResults([
+              {
+                isCited: false,
+                competitorsCited: [
+                  { domain: 'competitor1.com', context: 'mentioned' },
+                ],
+              },
+            ]),
           },
         },
         error: null,
@@ -179,7 +223,8 @@ describe('FreeReportPage Component', () => {
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/Not Cited/i)).toBeInTheDocument();
+        // 0% citation rate when not cited
+        expect(screen.getByText(/0%/i)).toBeInTheDocument();
       });
     });
 
@@ -188,14 +233,15 @@ describe('FreeReportPage Component', () => {
         data: {
           success: true,
           data: {
-            results: [{
-              isCited: false,
-              competitorsCited: [
-                { domain: 'zendesk.com', context: 'recommended' },
-                { domain: 'freshworks.com', context: 'alternative' },
-              ],
-              response: 'Response text',
-            }],
+            results: createMockResults([
+              {
+                isCited: false,
+                competitorsCited: [
+                  { domain: 'zendesk.com', context: 'recommended' },
+                  { domain: 'freshworks.com', context: 'alternative' },
+                ],
+              },
+            ]),
           },
         },
         error: null,
@@ -212,22 +258,18 @@ describe('FreeReportPage Component', () => {
       fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
 
       await waitFor(() => {
-        expect(screen.getByText(/Competitors Getting Cited/i)).toBeInTheDocument();
+        expect(screen.getByText(/Competitor Citation Leaderboard/i)).toBeInTheDocument();
         expect(screen.getByText('zendesk.com')).toBeInTheDocument();
         expect(screen.getByText('freshworks.com')).toBeInTheDocument();
       });
     });
 
-    it('shows the query that was tested', async () => {
+    it('shows query-by-query results', async () => {
       vi.mocked(supabase.functions.invoke).mockResolvedValue({
         data: {
           success: true,
           data: {
-            results: [{
-              isCited: false,
-              competitorsCited: [],
-              response: 'Response',
-            }],
+            results: createMockResults(),
           },
         },
         error: null,
@@ -241,7 +283,7 @@ describe('FreeReportPage Component', () => {
       fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
 
       await waitFor(() => {
-        expect(screen.getByText(/Query Tested/i)).toBeInTheDocument();
+        expect(screen.getByText(/Query-by-Query Results/i)).toBeInTheDocument();
         expect(screen.getByText(/What are the best acme alternatives/i)).toBeInTheDocument();
       });
     });
@@ -291,11 +333,7 @@ describe('FreeReportPage Component', () => {
         data: {
           success: true,
           data: {
-            results: [{
-              isCited: false,
-              competitorsCited: [],
-              response: 'Response',
-            }],
+            results: createMockResults(),
           },
         },
         error: null,
@@ -319,11 +357,7 @@ describe('FreeReportPage Component', () => {
         data: {
           success: true,
           data: {
-            results: [{
-              isCited: false,
-              competitorsCited: [],
-              response: 'Response',
-            }],
+            results: createMockResults(),
           },
         },
         error: null,
@@ -351,7 +385,7 @@ describe('FreeReportPage Component', () => {
       vi.mocked(supabase.functions.invoke).mockResolvedValue({
         data: {
           success: true,
-          data: { results: [{ isCited: false, competitorsCited: [], response: '' }] },
+          data: { results: createMockResults() },
         },
         error: null,
       });
@@ -369,6 +403,142 @@ describe('FreeReportPage Component', () => {
             website: 'https://example.com',
           }),
         });
+      });
+    });
+  });
+
+  describe('Abuse Prevention', () => {
+    it('blocks repeat reports from same email within 24 hours', async () => {
+      // Mock that email was already used
+      const emailUsedBuilder = createMockQueryBuilder([{ id: '123', created_at: new Date().toISOString() }]);
+      vi.mocked(supabase.from).mockReturnValue(emailUsedBuilder as any);
+
+      render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
+
+      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'repeat@example.com');
+      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'example.com');
+
+      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/already received a free report/i)).toBeInTheDocument();
+      });
+
+      // Should not call the analysis function
+      expect(supabase.functions.invoke).not.toHaveBeenCalledWith('check-citations', expect.anything());
+    });
+
+    it('blocks domain after 3 reports within 24 hours', async () => {
+      // Mock: email check passes (first query), domain check returns 3 results (second query)
+      let queryCount = 0;
+      vi.mocked(supabase.from).mockImplementation(() => {
+        queryCount++;
+        const isEmailQuery = queryCount === 1;
+
+        const builder: any = {
+          select: vi.fn(() => builder),
+          insert: vi.fn(() => Promise.resolve({ error: null })),
+          eq: vi.fn(() => builder),
+          gte: vi.fn(() => builder),
+          limit: vi.fn(() => Promise.resolve({
+            data: isEmailQuery ? [] : [{ id: '1' }, { id: '2' }, { id: '3' }],
+            error: null
+          })),
+        };
+        // For domain check (ends with gte, no limit)
+        builder.gte.mockReturnValue({
+          ...builder,
+          then: (resolve: any) => resolve({
+            data: isEmailQuery ? [] : [{ id: '1' }, { id: '2' }, { id: '3' }],
+            error: null
+          }),
+        });
+        return builder;
+      });
+
+      render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
+
+      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'new@example.com');
+      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'spammed-domain.com');
+
+      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/already been analyzed multiple times/i)).toBeInTheDocument();
+      });
+    });
+
+    it('allows report when no abuse detected', async () => {
+      // Default mock returns empty arrays (no abuse)
+      vi.mocked(supabase.functions.invoke).mockResolvedValue({
+        data: {
+          success: true,
+          data: { results: createMockResults() },
+        },
+        error: null,
+      });
+
+      render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
+
+      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'new@example.com');
+      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'new-domain.com');
+
+      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+
+      await waitFor(() => {
+        // Should proceed to analysis
+        expect(supabase.functions.invoke).toHaveBeenCalled();
+      });
+    });
+
+    it('continues analysis if abuse check fails', async () => {
+      // Mock abuse check throwing an error
+      const errorBuilder = {
+        select: vi.fn(() => { throw new Error('DB connection failed'); }),
+        insert: vi.fn(() => Promise.resolve({ error: null })),
+        eq: vi.fn(() => errorBuilder),
+        gte: vi.fn(() => errorBuilder),
+        limit: vi.fn(() => Promise.reject(new Error('DB error'))),
+      };
+      vi.mocked(supabase.from).mockReturnValue(errorBuilder as any);
+
+      vi.mocked(supabase.functions.invoke).mockResolvedValue({
+        data: {
+          success: true,
+          data: { results: createMockResults() },
+        },
+        error: null,
+      });
+
+      render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
+
+      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'test@example.com');
+      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'example.com');
+
+      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+
+      await waitFor(() => {
+        // Should still proceed to analysis despite abuse check failure
+        expect(supabase.functions.invoke).toHaveBeenCalled();
+      });
+    });
+
+    it('normalizes email to lowercase for abuse check', async () => {
+      // Mock that lowercase email was already used
+      const emailUsedBuilder = createMockQueryBuilder([{ id: '123', created_at: new Date().toISOString() }]);
+      vi.mocked(supabase.from).mockReturnValue(emailUsedBuilder as any);
+
+      render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
+
+      // Type email with uppercase
+      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'REPEAT@EXAMPLE.COM');
+      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'example.com');
+
+      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+
+      await waitFor(() => {
+        // Should check with lowercase email
+        expect(emailUsedBuilder.eq).toHaveBeenCalledWith('email', 'repeat@example.com');
       });
     });
   });

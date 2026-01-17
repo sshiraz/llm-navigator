@@ -25,7 +25,8 @@ supabase/functions/ # Edge Functions (Deno)
 ├── delete-account/ # User self-deletion (GDPR)
 ├── cleanup-data/   # Admin data retention cleanup
 ├── cleanup-auth-user/ # Cleanup orphaned auth users on signup failure
-└── create-user-profile/ # Create profile bypassing RLS (for email confirmation flow)
+├── create-user-profile/ # Create profile bypassing RLS (for email confirmation flow)
+└── send-free-report-email/ # Send free report via Resend
 
 scripts/            # Test scripts
 ```
@@ -329,6 +330,54 @@ serve(async (req) => {
 
 **Exception:** `stripe-webhook` skips origin validation - uses Stripe signature verification instead.
 
+### Free Report (Lead Generation)
+
+A free AI visibility report that serves as the primary lead generation tool.
+
+**What users get (no signup required):**
+- Real website crawl (title, meta, headings, schema detection)
+- 5 real LLM queries against OpenAI (alternatives, best tools, how-to, comparisons, recommendations)
+- Industry auto-detection from crawled content
+- AI Visibility Score + Citation Rate
+- Competitor intelligence (who's getting cited instead)
+- Personalized action plan based on gaps
+- Estimated missed traffic
+- Professional email report via Resend
+
+**Cost:** ~$0.07/report (5 OpenAI API calls)
+
+**Abuse Prevention:**
+| Check | Limit | Window |
+|-------|-------|--------|
+| Same email | 1 report | 24 hours |
+| Same domain | 3 reports | 24 hours |
+
+**Key files:**
+- `src/components/FreeReport/FreeReportPage.tsx` - Main component with crawl + multi-query analysis
+- `src/utils/industryDetector.ts` - Industry detection from domain/content keywords
+- `supabase/functions/send-free-report-email/index.ts` - Email via Resend API
+- Table: `free_report_leads` - Stores leads + abuse prevention checks
+
+**Flow:**
+```
+1. User enters email + website
+2. Abuse check → Query free_report_leads for recent entries
+3. Crawl website → Extract title, meta, headings, schema
+4. Detect industry → Score content against keyword lists
+5. Generate 5 prompts → Based on brand name + industry
+6. Query OpenAI → check-citations edge function
+7. Calculate scores → Citation rate, AI visibility, missed traffic
+8. Display results → Show comprehensive report
+9. Save lead → Insert to free_report_leads (async)
+10. Send email → send-free-report-email edge function (async)
+```
+
+**RLS requirement:** The `free_report_leads` table needs a policy allowing anonymous reads for abuse checks:
+```sql
+CREATE POLICY "Allow read for abuse check" ON free_report_leads
+  FOR SELECT USING (true);
+```
+
 ## Don't
 
 - **Delete or modify files without understanding their purpose** - Check [BRANCH_ANALYSIS.md](./BRANCH_ANALYSIS.md) for history. If unclear, ask before changing.
@@ -351,6 +400,9 @@ serve(async (req) => {
 | Privacy policy | `src/components/Legal/PrivacyPolicy.tsx` |
 | Account deletion | `supabase/functions/delete-account/index.ts` |
 | Data cleanup | `supabase/functions/cleanup-data/index.ts` |
+| Free report | `src/components/FreeReport/FreeReportPage.tsx` |
+| Industry detector | `src/utils/industryDetector.ts` |
+| Report email | `supabase/functions/send-free-report-email/index.ts` |
 
 ## Related Docs
 

@@ -5,6 +5,114 @@
 
 ---
 
+## 2026-01-17: Free Report Enhancements - Abuse Prevention, Detailed Email, Tests
+
+**Commit:** `pending` - Enhance free report with abuse prevention, detailed email, and explainer
+
+### Context
+
+The free report feature needed hardening for production use:
+1. **Abuse prevention** - Stop users from spamming free reports
+2. **Email parity** - Emailed report should match the landing page detail level
+3. **Explainer** - Users should understand what they're getting before submitting
+4. **Tests** - Ensure abuse prevention logic works correctly
+
+### Changes & Reasoning
+
+#### 1. Abuse Prevention
+
+**File:** `src/components/FreeReport/FreeReportPage.tsx`
+
+Added rate limiting checks before running analysis:
+
+| Check | Limit | Window | Reasoning |
+|-------|-------|--------|-----------|
+| Same email | 1 report | 24 hours | Prevent single user from spamming |
+| Same domain | 3 reports | 24 hours | Allow team members, block abuse |
+
+```typescript
+// Check against free_report_leads table before analysis
+const { data: emailCheck } = await supabase
+  .from('free_report_leads')
+  .select('id, created_at')
+  .eq('email', email.toLowerCase())
+  .gte('created_at', twentyFourHoursAgo)
+  .limit(1);
+```
+
+**Why graceful degradation:** If the abuse check fails (DB error), we continue with the analysis rather than blocking legitimate users.
+
+**Why lowercase email:** Prevents bypassing with `User@Example.com` vs `user@example.com`.
+
+#### 2. Detailed Email Report
+
+**File:** `supabase/functions/send-free-report-email/index.ts`
+
+Added two new sections to match landing page:
+
+- **Query-by-Query Results:** Shows each of 5 prompts with CITED/NOT CITED badge
+- **Pages Analyzed:** Lists individual pages with word counts and schema status
+
+**Why this matters:** Users share email reports internally. A detailed report = better social proof = higher conversion.
+
+#### 3. UI Explainer
+
+**File:** `src/components/FreeReport/FreeReportPage.tsx`
+
+Added "How It Works" section below the form:
+1. We crawl your website to analyze content structure, schema markup, and readability
+2. We query ChatGPT with 5 real prompts about your industry to check if you get cited
+3. You get a detailed report with scores, competitors, and personalized recommendations
+
+Plus indicators: "Takes ~30 seconds" | "Report emailed to you"
+
+**Why no rate limit shown:** Showing "1 report per day" feels restrictive. The limit still applies server-side.
+
+#### 4. Unit Tests for Abuse Prevention
+
+**File:** `src/components/FreeReport/FreeReportPage.test.tsx`
+
+Added 5 tests:
+- Blocks repeat reports from same email within 24 hours
+- Blocks domain after 3 reports within 24 hours
+- Allows report when no abuse detected
+- Continues analysis if abuse check fails (graceful degradation)
+- Normalizes email to lowercase for abuse check
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/FreeReport/FreeReportPage.tsx` | Abuse prevention, explainer UI |
+| `src/components/FreeReport/FreeReportPage.test.tsx` | 5 new abuse prevention tests |
+| `supabase/functions/send-free-report-email/index.ts` | Query results + pages list in email |
+| `src/utils/industryDetector.test.ts` | Fixed colliding test case |
+| `CLAUDE.md` | Added Free Report documentation section |
+
+### Testing Performed
+
+- **Test Suite:** 518 passed, 0 failed (518 total)
+- **Build:** Passed
+- Verified abuse prevention blocks repeat emails
+- Verified email includes query-by-query results
+
+### Deployment Commands
+
+```bash
+npx supabase functions deploy send-free-report-email
+```
+
+### RLS Requirement
+
+The `free_report_leads` table needs anonymous read access for abuse checks:
+
+```sql
+CREATE POLICY "Allow read for abuse check" ON free_report_leads
+  FOR SELECT USING (true);
+```
+
+---
+
 ## 2026-01-17: Security Audit and Critical Vulnerability Fixes
 
 **Commit:** `pending` - Fix critical security vulnerabilities in Edge Functions
