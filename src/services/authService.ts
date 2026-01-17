@@ -1,5 +1,6 @@
 import { supabase, handleSupabaseError, handleSupabaseSuccess } from '../lib/supabase';
 import { User } from '../types';
+import { AuditLogService } from './auditLogService';
 
 // Clear user-specific localStorage data to ensure clean state for new users
 function clearUserLocalStorage() {
@@ -91,6 +92,9 @@ export class AuthService {
 
       // Return with email confirmation status
       // Profile was auto-created by database trigger
+      // Log successful signup
+      AuditLogService.logSignup(userData.email).catch(() => {});
+
       return handleSupabaseSuccess({
         user: authData.user,
         profile: {
@@ -137,6 +141,8 @@ export class AuthService {
       });
 
       if (error) {
+        // Log failed login attempt
+        AuditLogService.logLoginFailed(email, error.message).catch(() => {});
         return handleSupabaseError(error);
       }
 
@@ -154,6 +160,9 @@ export class AuthService {
       // Clear any cached data from previous users
       clearUserLocalStorage();
 
+      // Log successful login
+      AuditLogService.logLogin().catch(() => {});
+
       return handleSupabaseSuccess({
         user: data.user,
         profile
@@ -166,6 +175,9 @@ export class AuthService {
   // Sign out
   static async signOut() {
     try {
+      // Log logout before signing out (while we still have the session)
+      AuditLogService.logLogout().catch(() => {});
+
       const { error } = await supabase.auth.signOut();
 
       if (error) {

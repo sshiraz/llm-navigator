@@ -1,6 +1,6 @@
 # LLM Navigator Architecture
 
-> Last updated: 2026-01-09
+> Last updated: 2026-01-16
 
 ## Tech Stack
 
@@ -20,7 +20,7 @@
 llm-navigator/
 ├── src/
 │   ├── components/
-│   │   ├── Account/         # User profile, subscription management
+│   │   ├── Account/         # User profile, subscription, 2FA setup
 │   │   ├── Admin/           # Admin dashboard, user management
 │   │   ├── Analysis/        # NewAnalysis, AnalysisProgress, AnalysisResults
 │   │   ├── Auth/            # Login/signup pages
@@ -31,7 +31,7 @@ llm-navigator/
 │   │   ├── History/         # Analysis history
 │   │   ├── Landing/         # Landing page
 │   │   ├── Layout/          # Header, Sidebar
-│   │   ├── Legal/           # Privacy policy, terms of service
+│   │   ├── Legal/           # Privacy policy, terms of service, DPA, cookie consent
 │   │   ├── Payment/         # Credit card form, checkout
 │   │   ├── Pricing/         # Pricing display
 │   │   ├── Reports/         # PDF export, reports
@@ -40,6 +40,8 @@ llm-navigator/
 │   │
 │   ├── services/
 │   │   ├── analysisService.ts  # Analysis CRUD
+│   │   ├── apiKeyService.ts    # API key management (Enterprise)
+│   │   ├── auditLogService.ts  # Security audit logging (auth, admin, data events)
 │   │   ├── authService.ts      # Auth operations + localStorage cleanup
 │   │   ├── paymentService.ts   # Payment records (consolidated)
 │   │   └── usageService.ts     # API usage tracking
@@ -69,6 +71,7 @@ llm-navigator/
 │       ├── crawl-website/      # Crawls & analyzes websites
 │       ├── create-payment-intent/
 │       ├── create-subscription/
+│       ├── delete-account/     # GDPR account deletion
 │       ├── delete-user/        # Admin user deletion
 │       ├── stripe-webhook/     # Payment webhooks
 │       └── webhook-helper/     # Webhook utilities

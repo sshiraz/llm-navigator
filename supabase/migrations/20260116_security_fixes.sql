@@ -19,6 +19,9 @@
 -- Drop the overly permissive SELECT policy
 DROP POLICY IF EXISTS "Allow fraud check reading for verification" ON fraud_checks;
 
+-- Drop existing restrictive policy if it exists (idempotent)
+DROP POLICY IF EXISTS "Only service role can read fraud checks" ON fraud_checks;
+
 -- Create a restrictive policy - only service role can read
 -- (No client-side SELECT needed - fraud checks are server-side only)
 CREATE POLICY "Only service role can read fraud checks"

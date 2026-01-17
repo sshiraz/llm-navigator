@@ -169,14 +169,36 @@ The app implements key GDPR and CCPA requirements:
 | Data Export | Account Settings | Download all user data as JSON (profile, analyses, projects) |
 | Account Deletion | Account Settings | Self-service deletion with "DELETE" confirmation |
 | Data Retention | `cleanup_sensitive_data()` | Auto-delete fraud data after 90 days, nullify IPs after 30 days |
+| Data Processing Agreement | `#dpa` route | DPA page for B2B/Enterprise customers |
 
 **Key files:**
 - `src/components/Legal/CookieConsent.tsx` - Cookie consent banner
 - `src/components/Legal/PrivacyPolicy.tsx` - Updated with GDPR rights
+- `src/components/Legal/DataProcessingAgreement.tsx` - DPA for B2B customers
 - `src/components/Account/AccountPage.tsx` - Export & delete features
 - `supabase/functions/delete-account/` - User self-deletion edge function
 - `supabase/functions/cleanup-data/` - Admin data cleanup edge function
 - `supabase/migrations/20260116_security_fixes.sql` - RLS fixes + cleanup function
+
+### Security Features
+
+| Feature | Location | Description |
+|---------|----------|-------------|
+| Two-Factor Auth | `TwoFactorSetup.tsx` | TOTP-based 2FA via Supabase MFA |
+| Audit Logging | `auditLogService.ts` | Track auth, admin, security events |
+| Input Sanitization | `sanitize.ts` | XSS/SQL injection prevention |
+
+**Key files:**
+- `src/components/Account/TwoFactorSetup.tsx` - 2FA setup UI (QR code, verification)
+- `src/services/auditLogService.ts` - Audit logging service (28 tests)
+- `supabase/migrations/20260117_audit_logs.sql` - Audit logs table + RLS
+- `src/utils/sanitize.ts` - Input sanitization utilities (115 tests)
+
+**Audit events tracked:**
+- `auth.login`, `auth.logout`, `auth.login_failed`, `auth.signup`
+- `security.2fa_enable`, `security.2fa_disable`
+- `data.export`, `data.delete_account`
+- `admin.user_delete`, `admin.cleanup_data`
 
 **Edge functions:**
 - `delete-account` - Users delete their own account (verifies ownership)

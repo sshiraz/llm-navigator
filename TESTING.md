@@ -13,7 +13,7 @@ This document provides an overview of all automated tests in the LLM Navigator p
 npm run test:run && npm run build
 ```
 
-Current test count: **434 tests** (15 test files)
+Current test count: **462 tests** (16 test files)
 
 ## Quick Reference
 
@@ -185,6 +185,25 @@ Tests the PaymentService for Stripe integration (19 tests).
 | `createPaymentIntent` | Payment intent creation |
 | `getSubscriptionStatus` | Subscription status retrieval |
 
+### Audit Log Service
+**File:** `src/services/auditLogService.test.ts`
+
+Tests the AuditLogService for security audit logging (28 tests).
+
+| Test Suite | Coverage |
+|------------|----------|
+| `log` | Event logging with metadata, status, error messages, category extraction |
+| `getLogs` | Fetching logs with filtering, pagination, error handling |
+| `getLoginHistory` | User login history retrieval |
+| `getSecuritySummary` | Admin dashboard security metrics |
+| **Convenience Methods** | `logLogin`, `logLogout`, `logLoginFailed`, `logSignup`, `logPasswordChange`, `logDataExport`, `logAccountDeletion`, `log2FAEnabled`, `log2FADisabled`, `logApiKeyCreate`, `logApiKeyRevoke`, `logAdminUserDelete`, `logAdminCleanup` |
+
+**Security/Compliance Coverage:**
+- Authentication events (login, logout, failed attempts, signup)
+- Security events (2FA enable/disable, API key management)
+- Data events (export, account deletion)
+- Admin events (user management, cleanup operations)
+
 ### Competitor Comparison
 **File:** `src/components/Analysis/competitorComparison.test.ts`
 
@@ -326,11 +345,12 @@ set -a && . ./.env && set +a && npm run test:functions
 | Storage | storageManager.test.ts | - |
 | Input Sanitization | sanitize.test.ts (115 tests) | - |
 | Payment/Stripe | paymentService.test.ts | test-payment-flow.ts |
+| Audit Logging | auditLogService.test.ts (28 tests) | - |
 | GDPR/Privacy | CookieConsent, PrivacyPolicy, AccountPage.gdpr | - |
 | Edge Functions | - | test-edge-functions.ts |
 | CORS Security | - | test-edge-functions.ts |
 
-**Total: 434 tests across 15 test files**
+**Total: 462 tests across 16 test files**
 
 ---
 

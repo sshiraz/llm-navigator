@@ -3746,6 +3746,135 @@ The app needed a dedicated pricing page that users could access from the landing
 
 ---
 
+## 2026-01-16: Add security compliance features (2FA, audit logging, DPA)
+
+**Commit:** `pending` - Add 2FA, audit logging, and DPA for security compliance
+
+### Context
+
+Enterprise customers and GDPR/SOC2 compliance require:
+1. Two-factor authentication for account security
+2. Audit logging for tracking security-relevant events
+3. Data Processing Agreement (DPA) for B2B contracts
+
+### Changes & Reasoning
+
+#### 1. Two-Factor Authentication (`src/components/Account/TwoFactorSetup.tsx`)
+
+**Problem:** No 2FA option for users who want extra account security.
+
+**Solution:** TOTP-based 2FA using Supabase MFA:
+- QR code generation for authenticator apps (Google Authenticator, Authy, 1Password)
+- Manual secret entry option with copy button
+- Enable/disable flows with verification code confirmation
+- Integrated into Account Settings → Security section
+
+**Why TOTP over SMS:** More secure (no SIM swapping attacks), no cost per message, works offline.
+
+**Why Supabase MFA:** Native integration, no additional service needed, handles challenge/verify flow.
+
+#### 2. Audit Log Service (`src/services/auditLogService.ts`)
+
+**Problem:** No tracking of security-relevant events for compliance.
+
+**Solution:** Comprehensive audit logging service with:
+- Event categories: `auth`, `admin`, `data`, `security`, `billing`
+- Event types: login, logout, login_failed, signup, 2fa_enable, 2fa_disable, data_export, account_deletion, etc.
+- Convenience methods for common events (non-blocking with `.catch(() => {})`)
+- Admin methods for viewing logs and security summaries
+
+**Integrated into:**
+- `authService.ts` - login, logout, signup, failed login attempts
+- `AccountPage.tsx` - data export, account deletion
+- `TwoFactorSetup.tsx` - 2FA enable/disable
+
+#### 3. Audit Logs Database (`supabase/migrations/20260117_audit_logs.sql`)
+
+**Problem:** Need persistent storage for audit events.
+
+**Solution:** PostgreSQL table with:
+- User tracking (user_id, user_email denormalized for deleted users)
+- Event details (type, category, description, metadata JSONB)
+- Context (ip_address, user_agent, status, error_message)
+- RLS: Admin-only read, authenticated insert via RPC function
+
+**Why denormalize email:** When users are deleted, we still need audit trail.
+
+**Why RPC function:** `log_audit_event()` allows secure insertion with automatic user context.
+
+#### 4. Data Processing Agreement (`src/components/Legal/DataProcessingAgreement.tsx`)
+
+**Problem:** Enterprise/B2B customers need a DPA for GDPR compliance.
+
+**Solution:** Complete DPA page with all GDPR-required sections:
+- Scope and purpose
+- Data controller/processor roles
+- Processing instructions
+- Sub-processors table (Supabase, Stripe, Netlify, OpenAI, Anthropic, Perplexity)
+- Security measures
+- Data subject rights
+- Breach notification
+- Download as text file
+
+**Route:** `#dpa`
+
+#### 5. Account Page Dark Theme Fix (`src/components/Account/AccountPage.tsx`)
+
+**Problem:** Account page had wrong color scheme (light gray instead of dark).
+
+**Solution:** Added dark gradient background wrapper:
+```tsx
+<div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+```
+
+### Files Changed
+
+| File | Change Type | Reason |
+|------|-------------|--------|
+| `src/components/Account/TwoFactorSetup.tsx` | New | 2FA setup component |
+| `src/services/auditLogService.ts` | New | Audit logging service |
+| `src/services/auditLogService.test.ts` | New | 28 unit tests |
+| `supabase/migrations/20260117_audit_logs.sql` | New | Audit logs table |
+| `supabase/migrations/20260116_security_fixes.sql` | Modified | Made idempotent |
+| `src/components/Legal/DataProcessingAgreement.tsx` | New | DPA page |
+| `src/components/Account/AccountPage.tsx` | Modified | Import 2FA, add dark theme |
+| `src/services/authService.ts` | Modified | Add audit logging |
+| `src/App.tsx` | Modified | Add DPA route |
+| `TESTING.md` | Modified | Update test count (462) |
+
+### Testing Performed
+
+```bash
+npm run test:run && npm run build
+```
+
+- **Test Suite:** ✅ 462 passed, 0 failed
+- **New Tests:** 28 tests in `auditLogService.test.ts`
+- **Build:** ✅ Passes
+
+**Manual Testing:**
+- 2FA enable/disable flow with authenticator app
+- Audit log entries appear in database
+- DPA page displays correctly and downloads as text
+- Account page has correct dark theme
+
+### Database Migrations
+
+Both migrations are idempotent (safe to re-run):
+```sql
+-- Applied via SQL Editor or supabase db push
+-- 20260116_security_fixes.sql - fraud_checks RLS fix
+-- 20260117_audit_logs.sql - audit logging table
+```
+
+### Related Issues
+
+- GDPR compliance: Data Processing Agreement requirement
+- SOC2 compliance: Audit logging requirement
+- Enterprise customers: 2FA security requirement
+
+---
+
 ## Template for Future Entries
 
 ```markdown

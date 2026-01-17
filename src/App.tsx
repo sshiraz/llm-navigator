@@ -10,6 +10,7 @@ import AccountPage from './components/Account/AccountPage';
 import ContactPage from './components/Contact/ContactPage';
 import PrivacyPolicy from './components/Legal/PrivacyPolicy';
 import TermsOfService from './components/Legal/TermsOfService';
+import DataProcessingAgreement from './components/Legal/DataProcessingAgreement';
 import CompetitorStrategy from './components/Reports/CompetitorStrategy';
 import AnalysisHistory from './components/History/AnalysisHistory';
 import LandingPage from './components/Landing/LandingPage';
@@ -268,7 +269,7 @@ function App() {
 
   const renderContent = () => {
     // Public pages that don't require login
-    if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account' || activeSection === 'api-docs' || activeSection === 'free-report') {
+    if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'dpa' || activeSection === 'admin-users' || activeSection === 'account' || activeSection === 'api-docs' || activeSection === 'free-report') {
       // Special handling for admin-users - only allow access if user is admin
       if (activeSection === 'admin-users') {
         // Check if user is admin
@@ -325,6 +326,8 @@ function App() {
           return <PrivacyPolicy />;
         case 'terms':
           return <TermsOfService />;
+        case 'dpa':
+          return <DataProcessingAgreement />;
         case 'admin-users':
           return <UserDashboard />;
         case 'pricing':
@@ -404,7 +407,7 @@ function App() {
   };
 
   // Show landing page or auth page without sidebar/header
-  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account' || activeSection === 'pricing' || activeSection === 'api-docs' || activeSection === 'free-report') {
+  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'dpa' || activeSection === 'admin-users' || activeSection === 'account' || activeSection === 'pricing' || activeSection === 'api-docs' || activeSection === 'free-report') {
     return (
       <>
         {renderContent()}

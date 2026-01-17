@@ -1,13 +1,13 @@
 # Security & Scalability Checklist
 
-> Last updated: 2026-01-09
+> Last updated: 2026-01-16
 > This document tracks the security and scalability state of LLM Navigator
 
 ---
 
-## Security State: 🟡 MODERATE
+## Security State: 🟢 GOOD
 
-**Score: 20/26 items implemented (77%)**
+**Score: 24/28 items implemented (86%)**
 
 ### Authentication & Authorization
 
@@ -18,7 +18,7 @@
 | ✅ | Email verification | Critical | Confirmation email required before login (2026-01-09) |
 | ✅ | Session persistence | High | `persistSession: true` |
 | ✅ | Row Level Security (RLS) on all tables | Critical | See `migrations/20250703064027_weathered_glitter.sql` |
-| ❌ | Multi-factor authentication (MFA) | High | Not implemented for admin accounts |
+| ✅ | Multi-factor authentication (MFA) | High | TOTP-based 2FA via Supabase MFA (2026-01-16) |
 | ❌ | Session timeout / auto-logout | Medium | No idle timeout configured |
 | ❌ | Password complexity requirements | Medium | Relying on Supabase defaults |
 
@@ -56,6 +56,18 @@
 | ✅ | Payment audit logging | High | `payment_logs` table |
 | ⚠️ | PCI SAQ A compliance | High | Checklist exists but not verified complete |
 
+### GDPR & Data Protection
+
+| Status | Item | Priority | Notes |
+|--------|------|----------|-------|
+| ✅ | Data export (portability) | High | JSON export of all user data (2026-01-16) |
+| ✅ | Account deletion (right to be forgotten) | High | Full deletion via edge function (2026-01-16) |
+| ✅ | Cookie consent banner | High | Accept/decline options (2026-01-16) |
+| ✅ | Privacy policy | High | GDPR sections included |
+| ✅ | Data Processing Agreement | High | DPA page for B2B customers (2026-01-16) |
+| ✅ | Data retention cleanup | Medium | `cleanup_sensitive_data()` function |
+| ❌ | Data breach notification workflow | Medium | Not documented |
+
 ### Fraud Prevention
 
 | Status | Item | Priority | Notes |
@@ -79,8 +91,10 @@
 
 | Status | Item | Priority | Notes |
 |--------|------|----------|-------|
+| ✅ | Security audit logging | High | AuditLogService tracks auth, admin, security events (2026-01-16) |
+| ✅ | Login attempt tracking | High | Failed login attempts logged with email/reason |
 | ⚠️ | Error logging | Medium | Console logs only |
-| ❌ | Security event alerting | High | No alerts for suspicious activity |
+| ❌ | Security event alerting | Medium | Logs exist but no automated alerts |
 | ❌ | Penetration testing | High | Never performed |
 | ❌ | Vulnerability scanning | Medium | No automated scans |
 | ❌ | Incident response plan | Medium | Not documented |

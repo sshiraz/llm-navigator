@@ -5,6 +5,8 @@ import { getTrialStatus } from '../../utils/mockData';
 import { supabase } from '../../lib/supabase';
 import { AuthService } from '../../services/authService';
 import { ApiKeyService } from '../../services/apiKeyService';
+import { AuditLogService } from '../../services/auditLogService';
+import TwoFactorSetup from './TwoFactorSetup';
 
 interface AccountPageProps {
   user: UserType;
@@ -63,6 +65,9 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteStatus, setDeleteStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [deleteMessage, setDeleteMessage] = useState('');
+
+  // 2FA state
+  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
 
   // Load API keys for Enterprise users
   useEffect(() => {
@@ -253,6 +258,9 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
+      // Log data export for audit
+      AuditLogService.logDataExport().catch(() => {});
+
       setExportStatus('success');
       setExportMessage('Your data has been exported successfully!');
 
@@ -291,6 +299,9 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
       if (error) throw error;
 
       if (data.success) {
+        // Log account deletion for audit (before signing out)
+        AuditLogService.logAccountDeletion().catch(() => {});
+
         setDeleteStatus('success');
         setDeleteMessage('Your account has been deleted. Redirecting...');
 
@@ -416,6 +427,7 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
   };
 
   return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
     <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="mb-8">
@@ -955,6 +967,14 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
                 </button>
               </div>
 
+              {/* Two-Factor Authentication */}
+              <div className="pt-4 border-t border-slate-700">
+                <TwoFactorSetup
+                  isEnabled={is2FAEnabled}
+                  onStatusChange={setIs2FAEnabled}
+                />
+              </div>
+
               {/* Data Export - GDPR Right to Data Portability */}
               <div className="pt-4 border-t border-slate-700">
                 <h4 className="text-sm font-medium text-slate-300 mb-2">Export Your Data</h4>
@@ -1466,6 +1486,7 @@ export default function AccountPage({ user, onBack, onUpdateProfile }: AccountPa
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }

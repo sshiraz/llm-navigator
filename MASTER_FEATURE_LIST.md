@@ -1,6 +1,6 @@
 # Master Feature List
 
-> Last updated: 2026-01-09
+> Last updated: 2026-01-16
 > Single source of truth for all features, organized by category.
 >
 > Legend: ✅ Complete | ⚠️ Partial | ❌ Not Started | 🔄 In Progress
@@ -12,17 +12,17 @@
 | Category | Complete | Partial | Pending | Total |
 |----------|----------|---------|---------|-------|
 | Core Features | 15 | 1 | 3 | 19 |
-| Security | 17 | 3 | 6 | 26 |
+| Security | 23 | 1 | 3 | 27 |
 | Scalability | 8 | 1 | 9 | 18 |
-| Testing | 6 | 1 | 1 | 8 |
+| Testing | 7 | 1 | 0 | 8 |
 | Documentation | 7 | 1 | 2 | 10 |
 | DevOps | 5 | 0 | 4 | 9 |
 | Payments | 9 | 0 | 2 | 11 |
 | User Experience | 9 | 0 | 3 | 12 |
 | Admin | 5 | 1 | 1 | 7 |
-| **Total** | **81** | **8** | **31** | **120** |
+| **Total** | **88** | **6** | **27** | **121** |
 
-**Overall Progress: 73% complete**
+**Overall Progress: 78% complete**
 
 ---
 
@@ -79,7 +79,7 @@
 | ✅ | Password hashing | Bcrypt (Supabase managed) |
 | ✅ | JWT tokens | Auto-refresh enabled |
 | ✅ | Session persistence | Survives page refresh |
-| ❌ | Multi-factor authentication | Not implemented |
+| ✅ | Multi-factor authentication | TOTP-based 2FA via Supabase MFA (2026-01-16) |
 | ❌ | OAuth providers | Google, GitHub, etc. |
 | ❌ | Session timeout | No idle logout |
 | ❌ | Password complexity rules | Using Supabase defaults |
@@ -126,9 +126,12 @@
 | Status | Feature | Notes |
 |--------|---------|-------|
 | ✅ | PCI via Stripe Elements | Card data never on server |
-| ❌ | GDPR data deletion | No workflow |
-| ❌ | GDPR consent tracking | Not implemented |
-| ❌ | SOC 2 | Would need significant work |
+| ✅ | GDPR data export | JSON export of all user data (2026-01-16) |
+| ✅ | GDPR data deletion | Account deletion with confirmation (2026-01-16) |
+| ✅ | GDPR cookie consent | Cookie banner with accept/decline (2026-01-16) |
+| ✅ | Data Processing Agreement | DPA page for B2B customers (2026-01-16) |
+| ✅ | Security audit logging | Track auth, admin, security events (2026-01-16) |
+| ❌ | SOC 2 certification | Would need third-party audit |
 
 ---
 
@@ -181,11 +184,12 @@
 | Status | Feature | Notes |
 |--------|---------|-------|
 | ✅ | Vitest setup | Test framework configured |
-| ✅ | Service tests | authService.test.ts (20+ tests) |
-| ✅ | Component tests | AuthPage, AnalysisForm, UserDashboard |
+| ✅ | Service tests | authService, paymentService, auditLogService (60+ tests) |
+| ✅ | Component tests | AuthPage, AnalysisForm, UserDashboard, GDPR components |
 | ✅ | Navigation tests | Hash routing, localStorage persistence |
 | ✅ | Analysis engine tests | analysisEngine.test.ts (16 tests) - real vs simulated |
-| ⚠️ | Test coverage | ~140+ tests, key paths covered |
+| ✅ | Security tests | sanitize.test.ts (115 tests), auditLogService.test.ts (28 tests) |
+| ✅ | Test coverage | 462 tests across 16 files (2026-01-16) |
 
 ### Integration Testing
 | Status | Feature | Notes |
