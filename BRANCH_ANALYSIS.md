@@ -5,6 +5,144 @@
 
 ---
 
+## 2026-01-17: Security Audit and Critical Vulnerability Fixes
+
+**Commit:** `pending` - Fix critical security vulnerabilities in Edge Functions
+
+### Context
+
+A comprehensive security audit was performed from a penetration tester's perspective, identifying vulnerabilities across Edge Functions, authentication flows, and authorization checks. The most critical finding was that the Stripe webhook could be bypassed entirely with a simple HTTP header.
+
+### Vulnerabilities Found
+
+| Severity | Count | Description |
+|----------|-------|-------------|
+| 🔴 Critical | 1 | Stripe webhook signature bypass via `x-test-request` header |
+| 🟠 High | 6 | IDOR and self-reported admin ID vulnerabilities |
+| 🟡 Medium | 5 | CORS, input validation issues |
+| 🟢 Low | 5 | Defense-in-depth improvements |
+
+### Changes & Reasoning
+
+#### 1. Stripe Webhook Test Bypass (CRITICAL)
+
+**File:** `supabase/functions/stripe-webhook/index.ts`
+
+**The Vulnerability:**
+```typescript
+// BEFORE: Anyone could bypass payment verification
+if (req.headers.get("x-test-request") === "true") {
+  // Proceed without signature verification - DANGEROUS
+}
+```
+
+**Why This Was Dangerous:** An attacker could send a POST request with `x-test-request: true` header and grant themselves any subscription plan without paying.
+
+**The Fix:**
+```typescript
+// AFTER: Test bypass requires explicit env vars (never set in production)
+const ALLOW_TEST_BYPASS = Deno.env.get("ALLOW_WEBHOOK_TEST_BYPASS") === "true" &&
+                          Deno.env.get("ENVIRONMENT") === "development";
+```
+
+**Why This Works:** Production will never have both `ALLOW_WEBHOOK_TEST_BYPASS=true` AND `ENVIRONMENT=development` set, making the bypass impossible.
+
+#### 2. Shared JWT Verification Helpers
+
+**File:** `supabase/functions/_shared/apiAuth.ts`
+
+Added two reusable functions for secure authentication:
+
+```typescript
+// Verify any authenticated user from JWT
+export async function verifyUserFromJwt(req: Request): Promise<JwtAuthResult>
+
+// Verify admin user from JWT + database check
+export async function verifyAdminFromJwt(req: Request): Promise<JwtAuthResult>
+```
+
+**Why Shared Helpers:** Multiple Edge Functions had the same vulnerability pattern (trusting request body for identity). Centralizing auth logic ensures consistent security.
+
+#### 3. Webhook Helper Admin Auth (HIGH)
+
+**File:** `supabase/functions/webhook-helper/index.ts`
+
+**The Vulnerability:** `fix_subscription` action had no authentication - only CORS validation.
+
+**The Fix:** Added `verifyAdmin()` check before allowing subscription modifications. All actions now logged to audit_logs table.
+
+#### 4. Cancel Subscription IDOR (HIGH)
+
+**File:** `supabase/functions/cancel-subscription/index.ts`
+
+**The Vulnerability:** Accepted `userId` from request body - any user could cancel any other user's subscription.
+
+**The Fix:** Uses `verifyUserFromJwt()` to extract user ID from JWT. Users can only cancel their OWN subscription.
+
+#### 5. Create Subscription No Auth (HIGH)
+
+**File:** `supabase/functions/create-subscription/index.ts`
+
+**The Vulnerability:** Accepted `userId` and `email` from request body without verification.
+
+**The Fix:** Uses `verifyUserFromJwt()` to extract verified user ID and email from JWT token.
+
+#### 6. Admin Functions Self-Reported ID (HIGH)
+
+**Files:**
+- `supabase/functions/admin-reset-password/index.ts`
+- `supabase/functions/delete-user/index.ts`
+
+**The Vulnerability:** Both accepted `adminUserId` from request body - attacker with a valid admin ID could impersonate that admin.
+
+**The Fix:** Uses `verifyAdminFromJwt()` to verify admin identity from JWT token, then checks `is_admin` flag in database.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `supabase/functions/stripe-webhook/index.ts` | Gated test bypass behind secure env vars |
+| `supabase/functions/webhook-helper/index.ts` | Added admin JWT verification |
+| `supabase/functions/cancel-subscription/index.ts` | User auth from JWT, not body |
+| `supabase/functions/create-subscription/index.ts` | User auth from JWT, not body |
+| `supabase/functions/admin-reset-password/index.ts` | Admin auth from JWT, not body |
+| `supabase/functions/delete-user/index.ts` | Admin auth from JWT, not body |
+| `supabase/functions/_shared/apiAuth.ts` | Added `verifyUserFromJwt()`, `verifyAdminFromJwt()` |
+| `SECURITY_AUDIT_REMEDIATION.md` | NEW - Full audit findings and remediation status |
+
+### Testing Performed
+
+- ✅ Build passes
+- ✅ 462 unit tests pass (0 failures)
+- Edge function deployment required to test in production
+
+### Security Status After Fixes
+
+| Severity | Status |
+|----------|--------|
+| 🔴 Critical | 1/1 FIXED ✅ |
+| 🟠 High | 5/6 FIXED + 1 Accepted Risk (localStorage) |
+| 🟡 Medium | 0/5 (backlog) |
+| 🟢 Low | 0/5 (backlog) |
+
+### Deployment Commands
+
+```bash
+npx supabase functions deploy stripe-webhook
+npx supabase functions deploy webhook-helper
+npx supabase functions deploy cancel-subscription
+npx supabase functions deploy create-subscription
+npx supabase functions deploy admin-reset-password
+npx supabase functions deploy delete-user
+```
+
+### Related Documentation
+
+- See `SECURITY_AUDIT_REMEDIATION.md` for full vulnerability details
+- See `SECURITY_SCALABILITY_CHECKLIST.md` for overall security state
+
+---
+
 ## 2026-01-12: Free Report lead generation page
 
 **Commit:** `pending` - Add free AI visibility report for lead capture

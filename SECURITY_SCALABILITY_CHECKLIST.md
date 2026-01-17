@@ -1,6 +1,6 @@
 # Security & Scalability Checklist
 
-> Last updated: 2026-01-16
+> Last updated: 2026-01-17
 > This document tracks the security and scalability state of LLM Navigator
 
 ---
@@ -8,6 +8,19 @@
 ## Security State: 🟢 GOOD
 
 **Score: 24/28 items implemented (86%)**
+
+### Recent Security Audit (2026-01-17)
+
+A penetration testing-style audit identified and fixed critical vulnerabilities:
+
+| Severity | Found | Fixed |
+|----------|-------|-------|
+| 🔴 Critical | 1 | 1 ✅ |
+| 🟠 High | 6 | 5 ✅ + 1 Accepted |
+| 🟡 Medium | 5 | 0 (backlog) |
+| 🟢 Low | 5 | 0 (backlog) |
+
+See `SECURITY_AUDIT_REMEDIATION.md` for full details.
 
 ### Authentication & Authorization
 

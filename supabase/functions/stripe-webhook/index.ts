@@ -8,9 +8,14 @@ import { v4 as uuidv4 } from "https://esm.sh/uuid@11.0.0";
 // so we don't restrict origin for this endpoint - only Stripe can call it with valid signatures
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature, x-webhook-signature, x-stripe-signature, webhook-signature, x-test-request",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature, x-webhook-signature, x-stripe-signature, webhook-signature",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+// SECURITY: Test mode bypass is DISABLED by default
+// Only enable in development environments with explicit env var
+const ALLOW_TEST_BYPASS = Deno.env.get("ALLOW_WEBHOOK_TEST_BYPASS") === "true" &&
+                          Deno.env.get("ENVIRONMENT") === "development";
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -70,20 +75,20 @@ serve(async (req) => {
     });
     
     if (!finalSignature) {
-      console.warn("⚠️ No stripe signature found in headers - this is expected for test requests");
-      // For test requests without signature, return a specific message
-      // Check if this is a test request
-      if (req.headers.get("x-test-request") === "true") {
-        console.log("🧪 Test request detected, proceeding without signature verification");
-        // Continue processing for test requests
+      console.warn("⚠️ No stripe signature found in headers");
+      // SECURITY: Reject all requests without valid Stripe signature
+      // Test bypass only allowed in development with explicit env vars
+      if (ALLOW_TEST_BYPASS) {
+        console.log("🧪 [DEV ONLY] Test bypass enabled - proceeding without signature");
       } else {
+        console.error("❌ SECURITY: Rejecting request without valid Stripe signature");
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             error: "No stripe signature found in headers",
-            message: "This appears to be a test request. For webhook verification, a valid signature is required."
-          }), 
-          { 
-            status: 400, 
+            message: "Valid Stripe webhook signature is required. Test bypass is disabled in production."
+          }),
+          {
+            status: 401,
             headers: { ...corsHeaders, "Content-Type": "application/json" }
           }
         );
@@ -170,21 +175,19 @@ serve(async (req) => {
     let event: Stripe.Event;
 
     try {
-      // Check if this is a test request
-      const isTestRequest = req.headers.get("x-test-request") === "true";
-      console.log(`${isTestRequest ? "🧪 Test request" : "🔐 Production request"} - Attempting to verify webhook signature...`);
-      
+      console.log("🔐 Attempting to verify webhook signature...");
+
       try {
-        if (isTestRequest && !isLiveMode) {
-          // For test requests, create a mock event
+        if (ALLOW_TEST_BYPASS && !isLiveMode && !finalSignature) {
+          // SECURITY: Only in development with explicit env vars AND no signature provided
           try {
             const jsonBody = JSON.parse(body);
-            console.log("🧪 Test request detected, creating mock event");
-            event = { 
+            console.log("🧪 [DEV ONLY] Creating mock event for testing");
+            event = {
               type: jsonBody.type || "test_event",
               id: "test_" + Date.now(),
               created: Math.floor(Date.now() / 1000),
-              data: { 
+              data: {
                 object: jsonBody.data?.object || {
                   id: "test_pi_" + Date.now(),
                   metadata: {
@@ -198,8 +201,8 @@ serve(async (req) => {
               },
               livemode: false
             } as Stripe.Event;
-            
-            console.log("✅ Created mock event for test request:", {
+
+            console.log("✅ [DEV ONLY] Created mock event:", {
               type: event.type,
               id: event.id
             });
@@ -208,7 +211,7 @@ serve(async (req) => {
             throw new Error("Invalid test request format");
           }
         } else {
-          // For real requests, verify the signature
+          // PRODUCTION: Always verify the signature
           event = stripe.webhooks.constructEvent(body, finalSignature || "", finalWebhookSecret);
           console.log("✅ Webhook signature verified successfully!");
           console.log("📋 Event details:", {
@@ -219,23 +222,23 @@ serve(async (req) => {
           });
         }
       } catch (signatureError) {
-        // For test requests, try to parse the body as JSON to handle them
-        try {
-          const jsonBody = JSON.parse(body);
-          if ((jsonBody.test === true || jsonBody.type === "test_event" || req.headers.get("x-test-request") === "true") && !isLiveMode) {
-            console.log("🧪 Test request detected, bypassing signature verification");
-            event = { 
+        // SECURITY: In production, always reject invalid signatures
+        if (ALLOW_TEST_BYPASS && !isLiveMode) {
+          try {
+            const jsonBody = JSON.parse(body);
+            console.log("🧪 [DEV ONLY] Signature verification failed, using test bypass");
+            event = {
               type: jsonBody.type || "test_event",
               id: "test_" + Date.now(),
               created: Math.floor(Date.now() / 1000),
               data: { object: jsonBody },
               livemode: false
             } as Stripe.Event;
-          } else {
-            throw signatureError; // Re-throw if not a test request
+          } catch (jsonError) {
+            throw signatureError;
           }
-        } catch (jsonError) {
-          throw signatureError; // Re-throw the original error if JSON parsing fails
+        } else {
+          throw signatureError; // Re-throw in production
         }
       }
     } catch (err) {
@@ -266,18 +269,18 @@ serve(async (req) => {
         console.log("🔴 LIVE MODE EVENT - Processing real payment");
       }
 
-      // For test requests, return success early
-      if ((event.type === "test_event" || req.headers.get("x-test-request") === "true") && !isLiveMode) {
-        console.log("🧪 Test event processed successfully");
+      // SECURITY: Only allow test events in development mode with explicit bypass
+      if (event.type === "test_event" && ALLOW_TEST_BYPASS && !isLiveMode) {
+        console.log("🧪 [DEV ONLY] Test event processed successfully");
         return new Response(
-          JSON.stringify({ 
-            received: true, 
-            message: "Test event processed successfully",
+          JSON.stringify({
+            received: true,
+            message: "[DEV ONLY] Test event processed successfully",
             eventType: event.type,
-            eventId: event.id 
-          }), 
-          { 
-            status: 200, 
+            eventId: event.id
+          }),
+          {
+            status: 200,
             headers: { ...corsHeaders, "Content-Type": "application/json" }
           }
         );

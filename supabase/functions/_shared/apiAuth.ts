@@ -12,6 +12,116 @@ export interface AuthResult {
   keyId?: string;
 }
 
+export interface JwtAuthResult {
+  success: boolean;
+  userId?: string;
+  email?: string;
+  isAdmin?: boolean;
+  error?: string;
+  status?: number;
+}
+
+/**
+ * Verify user identity from JWT token in Authorization header
+ * SECURITY: This extracts the user ID from a verified JWT, not from request body
+ */
+export async function verifyUserFromJwt(req: Request): Promise<JwtAuthResult> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return {
+      success: false,
+      error: "Missing or invalid Authorization header",
+      status: 401,
+    };
+  }
+
+  const token = authHeader.replace("Bearer ", "");
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return {
+      success: false,
+      error: "Server configuration error",
+      status: 500,
+    };
+  }
+
+  // Create client with user's token to verify their identity
+  const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } }
+  });
+
+  const { data: { user }, error: authError } = await userClient.auth.getUser();
+
+  if (authError || !user) {
+    return {
+      success: false,
+      error: "Invalid or expired token",
+      status: 401,
+    };
+  }
+
+  return {
+    success: true,
+    userId: user.id,
+    email: user.email,
+  };
+}
+
+/**
+ * Verify user is an admin from JWT token
+ * SECURITY: Checks both JWT validity AND is_admin flag in database
+ */
+export async function verifyAdminFromJwt(req: Request): Promise<JwtAuthResult> {
+  // First verify the JWT
+  const jwtResult = await verifyUserFromJwt(req);
+  if (!jwtResult.success) {
+    return jwtResult;
+  }
+
+  // Then check admin status in database
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return {
+      success: false,
+      error: "Server configuration error",
+      status: 500,
+    };
+  }
+
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  });
+
+  const { data: userData, error: userError } = await supabaseAdmin
+    .from('users')
+    .select('is_admin')
+    .eq('id', jwtResult.userId)
+    .single();
+
+  if (userError || !userData?.is_admin) {
+    return {
+      success: false,
+      userId: jwtResult.userId,
+      email: jwtResult.email,
+      isAdmin: false,
+      error: "User is not an admin",
+      status: 403,
+    };
+  }
+
+  return {
+    success: true,
+    userId: jwtResult.userId,
+    email: jwtResult.email,
+    isAdmin: true,
+  };
+}
+
 /**
  * Hash a string using SHA-256
  */

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightWithValidation, validateOrigin } from "../_shared/cors.ts";
+import { verifyAdminFromJwt } from "../_shared/apiAuth.ts";
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -16,7 +17,20 @@ serve(async (req) => {
   console.log("🔑 Admin Reset Password - Starting...");
 
   try {
-    const { targetUserId, newPassword, adminUserId } = await req.json();
+    // SECURITY: Verify admin identity from JWT token, not from request body
+    const authResult = await verifyAdminFromJwt(req);
+    if (!authResult.success) {
+      console.error("❌ SECURITY: Admin authentication failed:", authResult.error);
+      return new Response(
+        JSON.stringify({ error: authResult.error }),
+        { status: authResult.status || 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const adminUserId = authResult.userId!;
+    console.log("✅ Admin verified from JWT:", authResult.email);
+
+    const { targetUserId, newPassword } = await req.json();
 
     console.log("📋 Request data:", { targetUserId, adminUserId, passwordLength: newPassword?.length });
 
@@ -30,13 +44,6 @@ serve(async (req) => {
     if (!newPassword || newPassword.length < 6) {
       return new Response(
         JSON.stringify({ error: "Password must be at least 6 characters" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!adminUserId) {
-      return new Response(
-        JSON.stringify({ error: "Missing adminUserId" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -57,31 +64,6 @@ serve(async (req) => {
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false }
     });
-
-    // Verify the requesting user is an admin
-    const { data: adminUser, error: adminError } = await supabaseAdmin
-      .from('users')
-      .select('id, email, is_admin')
-      .eq('id', adminUserId)
-      .single();
-
-    if (adminError || !adminUser) {
-      console.error("❌ Admin user not found:", adminError);
-      return new Response(
-        JSON.stringify({ error: "Unauthorized - Admin not found" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!adminUser.is_admin) {
-      console.error("❌ User is not an admin:", adminUser.email);
-      return new Response(
-        JSON.stringify({ error: "Unauthorized - Not an admin" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log("✅ Admin verified:", adminUser.email);
 
     // Get the target user
     const { data: targetUser, error: userError } = await supabaseAdmin

@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { getCorsHeaders, handleCorsPreflightWithValidation, validateOrigin } from "../_shared/cors.ts";
+import { verifyUserFromJwt } from "../_shared/apiAuth.ts";
 
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -17,16 +18,24 @@ serve(async (req) => {
   console.log("🔄 Cancel Subscription - Starting...");
 
   try {
-    const { userId, subscriptionId } = await req.json();
-
-    console.log("📋 Request data:", { userId, subscriptionId });
-
-    if (!userId) {
+    // SECURITY: Verify user identity from JWT token, not from request body
+    const authResult = await verifyUserFromJwt(req);
+    if (!authResult.success) {
+      console.error("❌ SECURITY: Authentication failed:", authResult.error);
       return new Response(
-        JSON.stringify({ error: "Missing userId" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: authResult.error }),
+        { status: authResult.status || 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // User can only cancel their own subscription
+    const userId = authResult.userId!;
+    console.log("✅ Authenticated user:", authResult.email);
+
+    // subscriptionId is optional - can be provided for specific subscription
+    const { subscriptionId } = await req.json().catch(() => ({}));
+
+    console.log("📋 Request data:", { userId, subscriptionId });
 
     // Get environment variables
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
