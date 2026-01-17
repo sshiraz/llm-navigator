@@ -324,6 +324,9 @@ export default function ApiDocs() {
               </div>
             </div>
           </div>
+          <p className="text-slate-500 text-sm mt-4">
+            Note: Mode indicators are shown to administrators only, not on customer-facing pages.
+          </p>
         </section>
 
         {/* Support */}

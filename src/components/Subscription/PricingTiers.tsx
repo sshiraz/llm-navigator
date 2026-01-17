@@ -1,12 +1,10 @@
 import React from 'react';
-import { Check, Gift, CreditCard, ArrowRight, ArrowLeft, Home } from 'lucide-react';
+import { Check, Gift, ArrowLeft } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { stripePromise, STRIPE_CONFIG } from '../../utils/stripeUtils';
 import TrialSignup from '../Auth/TrialSignup';
 import CreditCardForm from '../Payment/CreditCardForm';
-import { isLiveMode } from '../../utils/liveMode';
 import { PLAN_CONFIGS, getPlanAmount } from '../../utils/planConfig';
-import LiveModeIndicator from '../UI/LiveModeIndicator';
 import { PaymentService } from '../../services/paymentService';
 
 interface PricingTiersProps {
@@ -131,8 +129,6 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
         </div>
 
         <div className="text-center mb-12">
-          {isLiveMode && <LiveModeIndicator variant="warning" className="mb-8 mx-auto max-w-3xl" />}
-
           <h1 className="text-4xl font-bold text-white mb-4">
             Choose Your AI Optimization Plan
           </h1>
@@ -292,7 +288,7 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
               How do Test Mode and Live Mode work?
             </h3>
             <p className="text-slate-400">
-              The platform automatically detects Test or Live mode based on your Stripe configuration. Development environments use test keys (no real charges), while production uses live keys for real payments. You'll see a clear indicator showing which mode is active.
+              The platform automatically detects Test or Live mode based on your Stripe configuration. Development environments use test keys (no real charges), while production uses live keys for real payments. Administrators see a status indicator in their dashboard.
             </p>
           </div>
         </div>

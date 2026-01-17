@@ -152,6 +152,11 @@ The UI shows:
 - **Test Mode**: Yellow badge, no payment warnings
 - **Live Mode**: Red warnings, "LIVE MODE ACTIVE" indicators
 
+**Where to show indicators:**
+- ✅ Admin dashboard (EnvironmentStatus component)
+- ✅ Admin user management page
+- ❌ Customer-facing pages (pricing, checkout) - don't show warnings to customers
+
 ## Key Patterns
 
 ### Service/Util/Component Separation
