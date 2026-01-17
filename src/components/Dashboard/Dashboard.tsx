@@ -102,10 +102,10 @@ export default function Dashboard({ onNewAnalysis }: DashboardProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Monitor your LLM optimization progress</p>
+          <h1 className="text-3xl font-bold text-white">Dashboard</h1>
+          <p className="text-slate-400 mt-1">Monitor your LLM optimization progress</p>
         </div>
-        <button 
+        <button
           onClick={onNewAnalysis}
           className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-lg"
         >

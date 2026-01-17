@@ -129,6 +129,29 @@ Example:
 3. Check webhook handling in `stripe-webhook/index.ts`
 4. Run: `npm run test:payment`
 
+### Test vs Live Mode (Auto-Detection)
+The app auto-detects Test or Live mode based on the Stripe key prefix:
+
+| Environment | Key Prefix | Mode | Real Charges? |
+|-------------|-----------|------|---------------|
+| Localhost | `pk_test_*` | Test | No |
+| Production | `pk_live_*` | Live | Yes |
+
+**How it works:**
+```typescript
+// src/utils/liveMode.ts
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
+export const isLiveMode = stripeKey.startsWith('pk_live_');
+```
+
+**Setup:**
+- Local `.env`: `VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...`
+- Netlify env vars: `VITE_STRIPE_PUBLISHABLE_KEY=pk_live_...`
+
+The UI shows:
+- **Test Mode**: Yellow badge, no payment warnings
+- **Live Mode**: Red warnings, "LIVE MODE ACTIVE" indicators
+
 ## Key Patterns
 
 ### Service/Util/Component Separation

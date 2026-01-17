@@ -168,24 +168,24 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-2xl p-8 text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Mail className="w-8 h-8 text-blue-600" />
+          <div className="bg-slate-800 rounded-2xl shadow-2xl p-8 text-center border border-slate-700">
+            <div className="w-16 h-16 bg-blue-900/50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Mail className="w-8 h-8 text-blue-400" />
             </div>
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Check Your Email</h2>
-            <p className="text-gray-600 mb-6">
+            <h2 className="text-2xl font-bold text-white mb-2">Check Your Email</h2>
+            <p className="text-slate-400 mb-6">
               We sent a confirmation link to<br />
-              <strong className="text-gray-900">{confirmationEmail}</strong>
+              <strong className="text-white">{confirmationEmail}</strong>
             </p>
 
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-sm text-slate-500 mb-6">
               Click the link in the email to activate your account and start your free trial.
             </p>
 
             {resendSuccess && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                <div className="flex items-center justify-center space-x-2 text-green-800">
+              <div className="bg-green-900/30 border border-green-700 rounded-lg p-3 mb-4">
+                <div className="flex items-center justify-center space-x-2 text-green-300">
                   <CheckCircle className="w-4 h-4" />
                   <span className="text-sm">Confirmation email sent!</span>
                 </div>
@@ -195,7 +195,7 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
             <button
               onClick={handleResendEmail}
               disabled={isResending}
-              className="w-full py-3 px-4 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-all flex items-center justify-center space-x-2 mb-4"
+              className="w-full py-3 px-4 bg-slate-700 text-slate-300 font-medium rounded-lg hover:bg-slate-600 disabled:opacity-50 transition-all flex items-center justify-center space-x-2 mb-4"
             >
               {isResending ? (
                 <>
@@ -216,7 +216,7 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
                 setIsLogin(true);
                 setFormData({ name: '', email: '', password: '', company: '', website: '' });
               }}
-              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+              className="text-blue-400 hover:text-blue-300 font-medium text-sm"
             >
               Back to Sign In
             </button>
@@ -247,8 +247,8 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
 
         {/* Email Confirmed Success Banner */}
         {emailJustConfirmed && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center space-x-2 text-green-800">
+          <div className="bg-green-900/30 border border-green-700 rounded-lg p-4 mb-6">
+            <div className="flex items-center space-x-2 text-green-300">
               <CheckCircle className="w-5 h-5" />
               <span className="font-medium">Email confirmed! You can now sign in.</span>
             </div>
@@ -257,9 +257,9 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
 
         {/* Confirmation Link Error Banner */}
         {confirmationLinkError && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+          <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-4 mb-6">
             <div className="flex items-start justify-between">
-              <div className="flex items-start space-x-2 text-amber-800">
+              <div className="flex items-start space-x-2 text-amber-300">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
@@ -268,7 +268,7 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
               {onLinkErrorAcknowledged && (
                 <button
                   onClick={onLinkErrorAcknowledged}
-                  className="text-amber-600 hover:text-amber-700 ml-2"
+                  className="text-amber-400 hover:text-amber-300 ml-2"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -281,8 +281,8 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <div className="flex items-start space-x-2 text-red-800">
+          <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 mb-6">
+            <div className="flex items-start space-x-2 text-red-300">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
@@ -294,14 +294,14 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
         {/* Demo Credentials */}
 
         {/* Auth Form */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="bg-slate-800 rounded-2xl shadow-2xl p-8 border border-slate-700">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl font-bold text-white mb-2">
               {isLogin ? 'Welcome Back' : 'Start Your Free Trial'}
             </h2>
-            <p className="text-gray-600">
-              {isLogin 
-                ? 'Sign in to your LLM Navigator account' 
+            <p className="text-slate-400">
+              {isLogin
+                ? 'Sign in to your LLM Navigator account'
                 : 'Join thousands optimizing for AI search'
               }
             </p>
@@ -310,17 +310,17 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Full Name *
                 </label>
                 <div className="relative">
-                  <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-500" />
                   <input
                     type="text"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="John Doe"
                   />
                 </div>
@@ -328,34 +328,34 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
                 Email Address *
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-500" />
                 <input
                   type="email"
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="john@company.com"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-2">
                 Password *
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-500" />
                 <input
                   type="password"
                   required
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder={isLogin ? "Enter your password" : "Create a password"}
                 />
               </div>
@@ -364,32 +364,32 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
             {!isLogin && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
                     Company (Optional)
                   </label>
                   <div className="relative">
-                    <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-500" />
                     <input
                       type="text"
                       value={formData.company}
                       onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Acme Corp"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
                     Website (Optional)
                   </label>
                   <div className="relative">
-                    <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-500" />
                     <input
                       type="url"
                       value={formData.website}
                       onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="https://acme.com"
                     />
                   </div>
@@ -423,19 +423,19 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
                 setIsLogin(!isLogin);
                 setFormData({ name: '', email: '', password: '', company: '', website: '' });
               }}
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="text-blue-400 hover:text-blue-300 font-medium"
             >
-              {isLogin 
-                ? "Don't have an account? Start your free trial" 
+              {isLogin
+                ? "Don't have an account? Start your free trial"
                 : "Already have an account? Sign in"
               }
             </button>
           </div>
 
           {!isLogin && (
-            <div className="mt-4 text-xs text-gray-500 text-center space-y-1">
+            <div className="mt-4 text-xs text-slate-500 text-center space-y-1">
               <p>
-                By creating an account, you agree to our <a href="#terms" onClick={(e) => {e.preventDefault(); window.location.hash = '#terms';}} className="text-blue-600 hover:text-blue-700">Terms of Service</a> and <a href="#privacy" onClick={(e) => {e.preventDefault(); window.location.hash = '#privacy';}} className="text-blue-600 hover:text-blue-700">Privacy Policy</a>.
+                By creating an account, you agree to our <a href="#terms" onClick={(e) => {e.preventDefault(); window.location.hash = '#terms';}} className="text-blue-400 hover:text-blue-300">Terms of Service</a> and <a href="#privacy" onClick={(e) => {e.preventDefault(); window.location.hash = '#privacy';}} className="text-blue-400 hover:text-blue-300">Privacy Policy</a>.
               </p>
               <br />
               14-day free trial • No credit card required
@@ -444,7 +444,7 @@ export default function AuthPage({ onLogin, emailJustConfirmed, onConfirmationAc
 
           {isLogin && (
             <div className="mt-4 text-center">
-              <button className="text-sm text-blue-600 hover:text-blue-700">
+              <button className="text-sm text-blue-400 hover:text-blue-300">
                 Forgot your password?
               </button>
             </div>

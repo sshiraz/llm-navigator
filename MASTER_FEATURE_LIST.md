@@ -18,9 +18,9 @@
 | Documentation | 7 | 1 | 2 | 10 |
 | DevOps | 5 | 0 | 4 | 9 |
 | Payments | 9 | 0 | 2 | 11 |
-| User Experience | 8 | 0 | 3 | 11 |
+| User Experience | 9 | 0 | 3 | 12 |
 | Admin | 5 | 1 | 1 | 7 |
-| **Total** | **80** | **8** | **31** | **119** |
+| **Total** | **81** | **8** | **31** | **120** |
 
 **Overall Progress: 73% complete**
 
@@ -315,6 +315,11 @@
 | ✅ | Sidebar navigation | Clear menu structure |
 | ✅ | Breadcrumbs | Context awareness |
 
+### Lead Generation
+| Status | Feature | Notes |
+|--------|---------|-------|
+| ✅ | Free Report page | Real AI analysis, email capture, upsell CTA |
+
 ### Reporting
 | Status | Feature | Notes |
 |--------|---------|-------|
@@ -413,3 +418,5 @@
 | 2026-01-12 | Admin user deletion now cancels Stripe subscription automatically |
 | 2026-01-12 | Next billing date displayed in Account Settings for paid plans |
 | 2026-01-12 | Admin accounts: automatic enterprise plan, no billing UI, webhook protection |
+| 2026-01-12 | Free Report page: real ChatGPT analysis, lead capture, competitor detection |
+| 2026-01-12 | Fixed domain extraction in check-citations (trailing punctuation cleanup) |

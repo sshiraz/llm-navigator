@@ -55,11 +55,11 @@ const EnvironmentStatus: React.FC<EnvironmentStatusProps> = ({ showDetails = fal
 
   const getStatusColor = (status: 'success' | 'error' | 'test' | 'live' | 'neutral') => {
     switch (status) {
-      case 'success': return 'text-green-600 bg-green-50';
-      case 'error': return 'text-red-600 bg-red-50';
-      case 'test': return 'text-yellow-600 bg-yellow-50';
-      case 'live': return 'text-blue-600 bg-blue-50';
-      case 'neutral': return 'text-gray-600 bg-gray-50';
+      case 'success': return 'text-green-400 bg-green-900/30';
+      case 'error': return 'text-red-400 bg-red-900/30';
+      case 'test': return 'text-yellow-400 bg-yellow-900/30';
+      case 'live': return 'text-blue-400 bg-blue-900/30';
+      case 'neutral': return 'text-slate-400 bg-slate-700';
     }
   };
 
@@ -85,19 +85,19 @@ const EnvironmentStatus: React.FC<EnvironmentStatusProps> = ({ showDetails = fal
   }
 
   return (
-    <div className={`bg-white border border-gray-200 rounded-lg shadow-sm ${className}`}>
-      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+    <div className={`bg-slate-800/50 border border-slate-700 rounded-lg shadow-sm ${className}`}>
+      <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <Shield className="w-4 h-4 text-gray-500" />
-          <span className="text-sm font-medium text-gray-700">Admin Environment Status</span>
+          <Shield className="w-4 h-4 text-slate-400" />
+          <span className="text-sm font-medium text-slate-300">Admin Environment Status</span>
         </div>
         {isStripeLive && (
-          <span className="px-2 py-0.5 text-xs font-semibold bg-blue-100 text-blue-700 rounded-full">
+          <span className="px-2 py-0.5 text-xs font-semibold bg-blue-900/30 text-blue-400 rounded-full">
             LIVE PAYMENTS
           </span>
         )}
         {isStripeTest && (
-          <span className="px-2 py-0.5 text-xs font-semibold bg-yellow-100 text-yellow-700 rounded-full">
+          <span className="px-2 py-0.5 text-xs font-semibold bg-yellow-900/30 text-yellow-400 rounded-full">
             TEST MODE
           </span>
         )}
@@ -111,9 +111,9 @@ const EnvironmentStatus: React.FC<EnvironmentStatusProps> = ({ showDetails = fal
                 <item.icon className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-xs text-gray-500">{item.label}</p>
+                <p className="text-xs text-slate-500">{item.label}</p>
                 <div className="flex items-center space-x-1">
-                  <p className="text-sm font-medium text-gray-900">{item.value}</p>
+                  <p className="text-sm font-medium text-white">{item.value}</p>
                   {getStatusIcon(item.status)}
                 </div>
               </div>
@@ -122,10 +122,10 @@ const EnvironmentStatus: React.FC<EnvironmentStatusProps> = ({ showDetails = fal
         </div>
 
         {showDetails && warnings.length > 0 && (
-          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="mt-4 p-3 bg-amber-900/30 border border-amber-700 rounded-lg">
             <div className="flex items-start space-x-2">
-              <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5" />
-              <div className="text-sm text-amber-800">
+              <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5" />
+              <div className="text-sm text-amber-300">
                 {warnings.map((warning, index) => (
                   <p key={index}>{warning}</p>
                 ))}

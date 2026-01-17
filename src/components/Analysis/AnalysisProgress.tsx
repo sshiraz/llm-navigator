@@ -170,10 +170,10 @@ export default function AnalysisProgress({
   if (error) {
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-red-900 mb-3">Analysis Failed</h3>
-          <p className="text-red-800 mb-6">{error}</p>
+        <div className="bg-red-900/30 border border-red-700 rounded-lg p-6 text-center">
+          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-red-300 mb-3">Analysis Failed</h3>
+          <p className="text-red-200 mb-6">{error}</p>
           <button
             onClick={() => window.location.hash = 'new-analysis'}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -190,27 +190,27 @@ export default function AnalysisProgress({
       <div className="text-center mb-8">
         <div className="flex items-center justify-center space-x-3 mb-4">
           {isRealAnalysis ? (
-            <Zap className="w-8 h-8 text-blue-600" />
+            <Zap className="w-8 h-8 text-blue-400" />
           ) : (
-            <Sparkles className="w-8 h-8 text-purple-600" />
+            <Sparkles className="w-8 h-8 text-purple-400" />
           )}
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-2xl font-bold text-white">
             {isRealAnalysis ? 'Checking AI Citations' : 'Demo Analysis'}
           </h2>
         </div>
 
-        <p className="text-gray-600 mb-2">
-          Analyzing <strong>{website}</strong>
-          {brandName && <> (brand: <strong>{brandName}</strong>)</>}
+        <p className="text-slate-300 mb-2">
+          Analyzing <strong className="text-white">{website}</strong>
+          {brandName && <> (brand: <strong className="text-white">{brandName}</strong>)</>}
         </p>
 
-        <p className="text-gray-500 text-sm mb-4">
+        <p className="text-slate-400 text-sm mb-4">
           {prompts.length} prompt{prompts.length > 1 ? 's' : ''} × {providers.length} AI provider{providers.length > 1 ? 's' : ''}
         </p>
 
         {isRealAnalysis ? (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-            <div className="flex items-center justify-center space-x-2 text-blue-800">
+          <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-3 mb-4">
+            <div className="flex items-center justify-center space-x-2 text-blue-300">
               <Zap className="w-4 h-4" />
               <span className="text-sm font-medium">
                 Live Citation Tracking
@@ -222,8 +222,8 @@ export default function AnalysisProgress({
             </div>
           </div>
         ) : (
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4">
-            <div className="flex items-center justify-center space-x-2 text-purple-800">
+          <div className="bg-purple-900/30 border border-purple-700 rounded-lg p-3 mb-4">
+            <div className="flex items-center justify-center space-x-2 text-purple-300">
               <Sparkles className="w-4 h-4" />
               <span className="text-sm font-medium">
                 Simulated Results for Demo
@@ -235,11 +235,11 @@ export default function AnalysisProgress({
 
       {/* Progress Bar */}
       <div className="mb-8">
-        <div className="flex justify-between text-sm text-gray-600 mb-2">
+        <div className="flex justify-between text-sm text-slate-400 mb-2">
           <span>Progress</span>
           <span>{Math.round(progress)}%</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
+        <div className="w-full bg-slate-700 rounded-full h-3">
           <div
             className={`h-3 rounded-full transition-all duration-300 ${
               isRealAnalysis ? 'bg-gradient-to-r from-blue-500 to-blue-600' : 'bg-gradient-to-r from-purple-500 to-purple-600'
@@ -261,11 +261,11 @@ export default function AnalysisProgress({
               className={`flex items-center space-x-4 p-4 rounded-lg border-2 transition-all ${
                 isActive
                   ? isRealAnalysis
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-purple-500 bg-purple-50'
+                    ? 'border-blue-500 bg-blue-900/30'
+                    : 'border-purple-500 bg-purple-900/30'
                   : isCompleted
-                    ? 'border-emerald-500 bg-emerald-50'
-                    : 'border-gray-200 bg-gray-50'
+                    ? 'border-emerald-500 bg-emerald-900/30'
+                    : 'border-slate-600 bg-slate-800/50'
               }`}
             >
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -275,7 +275,7 @@ export default function AnalysisProgress({
                     : 'bg-purple-600 text-white'
                   : isCompleted
                     ? 'bg-emerald-600 text-white'
-                    : 'bg-gray-300 text-gray-600'
+                    : 'bg-slate-600 text-slate-300'
               }`}>
                 {isCompleted ? (
                   <CheckCircle className="w-5 h-5" />
@@ -290,16 +290,16 @@ export default function AnalysisProgress({
                 <div className="flex items-center justify-between">
                   <h3 className={`font-semibold ${
                     isActive
-                      ? isRealAnalysis ? 'text-blue-900' : 'text-purple-900'
+                      ? isRealAnalysis ? 'text-blue-300' : 'text-purple-300'
                       : isCompleted
-                        ? 'text-emerald-900'
-                        : 'text-gray-700'
+                        ? 'text-emerald-300'
+                        : 'text-slate-300'
                   }`}>
                     {step.name}
                   </h3>
 
                   {isRealAnalysis && step.cost > 0 && (
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    <span className="text-xs text-slate-400 bg-slate-700 px-2 py-1 rounded">
                       ${step.cost.toFixed(2)}
                     </span>
                   )}
@@ -307,10 +307,10 @@ export default function AnalysisProgress({
 
                 <p className={`text-sm ${
                   isActive
-                    ? isRealAnalysis ? 'text-blue-700' : 'text-purple-700'
+                    ? isRealAnalysis ? 'text-blue-400' : 'text-purple-400'
                     : isCompleted
-                      ? 'text-emerald-700'
-                      : 'text-gray-500'
+                      ? 'text-emerald-400'
+                      : 'text-slate-500'
                 }`}>
                   {step.description}
                 </p>
@@ -319,10 +319,10 @@ export default function AnalysisProgress({
               {isActive && (
                 <div className="flex items-center space-x-2">
                   <div className={`w-4 h-4 border-2 border-t-transparent rounded-full animate-spin ${
-                    isRealAnalysis ? 'border-blue-600' : 'border-purple-600'
+                    isRealAnalysis ? 'border-blue-400' : 'border-purple-400'
                   }`}></div>
                   <Clock className={`w-4 h-4 ${
-                    isRealAnalysis ? 'text-blue-600' : 'text-purple-600'
+                    isRealAnalysis ? 'text-blue-400' : 'text-purple-400'
                   }`} />
                 </div>
               )}
@@ -332,25 +332,25 @@ export default function AnalysisProgress({
       </div>
 
       {/* Prompts Being Checked */}
-      <div className="mt-8 bg-white border border-gray-200 rounded-lg p-6">
-        <h3 className="font-semibold text-gray-900 mb-3">
+      <div className="mt-8 bg-slate-800/50 border border-slate-700 rounded-lg p-6">
+        <h3 className="font-semibold text-white mb-3">
           Prompts Being Checked
         </h3>
         <div className="space-y-2">
           {prompts.map((prompt, index) => (
             <div key={prompt.id} className="flex items-start space-x-2 text-sm">
-              <span className="text-gray-400 w-5">{index + 1}.</span>
-              <span className="text-gray-700">{prompt.text}</span>
+              <span className="text-slate-500 w-5">{index + 1}.</span>
+              <span className="text-slate-300">{prompt.text}</span>
             </div>
           ))}
         </div>
 
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <p className="text-sm text-gray-600">
+        <div className="mt-4 pt-4 border-t border-slate-700">
+          <p className="text-sm text-slate-400">
             Checking against: {' '}
             {providers.map((p, i) => (
               <span key={p}>
-                <strong>{p === 'openai' ? 'ChatGPT' : p === 'anthropic' ? 'Claude' : 'Perplexity'}</strong>
+                <strong className="text-white">{p === 'openai' ? 'ChatGPT' : p === 'anthropic' ? 'Claude' : 'Perplexity'}</strong>
                 {i < providers.length - 1 ? ', ' : ''}
               </span>
             ))}
@@ -360,8 +360,8 @@ export default function AnalysisProgress({
 
       {/* Analysis Type Info */}
       {!isRealAnalysis && (
-        <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-          <p className="text-sm text-purple-800">
+        <div className="mt-4 p-4 bg-purple-900/30 border border-purple-700 rounded-lg">
+          <p className="text-sm text-purple-300">
             <strong>Demo Mode:</strong> These are simulated results to preview the interface.
             Upgrade to a paid plan to check real AI citations.
           </p>

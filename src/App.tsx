@@ -16,6 +16,7 @@ import LandingPage from './components/Landing/LandingPage';
 import AuthPage from './components/Auth/AuthPage';
 import PricingPage from './components/Pricing/PricingPage';
 import ApiDocs from './components/Docs/ApiDocs';
+import FreeReportPage from './components/FreeReport/FreeReportPage';
 import { Analysis, User } from './types';
 import EnvironmentStatus from './components/UI/EnvironmentStatus';
 import { mockAnalyses } from './utils/mockData';
@@ -266,7 +267,7 @@ function App() {
 
   const renderContent = () => {
     // Public pages that don't require login
-    if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account' || activeSection === 'api-docs') {
+    if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account' || activeSection === 'api-docs' || activeSection === 'free-report') {
       // Special handling for admin-users - only allow access if user is admin
       if (activeSection === 'admin-users') {
         // Check if user is admin
@@ -329,6 +330,8 @@ function App() {
           return <PricingPage currentPlan={user?.subscription || 'free'} onUpgrade={handleUpgrade} />;
         case 'api-docs':
           return <ApiDocs />;
+        case 'free-report':
+          return <FreeReportPage onGetStarted={handleGetStarted} />;
         default:
           return <LandingPage onGetStarted={handleGetStarted} />;
       }
@@ -400,7 +403,7 @@ function App() {
   };
 
   // Show landing page or auth page without sidebar/header
-  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account' || activeSection === 'pricing' || activeSection === 'api-docs') {
+  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'admin-users' || activeSection === 'account' || activeSection === 'pricing' || activeSection === 'api-docs' || activeSection === 'free-report') {
     return (
       <>
         {renderContent()}
@@ -409,11 +412,11 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-slate-900 flex flex-col">
       {user && <Header user={user} />}
       <div className="flex flex-1">
         <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} onLogout={handleLogout} />
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
           {/* Show EnvironmentStatus only for admin user */}
           {isAdmin && <EnvironmentStatus showDetails className="mb-6" />}
           {renderContent()}

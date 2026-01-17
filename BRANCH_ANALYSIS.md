@@ -5,6 +5,129 @@
 
 ---
 
+## 2026-01-12: Free Report lead generation page
+
+**Commit:** `pending` - Add free AI visibility report for lead capture
+
+### Context
+
+To build a data moat and generate leads, we need a free tool that:
+1. Captures email + website URL (lead data)
+2. Provides real value (actual AI citation check)
+3. Upsells to paid plans
+4. Accumulates aggregate data over time (competitive advantage)
+
+### Changes & Reasoning
+
+#### 1. Free Report Page component
+
+**File:** `src/components/FreeReport/FreeReportPage.tsx`
+
+**Route:** `#free-report`
+
+The page has two states:
+- **Pre-report:** Email + URL form with value proposition
+- **Post-report:** Real results with upsell CTA
+
+```typescript
+// Uses real AI analysis with 1 prompt, 1 provider (OpenAI GPT-4o)
+const { data } = await supabase.functions.invoke('check-citations', {
+  body: {
+    prompts: [{ id: 'free-report-1', text: prompt }],
+    website: normalizedUrl,
+    brandName: brandName,
+    providers: ['openai']  // ~$0.01-0.03 per report
+  }
+});
+```
+
+**Why real data:** Simulated data provides no value. Real data:
+- Builds trust (users see actual AI response)
+- Captures real citation patterns for our database
+- Differentiates from competitors who might fake it
+
+**Why OpenAI:** More recognizable brand than Perplexity. Users know "ChatGPT checked my site."
+
+**Why single prompt:** Cost control. At $0.01-0.03/report, 1000 reports = $10-30/month.
+
+#### 2. Smart prompt generation
+
+```typescript
+const brandName = domain.split('.')[0];
+const prompt = `What are the best ${brandName} alternatives and competitors?`;
+```
+
+**Why this prompt:** "Alternatives and competitors" queries are:
+- High intent (people comparing options)
+- Likely to cite websites
+- Relevant to what businesses care about
+
+#### 3. Results displayed
+
+- **Citation status:** Were they mentioned? (with context quote)
+- **Competitors cited:** Who IS getting mentioned instead
+- **AI Visibility Score:** Calculated from citation + competitor count
+- **Personalized recommendation:** Based on their specific results
+- **The actual query:** Transparency builds trust
+
+#### 4. Domain cleanup fix
+
+**File:** `supabase/functions/check-citations/index.ts`
+
+```typescript
+// extractDomain() - remove trailing punctuation
+const cleanUrl = url.replace(/[)\]}>,:;!?]+$/, '');
+
+// domainPatterns - clean captured domains
+const cleanDomain = domain.toLowerCase().replace(/[^a-z0-9.-]/g, '');
+```
+
+**Why:** AI responses often have domains in parentheses like `(zendesk.com)` and the regex was capturing the `)`.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/FreeReport/FreeReportPage.tsx` | New component - lead capture + real analysis |
+| `src/App.tsx` | Added `#free-report` route |
+| `supabase/functions/check-citations/index.ts` | Fixed domain extraction (trailing punctuation) |
+
+### Database Table (Optional)
+
+To save leads:
+
+```sql
+CREATE TABLE free_report_leads (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email text NOT NULL,
+  website text NOT NULL,
+  is_cited boolean,
+  ai_score integer,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE free_report_leads ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public inserts" ON free_report_leads
+  FOR INSERT TO anon WITH CHECK (true);
+```
+
+### Cost Analysis
+
+| Volume | Cost (OpenAI) |
+|--------|---------------|
+| 100 reports/month | ~$1-3 |
+| 1,000 reports/month | ~$10-30 |
+| 10,000 reports/month | ~$100-300 |
+
+### Strategic Value
+
+1. **Lead capture:** Email + website for marketing
+2. **Data accumulation:** Citation patterns by industry over time
+3. **Brand awareness:** "Powered by ChatGPT" builds credibility
+4. **Upsell funnel:** Free report → Trial → Paid plan
+
+---
+
 ## 2026-01-12: Admin accounts auto-enterprise (no billing)
 
 **Commit:** `pending` - Auto-assign enterprise to admin accounts, hide billing UI

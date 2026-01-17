@@ -41,10 +41,13 @@ const COSTS = {
 // Extract domain from URL
 function extractDomain(url: string): string {
   try {
-    const parsed = new URL(url.startsWith('http') ? url : `https://${url}`);
+    // Clean up URL - remove trailing punctuation
+    const cleanUrl = url.replace(/[)\]}>,:;!?]+$/, '');
+    const parsed = new URL(cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`);
     return parsed.hostname.replace(/^www\./, '');
   } catch {
-    return url.replace(/^www\./, '').split('/')[0];
+    // Fallback: clean up and extract domain manually
+    return url.replace(/^www\./, '').split('/')[0].replace(/[^a-zA-Z0-9.-]/g, '');
   }
 }
 
@@ -139,7 +142,8 @@ function extractCompetitors(
   // Also look for common domain patterns mentioned without full URLs
   const domainPatterns = response.match(/\b[a-zA-Z0-9][-a-zA-Z0-9]*\.(com|org|net|io|co|ai)\b/gi) || [];
   domainPatterns.forEach((domain, index) => {
-    const cleanDomain = domain.toLowerCase();
+    // Clean up domain - remove trailing punctuation that might have been captured
+    const cleanDomain = domain.toLowerCase().replace(/[^a-z0-9.-]/g, '');
     if (cleanDomain !== userDomainLower &&
         !competitors.some(c => c.domain.toLowerCase() === cleanDomain)) {
       const domainIndex = response.toLowerCase().indexOf(cleanDomain);

@@ -1,15 +1,19 @@
 import { PaymentLogger } from './paymentLogger';
 
-// Check if we're in live mode
-// LIVE MODE ENABLED - Real payments will be processed
-export const isLiveMode = true;
+// Auto-detect live mode based on Stripe key
+// pk_live_ = production, pk_test_ = test mode
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
+export const isLiveMode = stripeKey.startsWith('pk_live_');
 
 // Log live mode status on initialization
 if (isLiveMode) {
-  console.warn('%c 🔴 LIVE MODE ACTIVE - REAL PAYMENTS WILL BE PROCESSED ', 
+  console.warn('%c 🔴 LIVE MODE ACTIVE - REAL PAYMENTS WILL BE PROCESSED ',
     'background: #f44336; color: white; font-size: 14px; font-weight: bold; padding: 4px;');
-  
+
   PaymentLogger.log('warn', 'LiveMode', '🔴 LIVE MODE ACTIVE - Using production Stripe keys');
+} else {
+  console.info('%c 🧪 TEST MODE - Using Stripe test keys ',
+    'background: #4CAF50; color: white; font-size: 14px; font-weight: bold; padding: 4px;');
 }
 
 // Get live mode class to elements

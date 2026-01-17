@@ -396,29 +396,29 @@ export default function UserDashboard() {
   const getSubscriptionBadge = (subscription: string) => {
     switch (subscription) {
       case 'starter':
-        return <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">Starter</span>;
+        return <span className="px-2 py-1 bg-blue-900/30 text-blue-400 rounded-full text-xs font-medium">Starter</span>;
       case 'professional':
-        return <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-medium">Professional</span>;
+        return <span className="px-2 py-1 bg-purple-900/30 text-purple-400 rounded-full text-xs font-medium">Professional</span>;
       case 'enterprise':
-        return <span className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-medium">Enterprise</span>;
+        return <span className="px-2 py-1 bg-indigo-900/30 text-indigo-400 rounded-full text-xs font-medium">Enterprise</span>;
       case 'trial':
-        return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">Trial</span>;
+        return <span className="px-2 py-1 bg-yellow-900/30 text-yellow-400 rounded-full text-xs font-medium">Trial</span>;
       default:
-        return <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">Free</span>;
+        return <span className="px-2 py-1 bg-slate-700 text-slate-300 rounded-full text-xs font-medium">Free</span>;
     }
   };
 
   // If not admin, show access denied
   if (isRedirecting) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
-        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-8 max-w-md text-center">
-          <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-          <p className="text-gray-600 mb-6">
+      <div className="flex flex-col items-center justify-center h-screen bg-slate-900">
+        <div className="bg-red-900/30 border-2 border-red-700 rounded-xl p-8 max-w-md text-center">
+          <Shield className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-white mb-2">Access Denied</h1>
+          <p className="text-slate-400 mb-6">
             You don't have permission to access this page. Redirecting you to the dashboard...
           </p>
-          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
             <div className="h-full bg-red-500 rounded-full animate-pulse"></div>
           </div>
         </div>
@@ -431,33 +431,34 @@ export default function UserDashboard() {
   }
 
   return (
+    <div className="min-h-screen bg-slate-900 py-8 px-4">
     <div className="max-w-7xl mx-auto space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <button
             onClick={() => window.location.hash = '#dashboard'}
-            className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
+            className="flex items-center space-x-2 text-slate-400 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Dashboard</span>
           </button>
-          
+
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-            <p className="text-gray-600 mt-1">Monitor user accounts and subscription status</p>
+            <h1 className="text-3xl font-bold text-white">User Management</h1>
+            <p className="text-slate-400 mt-1">Monitor user accounts and subscription status</p>
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-3">
           <button
             onClick={loadUsers}
-            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 border border-slate-600 rounded-lg hover:bg-slate-800 text-slate-300 transition-colors"
           >
-            <RefreshCw className="w-4 h-4 text-gray-600" />
+            <RefreshCw className="w-4 h-4 text-slate-400" />
             <span>Refresh</span>
           </button>
-          
+
           <button
             onClick={exportUsers}
             className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -471,22 +472,22 @@ export default function UserDashboard() {
       {/* Filters */}
       <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500" />
           <input
             type="text"
             placeholder="Search by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-600 text-white placeholder-slate-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
-        
+
         <div className="flex items-center space-x-2">
-          <Filter className="text-gray-400" />
+          <Filter className="text-slate-500" />
           <select
             value={filterPlan}
             onChange={(e) => setFilterPlan(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-3 py-2 bg-slate-900 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="all">All Plans</option>
             <option value="free">Free</option>
@@ -499,11 +500,11 @@ export default function UserDashboard() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+      <div className="bg-slate-800/50 rounded-xl border border-slate-700 overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-700 bg-slate-800">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Registered Users</h2>
-            <div className="text-sm text-gray-500">
+            <h2 className="text-lg font-semibold text-white">Registered Users</h2>
+            <div className="text-sm text-slate-400">
               {filteredUsers.length} {filteredUsers.length === 1 ? 'user' : 'users'} found
             </div>
           </div>
@@ -512,21 +513,21 @@ export default function UserDashboard() {
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-gray-600">Loading users...</span>
+              <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-slate-400">Loading users...</span>
             </div>
           </div>
         ) : filteredUsers.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64">
-            <Users className="w-12 h-12 text-gray-300 mb-4" />
-            <p className="text-gray-500">No users found</p>
+            <Users className="w-12 h-12 text-slate-600 mb-4" />
+            <p className="text-slate-400">No users found</p>
             {searchTerm || filterPlan !== 'all' ? (
               <button
                 onClick={() => {
                   setSearchTerm('');
                   setFilterPlan('all');
                 }}
-                className="mt-2 text-blue-600 hover:text-blue-800"
+                className="mt-2 text-blue-400 hover:text-blue-300"
               >
                 Clear filters
               </button>
@@ -535,10 +536,10 @@ export default function UserDashboard() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-slate-800">
                 <tr>
-                  <th 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-700"
                     onClick={() => handleSort('name')}
                   >
                     Name
@@ -546,8 +547,8 @@ export default function UserDashboard() {
                       <span className="ml-1">{sortBy.direction === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </th>
-                  <th 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-700"
                     onClick={() => handleSort('email')}
                   >
                     Email
@@ -555,8 +556,8 @@ export default function UserDashboard() {
                       <span className="ml-1">{sortBy.direction === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </th>
-                  <th 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-700"
                     onClick={() => handleSort('subscription')}
                   >
                     Subscription
@@ -564,8 +565,8 @@ export default function UserDashboard() {
                       <span className="ml-1">{sortBy.direction === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </th>
-                  <th 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-700"
                     onClick={() => handleSort('createdAt')}
                   >
                     Created
@@ -573,8 +574,8 @@ export default function UserDashboard() {
                       <span className="ml-1">{sortBy.direction === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </th>
-                  <th 
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  <th
+                    className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-700"
                     onClick={() => handleSort('trialEndsAt')}
                   >
                     Trial Status
@@ -582,15 +583,15 @@ export default function UserDashboard() {
                       <span className="ml-1">{sortBy.direction === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                     Payment Method
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-slate-800/50 divide-y divide-slate-700">
                 {filteredUsers.map((user) => {
                   // Calculate trial status
                   const now = new Date();
@@ -610,28 +611,28 @@ export default function UserDashboard() {
                   }
                   
                   return (
-                    <tr key={user.id} className="hover:bg-gray-50">
+                    <tr key={user.id} className="hover:bg-slate-700/50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
+                          <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center text-blue-400 font-semibold">
                             {user.name ? user.name.charAt(0) : '?'}
                           </div>
                           <div className="ml-3">
-                            <div className="text-sm font-medium text-gray-900">{user.name || 'N/A'}</div>
-                            <div className="text-xs text-gray-500">ID: {user.id.substring(0, 8)}...</div>
+                            <div className="text-sm font-medium text-white">{user.name || 'N/A'}</div>
+                            <div className="text-xs text-slate-500">ID: {user.id.substring(0, 8)}...</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{user.email}</div>
+                        <div className="text-sm text-slate-300">{user.email}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getSubscriptionBadge(user.subscription)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <Clock className="w-4 h-4 text-gray-400 mr-2" />
-                          <span className="text-sm text-gray-900">
+                          <Clock className="w-4 h-4 text-slate-500 mr-2" />
+                          <span className="text-sm text-slate-300">
                             {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                           </span>
                         </div>
@@ -642,33 +643,33 @@ export default function UserDashboard() {
                             {trialActive && daysRemaining > 0 ? (
                               <div className="flex items-center">
                                 <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                                <span className="text-sm text-gray-900">
-                                  {daysRemaining === 0 ? 'Expires today' : 
+                                <span className="text-sm text-slate-300">
+                                  {daysRemaining === 0 ? 'Expires today' :
                                    `${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'} left`}
                                 </span>
                               </div>
                             ) : (
                               <div className="flex items-center">
                                 <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
-                                <span className="text-sm text-gray-900">
+                                <span className="text-sm text-slate-300">
                                   {trialEnd ? 'Expired' : 'No end date'}
                                 </span>
                               </div>
                             )}
                           </div>
                         ) : user.subscription === 'free' ? (
-                          <span className="text-sm text-gray-500">N/A</span>
+                          <span className="text-sm text-slate-500">N/A</span>
                         ) : (
                           <div className="flex items-center">
-                            <CreditCard className="w-4 h-4 text-green-500 mr-2" />
-                            <span className="text-sm text-gray-900">Paid Plan</span>
+                            <CreditCard className="w-4 h-4 text-green-400 mr-2" />
+                            <span className="text-sm text-slate-300">Paid Plan</span>
                           </div>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-sm text-gray-900">
+                          <CheckCircle className="w-4 h-4 text-green-400 mr-2" />
+                          <span className="text-sm text-slate-300">
                             {user.paymentMethodAdded ? 'Yes' : 'No'}
                           </span>
                         </div>
@@ -677,7 +678,7 @@ export default function UserDashboard() {
                         <div className="flex items-center justify-end space-x-3">
                           <button
                             onClick={() => handleEditUser(user)}
-                            className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                            className="text-blue-400 hover:text-blue-300 font-medium text-sm"
                             disabled={deletingUserId === user.id}
                           >
                             Edit
@@ -689,7 +690,7 @@ export default function UserDashboard() {
                                 setNewPassword('');
                                 setResetPasswordError(null);
                               }}
-                              className="text-amber-600 hover:text-amber-800 font-medium text-sm flex items-center space-x-1"
+                              className="text-amber-400 hover:text-amber-300 font-medium text-sm flex items-center space-x-1"
                               disabled={deletingUserId === user.id}
                               title="Reset user password"
                             >
@@ -702,8 +703,8 @@ export default function UserDashboard() {
                             disabled={deletingUserId === user.id || user.isAdmin}
                             className={`font-medium text-sm flex items-center space-x-1 ${
                               user.isAdmin
-                                ? 'text-gray-400 cursor-not-allowed'
-                                : 'text-red-600 hover:text-red-800'
+                                ? 'text-slate-600 cursor-not-allowed'
+                                : 'text-red-400 hover:text-red-300'
                             }`}
                             title={user.isAdmin ? 'Cannot delete admin accounts' : 'Delete user'}
                           >
@@ -732,21 +733,21 @@ export default function UserDashboard() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="text-sm text-gray-500 mb-1">Total Users</div>
-          <div className="text-3xl font-bold text-gray-900">{users.length}</div>
+        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
+          <div className="text-sm text-slate-400 mb-1">Total Users</div>
+          <div className="text-3xl font-bold text-white">{users.length}</div>
         </div>
-        
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="text-sm text-gray-500 mb-1">Paid Subscriptions</div>
-          <div className="text-3xl font-bold text-blue-600">
+
+        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
+          <div className="text-sm text-slate-400 mb-1">Paid Subscriptions</div>
+          <div className="text-3xl font-bold text-blue-400">
             {users.filter(u => ['starter', 'professional', 'enterprise'].includes(u.subscription)).length}
           </div>
         </div>
-        
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="text-sm text-gray-500 mb-1">Active Trials</div>
-          <div className="text-3xl font-bold text-yellow-600">
+
+        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
+          <div className="text-sm text-slate-400 mb-1">Active Trials</div>
+          <div className="text-3xl font-bold text-yellow-400">
             {users.filter(u => {
               if (u.subscription !== 'trial') return false;
               const trialEnd = u.trialEndsAt ? new Date(u.trialEndsAt) : null;
@@ -754,10 +755,10 @@ export default function UserDashboard() {
             }).length}
           </div>
         </div>
-        
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="text-sm text-gray-500 mb-1">Payment Methods Added</div>
-          <div className="text-3xl font-bold text-green-600">
+
+        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
+          <div className="text-sm text-slate-400 mb-1">Payment Methods Added</div>
+          <div className="text-3xl font-bold text-green-400">
             {users.filter(u => u.paymentMethodAdded).length}
           </div>
         </div>
@@ -765,51 +766,51 @@ export default function UserDashboard() {
       
       {/* Edit User Modal */}
       {editingUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-xl max-w-md w-full p-6 border border-slate-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Edit User</h3>
+              <h3 className="text-xl font-bold text-white">Edit User</h3>
               <button
                 onClick={() => setEditingUser(null)}
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-1 hover:bg-slate-700 rounded-full transition-colors"
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-5 h-5 text-slate-400" />
               </button>
             </div>
-            
+
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-300 mb-1">
                   Name
                 </label>
                 <input
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-600 text-white placeholder-slate-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-300 mb-1">
                   Email
                 </label>
                 <input
                   type="email"
                   value={editForm.email}
                   onChange={(e) => setEditForm({...editForm, email: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-600 text-white placeholder-slate-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-300 mb-1">
                   Subscription
                 </label>
                 <select
                   value={editForm.subscription}
                   onChange={(e) => setEditForm({...editForm, subscription: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="free">Free</option>
                   <option value="trial">Trial</option>
@@ -818,29 +819,29 @@ export default function UserDashboard() {
                   <option value="enterprise">Enterprise</option>
                 </select>
               </div>
-              
+
               <div className="flex items-center">
                 <input
                   type="checkbox"
                   id="paymentMethodAdded"
                   checked={editForm.paymentMethodAdded}
                   onChange={(e) => setEditForm({...editForm, paymentMethodAdded: e.target.checked})}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-600 bg-slate-900 rounded"
                 />
-                <label htmlFor="paymentMethodAdded" className="ml-2 block text-sm text-gray-900">
+                <label htmlFor="paymentMethodAdded" className="ml-2 block text-sm text-slate-300">
                   Payment Method Added
                 </label>
               </div>
             </div>
-            
+
             <div className="mt-6 flex space-x-3">
               <button
                 onClick={() => setEditingUser(null)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2 border border-slate-600 text-slate-300 rounded-lg hover:bg-slate-700 transition-colors"
               >
                 Cancel
               </button>
-              
+
               <button
                 onClick={handleSaveUser}
                 className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
@@ -855,37 +856,37 @@ export default function UserDashboard() {
 
       {/* Reset Password Modal */}
       {resetPasswordUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-xl max-w-md w-full p-6 border border-slate-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Reset Password</h3>
+              <h3 className="text-xl font-bold text-white">Reset Password</h3>
               <button
                 onClick={() => {
                   setResetPasswordUser(null);
                   setNewPassword('');
                   setResetPasswordError(null);
                 }}
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-1 hover:bg-slate-700 rounded-full transition-colors"
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-5 h-5 text-slate-400" />
               </button>
             </div>
 
             <div className="mb-4">
-              <p className="text-gray-600">
-                Set a new password for <span className="font-semibold">{resetPasswordUser.email}</span>
+              <p className="text-slate-400">
+                Set a new password for <span className="font-semibold text-white">{resetPasswordUser.email}</span>
               </p>
             </div>
 
             {resetPasswordError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm">
                 {resetPasswordError}
               </div>
             )}
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-300 mb-1">
                   New Password
                 </label>
                 <input
@@ -893,7 +894,7 @@ export default function UserDashboard() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Enter new password (min 6 characters)"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-600 text-white placeholder-slate-500 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                   disabled={isResettingPassword}
                 />
               </div>
@@ -907,7 +908,7 @@ export default function UserDashboard() {
                   setResetPasswordError(null);
                 }}
                 disabled={isResettingPassword}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 border border-slate-600 text-slate-300 rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -933,6 +934,7 @@ export default function UserDashboard() {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }

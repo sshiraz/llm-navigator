@@ -8,14 +8,14 @@ const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 // Initialize Stripe
 export const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
-// Check if we're in live mode
-// LIVE MODE ENABLED - Real payments will be processed
-export const isLiveMode = true;
+// Auto-detect live mode based on Stripe key prefix
+// pk_live_ = production, pk_test_ = test mode
+export const isLiveMode = stripePublishableKey?.startsWith('pk_live_') || false;
 
-// Log a warning if using live keys
-if (stripePublishableKey?.startsWith('pk_live_')) {
+// Log mode on initialization
+if (isLiveMode) {
   console.warn('⚠️ LIVE MODE ACTIVE - Using production Stripe keys. Real credit cards will be charged.');
-  PaymentLogger.log('warn', 'StripeUtils', '🔴 LIVE KEYS DETECTED - Forcing test mode for safety');
+  PaymentLogger.log('warn', 'StripeUtils', '🔴 LIVE KEYS DETECTED - Real payments enabled');
 }
 
 // Stripe configuration

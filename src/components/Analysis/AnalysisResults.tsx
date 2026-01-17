@@ -39,26 +39,26 @@ export default function AnalysisResults({ analysis, onBack, logoUrl }: AnalysisR
   };
 
   const getScoreBackground = (score: number) => {
-    if (score >= 80) return 'bg-emerald-50 border-emerald-200';
-    if (score >= 60) return 'bg-yellow-50 border-yellow-200';
-    return 'bg-red-50 border-red-200';
+    if (score >= 80) return 'bg-emerald-900/30 border-emerald-700';
+    if (score >= 60) return 'bg-yellow-900/30 border-yellow-700';
+    return 'bg-red-900/30 border-red-700';
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-emerald-100 text-emerald-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'high': return 'bg-red-900/30 text-red-400';
+      case 'medium': return 'bg-yellow-900/30 text-yellow-400';
+      case 'low': return 'bg-emerald-900/30 text-emerald-400';
+      default: return 'bg-slate-700 text-slate-300';
     }
   };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'hard': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'easy': return 'bg-emerald-100 text-emerald-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'hard': return 'bg-red-900/30 text-red-400';
+      case 'medium': return 'bg-yellow-900/30 text-yellow-400';
+      case 'easy': return 'bg-emerald-900/30 text-emerald-400';
+      default: return 'bg-slate-700 text-slate-300';
     }
   };
 
@@ -162,26 +162,26 @@ export default function AnalysisResults({ analysis, onBack, logoUrl }: AnalysisR
       <div className="mb-8">
         <button
           onClick={onBack}
-          className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 mb-4 transition-colors"
+          className="flex items-center space-x-2 text-slate-400 hover:text-white mb-4 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Analysis</span>
         </button>
-        
+
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">LLM Analysis Report</h1>
+            <h1 className="text-3xl font-bold text-white">LLM Analysis Report</h1>
             <div className="flex items-center space-x-4 mt-2">
               <div className="flex items-center space-x-2">
-                <span className="text-gray-600">Website:</span>
-                <span className="font-medium text-gray-900">{analysis.website}</span>
-                <ExternalLink className="w-4 h-4 text-gray-400" />
+                <span className="text-slate-400">Website:</span>
+                <span className="font-medium text-white">{analysis.website}</span>
+                <ExternalLink className="w-4 h-4 text-slate-500" />
               </div>
               <div className="flex items-center space-x-2">
-                <span className="text-gray-600">
+                <span className="text-slate-400">
                   {analysis.category === 'Answer Engine Optimization' ? 'Prompts:' : 'Keywords:'}
                 </span>
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-white">
                   {analysis.category === 'Answer Engine Optimization'
                     ? `${analysis.keywords.length} prompt${analysis.keywords.length > 1 ? 's' : ''} tested`
                     : analysis.keywords.join(', ')}
@@ -189,11 +189,11 @@ export default function AnalysisResults({ analysis, onBack, logoUrl }: AnalysisR
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-3">
             <div className="text-right">
-              <div className="text-sm text-gray-500">Generated on</div>
-              <div className="text-sm font-medium text-gray-900">
+              <div className="text-sm text-slate-500">Generated on</div>
+              <div className="text-sm font-medium text-white">
                 {new Date(analysis.createdAt).toLocaleDateString()}
               </div>
             </div>
@@ -222,48 +222,48 @@ export default function AnalysisResults({ analysis, onBack, logoUrl }: AnalysisR
         {/* Overall Score - Different display for AEO vs standard analysis */}
         <div className={`rounded-xl border-2 p-8 ${getScoreBackground(analysis.score)}`}>
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl font-bold text-white mb-2">
               {analysis.category === 'Answer Engine Optimization' ? 'AI Citation Rate' : 'Overall LLM Navigator Score'}
             </h2>
             <div className={`text-6xl font-bold mb-4 ${getScoreColor(analysis.score)}`}>
               {analysis.score}
-              <span className="text-2xl text-gray-500">{analysis.category === 'Answer Engine Optimization' ? '%' : '/100'}</span>
+              <span className="text-2xl text-slate-400">{analysis.category === 'Answer Engine Optimization' ? '%' : '/100'}</span>
             </div>
             {analysis.category === 'Answer Engine Optimization' && (
-              <p className="text-gray-600 mb-4">
+              <p className="text-slate-400 mb-4">
                 Your website was cited in {analysis.score}% of AI responses for your search prompts
               </p>
             )}
             <div className="flex items-center justify-center space-x-8">
               <div className="text-center">
-                <div className="text-lg font-semibold text-gray-900">
+                <div className="text-lg font-semibold text-white">
                   {analysis.category === 'Answer Engine Optimization' ? 'Visibility' : 'AI Confidence'}
                 </div>
-                <div className={`text-2xl font-bold ${analysis.score >= 75 ? 'text-emerald-600' : analysis.score >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
+                <div className={`text-2xl font-bold ${analysis.score >= 75 ? 'text-emerald-400' : analysis.score >= 50 ? 'text-amber-400' : 'text-red-400'}`}>
                   {analysis.score >= 75 ? 'High' : analysis.score >= 50 ? 'Medium' : 'Low'}
                 </div>
               </div>
               {analysis.category === 'Answer Engine Optimization' ? (
                 <div className="text-center">
-                  <div className="text-lg font-semibold text-gray-900">Providers Checked</div>
-                  <div className="text-base font-medium text-indigo-600">Perplexity, ChatGPT, Claude</div>
+                  <div className="text-lg font-semibold text-white">Providers Checked</div>
+                  <div className="text-base font-medium text-indigo-400">Perplexity, ChatGPT, Claude</div>
                 </div>
               ) : (
                 <div className="text-center">
-                  <div className="text-lg font-semibold text-gray-900">Category</div>
-                  <div className="text-xl font-medium text-indigo-600">{analysis.category}</div>
+                  <div className="text-lg font-semibold text-white">Category</div>
+                  <div className="text-xl font-medium text-indigo-400">{analysis.category}</div>
                 </div>
               )}
               {analysis.category === 'Answer Engine Optimization' && (
                 <div className="text-center">
-                  <div className="text-lg font-semibold text-gray-900">Prompts Tested</div>
-                  <div className="text-xl font-medium text-purple-600">{analysis.keywords.length}</div>
+                  <div className="text-lg font-semibold text-white">Prompts Tested</div>
+                  <div className="text-xl font-medium text-purple-400">{analysis.keywords.length}</div>
                 </div>
               )}
               {analysis.model && analysis.category !== 'Answer Engine Optimization' && (
               <div className="text-center">
-                <div className="text-lg font-semibold text-gray-900">AI Model</div>
-                <div className="text-xl font-medium text-purple-600">
+                <div className="text-lg font-semibold text-white">AI Model</div>
+                <div className="text-xl font-medium text-purple-400">
                   {analysis.model?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'GPT-4'}
                 </div>
               </div>
@@ -294,22 +294,22 @@ export default function AnalysisResults({ analysis, onBack, logoUrl }: AnalysisR
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* AI Insights */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">AI-Generated Insights</h3>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-gray-700 leading-relaxed">{analysis.insights}</p>
+            <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6 shadow-sm">
+              <h3 className="text-xl font-semibold text-white mb-4">AI-Generated Insights</h3>
+              <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-4">
+                <p className="text-slate-300 leading-relaxed">{analysis.insights}</p>
               </div>
             </div>
 
             {/* Recommendations */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">Actionable Recommendations</h3>
-              
+            <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6 shadow-sm">
+              <h3 className="text-xl font-semibold text-white mb-6">Actionable Recommendations</h3>
+
               <div className="space-y-4">
                 {analysis.recommendations.map((recommendation) => (
-                  <div key={recommendation.id} className="border border-gray-200 rounded-lg p-4">
+                  <div key={recommendation.id} className="border border-slate-700 rounded-lg p-4 bg-slate-800/30">
                     <div className="flex items-start justify-between mb-3">
-                      <h4 className="text-lg font-medium text-gray-900">
+                      <h4 className="text-lg font-medium text-white">
                         {recommendation.title}
                       </h4>
                       <div className="flex space-x-2">
@@ -318,24 +318,24 @@ export default function AnalysisResults({ analysis, onBack, logoUrl }: AnalysisR
                         </span>
                       </div>
                     </div>
-                    
-                    <p className="text-gray-600 mb-4">{recommendation.description}</p>
-                    
+
+                    <p className="text-slate-400 mb-4">{recommendation.description}</p>
+
                     <div className="flex items-center space-x-6 text-sm">
                       <div className="flex items-center space-x-2">
-                        <Clock className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-600">Time: {recommendation.estimatedTime}</span>
+                        <Clock className="w-4 h-4 text-slate-500" />
+                        <span className="text-slate-400">Time: {recommendation.estimatedTime}</span>
                       </div>
-                      
+
                       <div className="flex items-center space-x-2">
                         <span className={`px-2 py-1 text-xs rounded ${getDifficultyColor(recommendation.difficulty)}`}>
                           {recommendation.difficulty}
                         </span>
                       </div>
-                      
+
                       <div className="flex items-center space-x-2">
-                        <Zap className="w-4 h-4 text-emerald-500" />
-                        <span className="text-emerald-600 font-medium">
+                        <Zap className="w-4 h-4 text-emerald-400" />
+                        <span className="text-emerald-400 font-medium">
                           +{recommendation.expectedImpact} points
                         </span>
                       </div>
@@ -349,38 +349,38 @@ export default function AnalysisResults({ analysis, onBack, logoUrl }: AnalysisR
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Quick Stats */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
-              
+            <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-white mb-4">Quick Stats</h3>
+
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Content Quality</span>
-                  <span className="font-semibold text-gray-900">
-                    {analysis.metrics.contentClarity >= 80 ? 'Excellent' : 
+                  <span className="text-slate-400">Content Quality</span>
+                  <span className="font-semibold text-white">
+                    {analysis.metrics.contentClarity >= 80 ? 'Excellent' :
                      analysis.metrics.contentClarity >= 60 ? 'Good' : 'Needs Work'}
                   </span>
                 </div>
-                
+
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Technical Setup</span>
-                  <span className="font-semibold text-gray-900">
-                    {analysis.metrics.structuredData >= 80 ? 'Excellent' : 
+                  <span className="text-slate-400">Technical Setup</span>
+                  <span className="font-semibold text-white">
+                    {analysis.metrics.structuredData >= 80 ? 'Excellent' :
                      analysis.metrics.structuredData >= 60 ? 'Good' : 'Needs Work'}
                   </span>
                 </div>
-                
+
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Keyword Alignment</span>
-                  <span className="font-semibold text-gray-900">
-                    {analysis.metrics.keywordRelevance >= 80 ? 'Excellent' : 
+                  <span className="text-slate-400">Keyword Alignment</span>
+                  <span className="font-semibold text-white">
+                    {analysis.metrics.keywordRelevance >= 80 ? 'Excellent' :
                      analysis.metrics.keywordRelevance >= 60 ? 'Good' : 'Needs Work'}
                   </span>
                 </div>
-                
+
                 <div className="flex justify-between">
-                  <span className="text-gray-600">AI Readiness</span>
-                  <span className="font-semibold text-gray-900">
-                    {analysis.score >= 80 ? 'High' : 
+                  <span className="text-slate-400">AI Readiness</span>
+                  <span className="font-semibold text-white">
+                    {analysis.score >= 80 ? 'High' :
                      analysis.score >= 60 ? 'Medium' : 'Low'}
                   </span>
                 </div>
@@ -388,30 +388,30 @@ export default function AnalysisResults({ analysis, onBack, logoUrl }: AnalysisR
             </div>
 
             {/* Next Steps */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+            <div className="bg-gradient-to-br from-blue-900/30 to-indigo-900/30 border border-blue-700 rounded-xl p-6">
               <div className="flex items-center space-x-2 mb-4">
-                <AlertCircle className="w-5 h-5 text-blue-600" />
-                <h3 className="text-lg font-semibold text-blue-900">Next Steps</h3>
+                <AlertCircle className="w-5 h-5 text-blue-400" />
+                <h3 className="text-lg font-semibold text-blue-300">Next Steps</h3>
               </div>
-              
+
               <div className="space-y-3 text-sm">
                 <div className="flex items-start space-x-2">
-                  <CheckCircle className="w-4 h-4 text-blue-600 mt-0.5" />
-                  <span className="text-blue-800">
+                  <CheckCircle className="w-4 h-4 text-blue-400 mt-0.5" />
+                  <span className="text-blue-300">
                     Focus on high-priority recommendations first
                   </span>
                 </div>
-                
+
                 <div className="flex items-start space-x-2">
-                  <CheckCircle className="w-4 h-4 text-blue-600 mt-0.5" />
-                  <span className="text-blue-800">
+                  <CheckCircle className="w-4 h-4 text-blue-400 mt-0.5" />
+                  <span className="text-blue-300">
                     Re-analyze after implementing changes
                   </span>
                 </div>
-                
+
                 <div className="flex items-start space-x-2">
-                  <CheckCircle className="w-4 h-4 text-blue-600 mt-0.5" />
-                  <span className="text-blue-800">
+                  <CheckCircle className="w-4 h-4 text-blue-400 mt-0.5" />
+                  <span className="text-blue-300">
                     Track competitor improvements
                   </span>
                 </div>
@@ -419,9 +419,9 @@ export default function AnalysisResults({ analysis, onBack, logoUrl }: AnalysisR
             </div>
 
             {/* Report Actions */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Report Actions</h3>
-              
+            <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-white mb-4">Report Actions</h3>
+
               <div className="space-y-3">
                 <button
                   onClick={handleDownloadPDF}
@@ -430,13 +430,13 @@ export default function AnalysisResults({ analysis, onBack, logoUrl }: AnalysisR
                   <FileText className="w-4 h-4" />
                   <span>Download PDF Report</span>
                 </button>
-                
-                <button className="w-full flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+
+                <button className="w-full flex items-center justify-center space-x-2 px-4 py-2 border border-slate-600 text-slate-300 rounded-lg hover:bg-slate-700 transition-colors">
                   <ExternalLink className="w-4 h-4" />
                   <span>Share Report</span>
                 </button>
-                
-                <button className="w-full flex items-center justify-center space-x-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+
+                <button className="w-full flex items-center justify-center space-x-2 px-4 py-2 border border-slate-600 text-slate-300 rounded-lg hover:bg-slate-700 transition-colors">
                   <Zap className="w-4 h-4" />
                   <span>Schedule Re-analysis</span>
                 </button>
@@ -448,30 +448,30 @@ export default function AnalysisResults({ analysis, onBack, logoUrl }: AnalysisR
       
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-xl max-w-md w-full p-6 border border-slate-700">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">Delete Analysis</h3>
+              <h3 className="text-xl font-bold text-white">Delete Analysis</h3>
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-1 hover:bg-slate-700 rounded-full transition-colors"
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-5 h-5 text-slate-400" />
               </button>
             </div>
-            
-            <p className="text-gray-700 mb-6">
+
+            <p className="text-slate-300 mb-6">
               Are you sure you want to delete this analysis? This action cannot be undone.
             </p>
-            
+
             <div className="flex space-x-4">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2 border border-slate-600 text-slate-300 rounded-lg hover:bg-slate-700 transition-colors"
               >
                 Cancel
               </button>
-              
+
               <button
                 onClick={confirmDelete}
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"

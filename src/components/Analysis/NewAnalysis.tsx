@@ -256,17 +256,17 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">
+        <h1 className="text-3xl font-bold text-white mb-4">
           Analyze Your AI Visibility
         </h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+        <p className="text-lg text-slate-400 max-w-2xl mx-auto">
           Enter prompts that your potential customers might ask AI assistants.
           We'll check if you're getting cited by ChatGPT, Claude, and Perplexity.
         </p>
         {(hasLastAnalysis || localStorage.getItem('currentAnalysis')) && (
           <button
             onClick={() => window.location.hash = 'analysis-results'}
-            className="mt-4 inline-flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+            className="mt-4 inline-flex items-center space-x-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors"
           >
             <History className="w-4 h-4" />
             <span>View Last Analysis</span>
@@ -290,17 +290,17 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
       {user && (
         <div className={`mb-8 rounded-xl border-2 p-6 ${
           isRealAnalysis
-            ? 'border-blue-500 bg-blue-50'
-            : 'border-purple-500 bg-purple-50'
+            ? 'border-blue-600 bg-blue-900/30'
+            : 'border-purple-600 bg-purple-900/30'
         }`}>
           <div className="flex items-center justify-center space-x-3 mb-3">
             {isRealAnalysis ? (
-              <Zap className="w-6 h-6 text-blue-600" />
+              <Zap className="w-6 h-6 text-blue-400" />
             ) : (
-              <Sparkles className="w-6 h-6 text-purple-600" />
+              <Sparkles className="w-6 h-6 text-purple-400" />
             )}
             <h3 className={`text-lg font-semibold ${
-              isRealAnalysis ? 'text-blue-900' : 'text-purple-900'
+              isRealAnalysis ? 'text-blue-300' : 'text-purple-300'
             }`}>
               {isRealAnalysis ? 'Live Citation Tracking' : user.subscription === 'trial' ? 'Trial Mode' : 'Demo Mode'}
             </h3>
@@ -309,38 +309,38 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             {isRealAnalysis ? (
               <>
-                <div className="flex items-center space-x-2 text-blue-800">
+                <div className="flex items-center space-x-2 text-blue-300">
                   <div className="w-2 h-2 bg-current rounded-full"></div>
                   <span>Real-time AI model queries</span>
                 </div>
-                <div className="flex items-center space-x-2 text-blue-800">
+                <div className="flex items-center space-x-2 text-blue-300">
                   <div className="w-2 h-2 bg-current rounded-full"></div>
                   <span>Actual citation detection</span>
                 </div>
-                <div className="flex items-center space-x-2 text-blue-800">
+                <div className="flex items-center space-x-2 text-blue-300">
                   <div className="w-2 h-2 bg-current rounded-full"></div>
                   <span>Competitor visibility analysis</span>
                 </div>
-                <div className="flex items-center space-x-2 text-blue-800">
+                <div className="flex items-center space-x-2 text-blue-300">
                   <div className="w-2 h-2 bg-current rounded-full"></div>
                   <span>Actionable AEO recommendations</span>
                 </div>
               </>
             ) : (
               <>
-                <div className="flex items-center space-x-2 text-purple-800">
+                <div className="flex items-center space-x-2 text-purple-300">
                   <div className="w-2 h-2 bg-current rounded-full"></div>
                   <span>Simulated citation results</span>
                 </div>
-                <div className="flex items-center space-x-2 text-purple-800">
+                <div className="flex items-center space-x-2 text-purple-300">
                   <div className="w-2 h-2 bg-current rounded-full"></div>
                   <span>Sample competitor data</span>
                 </div>
-                <div className="flex items-center space-x-2 text-purple-800">
+                <div className="flex items-center space-x-2 text-purple-300">
                   <div className="w-2 h-2 bg-current rounded-full"></div>
                   <span>Full interface preview</span>
                 </div>
-                <div className="flex items-center space-x-2 text-purple-800">
+                <div className="flex items-center space-x-2 text-purple-300">
                   <div className="w-2 h-2 bg-current rounded-full"></div>
                   <span>Example recommendations</span>
                 </div>
@@ -349,10 +349,10 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
           </div>
 
           {!isRealAnalysis && (
-            <div className="mt-4 p-3 bg-white border border-purple-200 rounded-lg">
+            <div className="mt-4 p-3 bg-slate-800 border border-purple-700 rounded-lg">
               <div className="flex items-start space-x-2">
-                <AlertCircle className="w-4 h-4 text-purple-600 mt-0.5" />
-                <p className="text-sm text-purple-800">
+                <AlertCircle className="w-4 h-4 text-purple-400 mt-0.5" />
+                <p className="text-sm text-purple-300">
                   <strong>Want real citations?</strong> Upgrade to any paid plan to query actual AI models
                   and see if your website is being recommended to users.
                 </p>
@@ -364,24 +364,24 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
 
       {/* Error Message */}
       {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="mb-6 bg-red-900/30 border border-red-700 rounded-lg p-4">
           <div className="flex items-start space-x-2">
-            <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
-            <p className="text-red-800">{error}</p>
+            <AlertCircle className="w-5 h-5 text-red-400 mt-0.5" />
+            <p className="text-red-300">{error}</p>
           </div>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Website Input */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-              <Globe className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 bg-blue-900/50 rounded-xl flex items-center justify-center">
+              <Globe className="w-6 h-6 text-blue-400" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Your Website</h3>
-              <p className="text-sm text-gray-600">The website you want to track citations for</p>
+              <h3 className="text-lg font-semibold text-white">Your Website</h3>
+              <p className="text-sm text-slate-400">The website you want to track citations for</p>
             </div>
           </div>
 
@@ -390,19 +390,19 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
             value={website}
             onChange={(e) => setWebsite(e.target.value)}
             placeholder="https://example.com"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+            className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
           />
         </div>
 
         {/* Brand Name Input (Optional) */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-purple-600" />
+            <div className="w-12 h-12 bg-purple-900/50 rounded-xl flex items-center justify-center">
+              <Building2 className="w-6 h-6 text-purple-400" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Brand Name <span className="text-gray-400 font-normal">(optional)</span></h3>
-              <p className="text-sm text-gray-600">We'll also check for mentions of your brand name</p>
+              <h3 className="text-lg font-semibold text-white">Brand Name <span className="text-slate-500 font-normal">(optional)</span></h3>
+              <p className="text-sm text-slate-400">We'll also check for mentions of your brand name</p>
             </div>
           </div>
 
@@ -411,19 +411,19 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
             value={brandName}
             onChange={(e) => setBrandName(e.target.value)}
             placeholder="Your Company Name"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+            className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
           />
         </div>
 
         {/* Prompts Input */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
           <div className="flex items-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
-              <MessageSquare className="w-6 h-6 text-emerald-600" />
+            <div className="w-12 h-12 bg-emerald-900/50 rounded-xl flex items-center justify-center">
+              <MessageSquare className="w-6 h-6 text-emerald-400" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Search Prompts</h3>
-              <p className="text-sm text-gray-600">
+              <h3 className="text-lg font-semibold text-white">Search Prompts</h3>
+              <p className="text-sm text-slate-400">
                 Enter questions your customers might ask AI assistants ({prompts.length}/{maxPrompts})
               </p>
             </div>
@@ -432,19 +432,19 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
           <div className="space-y-3">
             {prompts.map((prompt, index) => (
               <div key={prompt.id} className="flex items-center space-x-2">
-                <span className="text-gray-400 text-sm w-6">{index + 1}.</span>
+                <span className="text-slate-500 text-sm w-6">{index + 1}.</span>
                 <input
                   type="text"
                   value={prompt.text}
                   onChange={(e) => updatePrompt(prompt.id, e.target.value)}
                   placeholder="e.g., What are the best marketing automation tools?"
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className="flex-1 px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                 />
                 {prompts.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removePrompt(prompt.id)}
-                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                    className="p-2 text-slate-500 hover:text-red-400 transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -457,7 +457,7 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
             <button
               type="button"
               onClick={addPrompt}
-              className="mt-3 flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium"
+              className="mt-3 flex items-center space-x-2 text-blue-400 hover:text-blue-300 font-medium"
             >
               <Plus className="w-4 h-4" />
               <span>Add another prompt</span>
@@ -465,10 +465,10 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
           )}
 
           {/* Prompt Suggestions */}
-          <div className="mt-4 pt-4 border-t border-gray-100">
+          <div className="mt-4 pt-4 border-t border-slate-700">
             <div className="flex items-center space-x-2 mb-3">
-              <Lightbulb className="w-4 h-4 text-yellow-500" />
-              <span className="text-sm font-medium text-gray-700">Example prompts:</span>
+              <Lightbulb className="w-4 h-4 text-yellow-400" />
+              <span className="text-sm font-medium text-slate-300">Example prompts:</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {suggestedPrompts.map((suggestion, index) => (
@@ -483,7 +483,7 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
                       setPrompts([...prompts, { id: generateId(), text: suggestion }]);
                     }
                   }}
-                  className="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 transition-colors"
+                  className="px-3 py-1 bg-slate-700 text-slate-300 text-sm rounded-md hover:bg-slate-600 transition-colors"
                 >
                   {suggestion}
                 </button>
@@ -493,9 +493,9 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
         </div>
 
         {/* Provider Selection */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">AI Providers to Check</h3>
-          <p className="text-sm text-gray-600 mb-4">
+        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
+          <h3 className="text-lg font-semibold text-white mb-2">AI Providers to Check</h3>
+          <p className="text-sm text-slate-400 mb-4">
             Select which AI assistants to query for citations
           </p>
 
@@ -511,17 +511,17 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
                 onClick={() => toggleProvider(provider.id)}
                 className={`p-4 rounded-lg border-2 text-left transition-all ${
                   selectedProviders.includes(provider.id)
-                    ? `border-${provider.color}-500 bg-${provider.color}-50`
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? `border-${provider.color}-500 bg-${provider.color}-900/30`
+                    : 'border-slate-600 hover:border-slate-500 bg-slate-900/50'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-gray-900">{provider.name}</span>
+                  <span className="font-semibold text-white">{provider.name}</span>
                   {selectedProviders.includes(provider.id) && (
-                    <CheckCircle className={`w-5 h-5 text-${provider.color}-600`} />
+                    <CheckCircle className={`w-5 h-5 text-${provider.color}-400`} />
                   )}
                 </div>
-                <p className="text-sm text-gray-600">{provider.description}</p>
+                <p className="text-sm text-slate-400">{provider.description}</p>
               </button>
             ))}
           </div>
@@ -529,41 +529,41 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
 
         {/* Cost Estimate */}
         {isRealAnalysis && validPromptCount > 0 && (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-gray-900">Estimated Cost</p>
-                <p className="text-sm text-gray-600">
+                <p className="font-medium text-white">Estimated Cost</p>
+                <p className="text-sm text-slate-400">
                   {validPromptCount} prompt{validPromptCount > 1 ? 's' : ''} × {selectedProviders.length} provider{selectedProviders.length > 1 ? 's' : ''} = {validPromptCount * selectedProviders.length} queries
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-gray-900">${estimatedCost.toFixed(2)}</p>
-                <p className="text-sm text-gray-500">~$0.02 per query</p>
+                <p className="text-2xl font-bold text-white">${estimatedCost.toFixed(2)}</p>
+                <p className="text-sm text-slate-500">~$0.02 per query</p>
               </div>
             </div>
           </div>
         )}
 
         {/* What You'll Get */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-3">What You'll Get</h3>
+        <div className="bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border border-blue-700 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-blue-300 mb-3">What You'll Get</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-              <span className="text-blue-800">Citation rate across AI providers</span>
+              <div className="w-2 h-2 bg-blue-400 rounded-full mt-2"></div>
+              <span className="text-blue-200">Citation rate across AI providers</span>
             </div>
             <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-              <span className="text-blue-800">Which competitors ARE getting cited</span>
+              <div className="w-2 h-2 bg-blue-400 rounded-full mt-2"></div>
+              <span className="text-blue-200">Which competitors ARE getting cited</span>
             </div>
             <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-              <span className="text-blue-800">Content analysis of your website</span>
+              <div className="w-2 h-2 bg-blue-400 rounded-full mt-2"></div>
+              <span className="text-blue-200">Content analysis of your website</span>
             </div>
             <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-              <span className="text-blue-800">AEO recommendations to improve visibility</span>
+              <div className="w-2 h-2 bg-blue-400 rounded-full mt-2"></div>
+              <span className="text-blue-200">AEO recommendations to improve visibility</span>
             </div>
           </div>
         </div>
@@ -593,13 +593,13 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
 
         {!canAnalyze && (
           <div className="text-center">
-            <p className="text-gray-600 mb-2">
+            <p className="text-slate-400 mb-2">
               You've reached your monthly analysis limit.
             </p>
             <button
               type="button"
               onClick={() => window.location.hash = '#pricing'}
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="text-blue-400 hover:text-blue-300 font-medium"
             >
               Upgrade your plan to continue
             </button>
