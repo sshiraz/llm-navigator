@@ -20,7 +20,7 @@ export default function ApiDocs() {
     "url": "https://example.com",
     "prompts": ["best project management software", "top PM tools 2024"],
     "brandName": "Example Corp",
-    "providers": ["perplexity", "openai", "anthropic"]
+    "providers": ["perplexity", "openai", "anthropic", "gemini"]
   }'`,
     listAnalyses: `curl ${baseUrl}/analyses \\
   -H "Authorization: Bearer llm_sk_your_api_key"`,
@@ -131,9 +131,10 @@ export default function ApiDocs() {
   ],
   "brandName": "Example Corp",       // Optional: Brand name to look for
   "providers": [                     // Optional: AI providers to query
-    "perplexity",                    // Default: all three
+    "perplexity",                    // Default: all four
     "openai",
-    "anthropic"
+    "anthropic",
+    "gemini"
   ]
 }`}</pre>
             </div>

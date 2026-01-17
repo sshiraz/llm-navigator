@@ -13,7 +13,7 @@ interface CompetitorCitation {
 interface CitationResult {
   promptId: string;
   prompt: string;
-  provider: 'openai' | 'anthropic' | 'perplexity';
+  provider: 'openai' | 'anthropic' | 'perplexity' | 'gemini';
   modelUsed: string;
   response: string;
   isCited: boolean;
@@ -28,14 +28,15 @@ interface CheckCitationsRequest {
   prompts: { id: string; text: string }[];
   website: string;
   brandName?: string;
-  providers: ('openai' | 'anthropic' | 'perplexity')[];
+  providers: ('openai' | 'anthropic' | 'perplexity' | 'gemini')[];
 }
 
 // Cost per 1K tokens (approximate)
-const COSTS = {
+const COSTS: Record<string, { input: number; output: number }> = {
   openai: { input: 0.01, output: 0.03 },      // GPT-4o
   anthropic: { input: 0.003, output: 0.015 }, // Claude 3 Haiku (cost-effective)
-  perplexity: { input: 0.001, output: 0.001 } // Perplexity Sonar
+  perplexity: { input: 0.001, output: 0.001 }, // Perplexity Sonar
+  gemini: { input: 0.00025, output: 0.0005 }  // Gemini 1.5 Flash (very cost-effective)
 };
 
 // Extract domain from URL
@@ -280,9 +281,60 @@ async function queryPerplexity(
   };
 }
 
+// Query Google Gemini
+async function queryGemini(
+  prompt: string,
+  apiKey: string
+): Promise<{ response: string; tokensUsed: number; model: string }> {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `You are a helpful assistant. Provide informative, factual answers. When relevant, mention specific websites, companies, or resources that could help the user.\n\nUser: ${prompt}`
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          maxOutputTokens: 1000,
+          temperature: 0.7
+        }
+      })
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Gemini API error: ${response.status} - ${error}`);
+  }
+
+  const data = await response.json();
+
+  // Extract text from Gemini response
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+  // Gemini returns token counts in usageMetadata
+  const inputTokens = data.usageMetadata?.promptTokenCount || 0;
+  const outputTokens = data.usageMetadata?.candidatesTokenCount || 0;
+
+  return {
+    response: text,
+    tokensUsed: inputTokens + outputTokens,
+    model: 'gemini-1.5-flash'
+  };
+}
+
 // Calculate cost
 function calculateCost(
-  provider: 'openai' | 'anthropic' | 'perplexity',
+  provider: 'openai' | 'anthropic' | 'perplexity' | 'gemini',
   tokensUsed: number
 ): number {
   const costs = COSTS[provider];
@@ -298,7 +350,7 @@ function calculateCost(
 async function processPrompt(
   promptId: string,
   promptText: string,
-  provider: 'openai' | 'anthropic' | 'perplexity',
+  provider: 'openai' | 'anthropic' | 'perplexity' | 'gemini',
   website: string,
   brandName: string | undefined,
   apiKeys: Record<string, string>
@@ -318,6 +370,9 @@ async function processPrompt(
         break;
       case 'perplexity':
         result = await queryPerplexity(promptText, apiKeys.perplexity);
+        break;
+      case 'gemini':
+        result = await queryGemini(promptText, apiKeys.gemini);
         break;
     }
 
@@ -412,7 +467,8 @@ serve(async (req) => {
     const apiKeys = {
       openai: Deno.env.get('OPENAI_API_KEY') || '',
       anthropic: Deno.env.get('ANTHROPIC_API_KEY') || '',
-      perplexity: Deno.env.get('PERPLEXITY_API_KEY') || ''
+      perplexity: Deno.env.get('PERPLEXITY_API_KEY') || '',
+      gemini: Deno.env.get('GEMINI_API_KEY') || ''
     };
 
     // Validate we have keys for requested providers

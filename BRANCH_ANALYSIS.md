@@ -4121,6 +4121,94 @@ Both migrations are idempotent (safe to re-run):
 
 ---
 
+## 2026-01-17: Add Gemini AI Provider Support
+
+**Commit:** `pending`
+
+### Context
+
+Expanding AI provider coverage to include Google's Gemini AI. Previously supported OpenAI (ChatGPT), Anthropic (Claude), and Perplexity. Adding Gemini gives users broader citation tracking across all major AI assistants.
+
+### Changes & Reasoning
+
+#### 1. Edge Function (`supabase/functions/check-citations/index.ts`)
+
+**Problem:** No support for querying Gemini AI for citation checks.
+
+**Solution:** Added full Gemini integration:
+- Added `'gemini'` to provider type union
+- Added Gemini cost constants (most cost-effective option)
+- Implemented `queryGemini()` function using Gemini 1.5 Flash API
+- Added gemini case to `processPrompt` switch statement
+- Added `GEMINI_API_KEY` environment variable
+
+```typescript
+const COSTS: Record<string, { input: number; output: number }> = {
+  openai: { input: 0.01, output: 0.03 },      // GPT-4o
+  anthropic: { input: 0.003, output: 0.015 }, // Claude 3 Haiku
+  perplexity: { input: 0.001, output: 0.001 }, // Perplexity Sonar
+  gemini: { input: 0.00025, output: 0.0005 }  // Gemini 1.5 Flash - 50x cheaper than OpenAI
+};
+```
+
+#### 2. Type Definitions (`src/types/index.ts`)
+
+**Problem:** TypeScript didn't recognize `'gemini'` as valid provider.
+
+**Solution:** Added `'gemini'` to `AnalysisProvider` type union:
+```typescript
+export type AnalysisProvider = 'openai' | 'anthropic' | 'perplexity' | 'gemini' | 'local';
+```
+
+#### 3. Analysis UI (`src/components/Analysis/NewAnalysis.tsx`)
+
+**Problem:** Users couldn't select Gemini as a provider option.
+
+**Solution:**
+- Added Gemini to provider selection grid with amber color theme
+- Changed grid from 3-column to responsive 2/4-column layout for 4 providers
+- Updated header text to mention Gemini
+
+```typescript
+{ id: 'gemini' as AnalysisProvider, name: 'Gemini', description: 'Google AI - brand mention detection', color: 'amber' }
+```
+
+#### 4. API Documentation (`src/components/Docs/ApiDocs.tsx`)
+
+**Problem:** API docs didn't show Gemini as available provider.
+
+**Solution:** Updated example requests and providers array in documentation.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `supabase/functions/check-citations/index.ts` | Add Gemini API integration |
+| `src/types/index.ts` | Add gemini to AnalysisProvider type |
+| `src/components/Analysis/NewAnalysis.tsx` | Add Gemini to UI provider selection |
+| `src/components/Docs/ApiDocs.tsx` | Update API docs examples |
+
+### Deployment Steps
+
+```bash
+# Set Gemini API key in Supabase secrets
+npx supabase secrets set GEMINI_API_KEY=your_key
+
+# Deploy edge function
+npx supabase functions deploy check-citations
+
+# Frontend auto-deploys via Netlify on push to main
+```
+
+### Cost Impact
+
+Gemini 1.5 Flash is the most cost-effective provider:
+- ~$0.0005 per query vs $0.029 for OpenAI (50x cheaper)
+- Adds minimal infrastructure cost even if all users enable it
+- Good option for users wanting broad AI coverage at lower cost
+
+---
+
 ## Template for Future Entries
 
 ```markdown

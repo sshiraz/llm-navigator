@@ -153,7 +153,7 @@ export interface ApiUsage {
     model?: number;
     embeddings: number;
   };
-  provider: 'openai' | 'anthropic' | 'perplexity' | 'local'; 
+  provider: 'openai' | 'anthropic' | 'perplexity' | 'gemini' | 'local'; 
   modelVariantId?: string; // Reference to the model variant used
   success: boolean;
   errorCode?: string;
@@ -171,7 +171,7 @@ export interface UsageLimits {
   resetDate: string;
 }
 
-export type AnalysisProvider = 'openai' | 'anthropic' | 'perplexity' | 'local';
+export type AnalysisProvider = 'openai' | 'anthropic' | 'perplexity' | 'gemini' | 'local';
 
 // ============================================
 // AEO (Answer Engine Optimization) Types

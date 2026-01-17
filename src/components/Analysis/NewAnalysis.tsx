@@ -261,7 +261,7 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
         </h1>
         <p className="text-lg text-slate-400 max-w-2xl mx-auto">
           Enter prompts that your potential customers might ask AI assistants.
-          We'll check if you're getting cited by ChatGPT, Claude, and Perplexity.
+          We'll check if you're getting cited by ChatGPT, Claude, Gemini, and Perplexity.
         </p>
         {(hasLastAnalysis || localStorage.getItem('currentAnalysis')) && (
           <button
@@ -499,11 +499,12 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
             Select which AI assistants to query for citations
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { id: 'perplexity' as AnalysisProvider, name: 'Perplexity', description: 'Best for citations - returns source URLs', color: 'blue' },
               { id: 'openai' as AnalysisProvider, name: 'ChatGPT', description: 'Brand mention detection', color: 'green' },
-              { id: 'anthropic' as AnalysisProvider, name: 'Claude', description: 'Brand mention detection', color: 'purple' }
+              { id: 'anthropic' as AnalysisProvider, name: 'Claude', description: 'Brand mention detection', color: 'purple' },
+              { id: 'gemini' as AnalysisProvider, name: 'Gemini', description: 'Google AI - brand mention detection', color: 'amber' }
             ].map((provider) => (
               <button
                 key={provider.id}
