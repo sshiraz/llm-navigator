@@ -208,10 +208,10 @@ export default function MetricsBreakdown({ analysis, competitors = [], previousA
 
                     {/* Tooltip */}
                     {hoveredMetric === metric.key && (
-                      <div className="absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-3 bg-slate-900 text-white text-xs rounded-lg shadow-lg border border-slate-700">
-                        <div className="font-medium mb-1">{metric.description}</div>
-                        <div className="text-slate-400">{metric.tooltip}</div>
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900"></div>
+                      <div className="absolute z-50 top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 p-3 bg-slate-900 text-white text-xs rounded-lg shadow-xl border border-slate-600">
+                        <div className="font-medium mb-1 text-blue-300">{metric.description}</div>
+                        <div className="text-slate-300 leading-relaxed">{metric.tooltip}</div>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-slate-900"></div>
                       </div>
                     )}
                   </th>

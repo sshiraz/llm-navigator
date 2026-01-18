@@ -4209,6 +4209,62 @@ Gemini 1.5 Flash is the most cost-effective provider:
 
 ---
 
+## 2026-01-17: Fix Performance Snapshot tooltip positioning
+
+**Commit:** `pending`
+
+### Context
+
+Column header tooltips in the Performance Snapshot table (Clarity, Depth, Trust, Quotable, Match) were not visible. The tooltips existed but were positioned above the headers (`bottom-full`), causing them to appear off-screen since the table headers are at the top of the viewport.
+
+### Changes & Reasoning
+
+#### MetricsBreakdown.tsx Tooltip Fix
+
+**Problem:** Tooltips appeared above headers, often cut off by viewport edge.
+
+**Solution:** Repositioned tooltips to appear below headers:
+- Changed `bottom-full` to `top-full` (tooltip below instead of above)
+- Changed `mb-2` to `mt-2` (margin direction)
+- Increased `z-10` to `z-50` (ensure visibility above table content)
+- Flipped arrow direction (border-t to border-b)
+- Improved styling for better contrast
+
+```tsx
+// Before
+<div className="absolute z-10 bottom-full ... mb-2">
+
+// After
+<div className="absolute z-50 top-full ... mt-2">
+```
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/Analysis/MetricsBreakdown.tsx` | Fix tooltip positioning |
+
+### Testing Performed
+
+```bash
+npm run test:run && npm run build
+```
+
+- **Test Suite:** 462 passed, 0 failed
+- **Build:** Passes
+- **Manual:** Tooltips now visible on hover over column headers
+
+### Tooltip Content
+
+Each column now shows explanatory tooltip on hover:
+- **Clarity:** "Can AI quickly understand who you are and what you do?"
+- **Depth:** "Is your content thorough enough to be trusted?"
+- **Trust:** "Can AI verify your business exists?"
+- **Quotable:** "Can AI safely quote your content?"
+- **Match:** "Does your content match what people search for?"
+
+---
+
 ## Template for Future Entries
 
 ```markdown
