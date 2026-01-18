@@ -1,6 +1,6 @@
 # Master Feature List
 
-> Last updated: 2026-01-16
+> Last updated: 2026-01-18
 > Single source of truth for all features, organized by category.
 >
 > Legend: ✅ Complete | ⚠️ Partial | ❌ Not Started | 🔄 In Progress
@@ -11,7 +11,7 @@
 
 | Category | Complete | Partial | Pending | Total |
 |----------|----------|---------|---------|-------|
-| Core Features | 15 | 1 | 3 | 19 |
+| Core Features | 16 | 1 | 2 | 19 |
 | Security | 23 | 1 | 3 | 27 |
 | Scalability | 8 | 1 | 9 | 18 |
 | Testing | 7 | 1 | 0 | 8 |
@@ -20,9 +20,9 @@
 | Payments | 9 | 0 | 2 | 11 |
 | User Experience | 9 | 0 | 3 | 12 |
 | Admin | 5 | 1 | 1 | 7 |
-| **Total** | **88** | **6** | **27** | **121** |
+| **Total** | **89** | **6** | **26** | **121** |
 
-**Overall Progress: 78% complete**
+**Overall Progress: 79% complete**
 
 ---
 
@@ -41,7 +41,7 @@
 | ✅ | Citation Results Detail UI | Per-prompt AI responses, expandable accordion |
 | ✅ | Competitor Strategy (real data) | Uses actual citationResults, not mock data |
 | ✅ | Demo Mode indicator | Clear banner for simulated vs real data |
-| ❌ | Google Gemini integration | Future provider |
+| ✅ | Google Gemini integration | Added 2026-01-17 |
 | ❌ | Microsoft Copilot integration | Future provider |
 | ❌ | Meta AI integration | Future provider |
 
@@ -189,7 +189,7 @@
 | ✅ | Navigation tests | Hash routing, localStorage persistence |
 | ✅ | Analysis engine tests | analysisEngine.test.ts (16 tests) - real vs simulated |
 | ✅ | Security tests | sanitize.test.ts (115 tests), auditLogService.test.ts (28 tests) |
-| ✅ | Test coverage | 462 tests across 16 files (2026-01-16) |
+| ✅ | Test coverage | 577 tests across 18 files (2026-01-18) |
 
 ### Integration Testing
 | Status | Feature | Notes |
@@ -357,22 +357,21 @@
 
 ### Critical (Security)
 1. ⚠️ Rate limiting - API has limits, main app does not
-2. ❌ MFA for admin - High-value target
 
 ### High Priority (Scalability)
-4. ❌ Redis caching - Every request hits DB
-5. ⚠️ localStorage migration - Data loss risk
-6. ❌ Background job queue - Blocking UI
+2. ❌ Redis caching - Every request hits DB
+3. ⚠️ localStorage migration - Data loss risk
+4. ❌ Background job queue - Blocking UI
 
 ### High Priority (DevOps)
-7. ❌ CI/CD pipeline - Manual deploys
-8. ❌ Error tracking - No visibility into errors
-9. ❌ Load testing - Unknown capacity
+5. ❌ CI/CD pipeline - Manual deploys
+6. ❌ Error tracking - No visibility into errors
+7. ❌ Load testing - Unknown capacity
 
 ### Medium Priority (Features)
-10. ❌ Scheduled monitoring - Manual re-analysis only
-11. ❌ Trend charts - History exists but no visualization
-12. ❌ More AI providers - Only 3 currently
+8. ❌ Scheduled monitoring - Manual re-analysis only
+9. ❌ Trend charts - History exists but no visualization
+10. ❌ More AI providers - Gemini added, 2 remaining (Copilot, Meta AI)
 
 ---
 
@@ -424,3 +423,16 @@
 | 2026-01-12 | Admin accounts: automatic enterprise plan, no billing UI, webhook protection |
 | 2026-01-12 | Free Report page: real ChatGPT analysis, lead capture, competitor detection |
 | 2026-01-12 | Fixed domain extraction in check-citations (trailing punctuation cleanup) |
+| 2026-01-16 | GDPR compliance: cookie consent, data export (JSON), account deletion |
+| 2026-01-16 | Security audit logging: auth events, admin actions, 2FA events |
+| 2026-01-16 | Two-factor authentication (TOTP) via Supabase MFA |
+| 2026-01-16 | Data Processing Agreement (DPA) page for enterprise/B2B |
+| 2026-01-17 | Google Gemini AI provider integration for citation tracking |
+| 2026-01-17 | Free Report abuse prevention: rate limiting, honeypot, email validation |
+| 2026-01-17 | Critical security fixes: Edge Function authentication, admin operations |
+| 2026-01-17 | Performance Snapshot tooltip positioning fix |
+| 2026-01-17 | Admin user management authentication hardening |
+| 2026-01-17 | Hard paywall for expired trial users |
+| 2026-01-17 | Unit tests for admin auth and user utilities (577 total tests) |
+| 2026-01-18 | Stripe customer name and payment method storage for recurring billing |
+| 2026-01-18 | Payment metadata fix: real userId and email instead of placeholders |

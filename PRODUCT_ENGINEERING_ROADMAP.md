@@ -1,4 +1,6 @@
 # LLM Navigator Engineering Blueprint
+> Last updated: 2026-01-18
+>
 > This defines **how the system is structured, what constraints exist, and how development must evolve.**
 
 ---
@@ -34,9 +36,10 @@ A SaaS product that analyzes websites for **AI search discoverability**, generat
 
 ### AI Layer
 - Multi-Model abstraction:
-    - GPT-4
-    - Claude 3.5
+    - GPT-4 (OpenAI)
+    - Claude 3.5 (Anthropic)
     - Perplexity
+    - Google Gemini (added 2026-01-17)
 
 ### Payment System
 - Stripe Checkout + Subscription Webhooks
@@ -50,16 +53,19 @@ A SaaS product that analyzes websites for **AI search discoverability**, generat
 
 ## 3. Existing Core Features
 
-✔ Website crawling + AI scoring  
-✔ Multi-tier subscription gating  
-✔ Competitor tracking  
-✔ Usage cost tracking (~$0.20/run)  
-✔ Admin dashboard  
-✔ Fraud prevention engine:
-- device fingerprint
-- IP / velocity heuristics
-
+✔ Website crawling + AI scoring
+✔ Multi-tier subscription gating (Starter, Professional, Enterprise)
+✔ Competitor tracking with citation analysis
+✔ Usage cost tracking (~$0.20/run)
+✔ Admin dashboard
 ✔ Real-time progress feedback
+✔ 4 AI providers (OpenAI, Anthropic, Perplexity, Gemini)
+✔ GDPR/CCPA compliance (data export, deletion, cookie consent)
+✔ Two-factor authentication (TOTP)
+✔ Security audit logging
+✔ Free Report lead generation page
+✔ Live Stripe payments
+✔ Hard paywall for expired trials
 
 ---
 
@@ -86,17 +92,19 @@ No bypass permitted.
 
 ---
 
-### 4.3 Billing & Fraud Integrity
+### 4.3 Billing Integrity
 
 All compute / analysis:
 - gated by Stripe subscription state
 - tallied in `api_usage`
-- subject to fraud checks
+- trial users see simulated data only (no real API costs)
 
 Do not build anything that enables:
 - infinite free trial
 - untracked analysis
 - bypassing usage metering
+
+> **Note:** Complex fraud prevention was removed (2026-01-09) because trial users only see simulated data. The cost of trial abuse is zero.
 
 ---
 
@@ -178,8 +186,11 @@ Test suites must cover:
 - Simulation parsing
 - DB persistence behavior
 - Stripe subscription enforcement
-- Fraud engine thresholds
 - Edge Function behavior
+- Security (input sanitization, auth)
+- GDPR compliance (data export, deletion)
+
+**Current coverage:** 577 tests across 18 files
 
 ---
 

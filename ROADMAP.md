@@ -1,10 +1,12 @@
 # LLM Navigator Roadmap
 
+> Last updated: 2026-01-18
+
 ## Completed Features
 
 ### AEO (Answer Engine Optimization)
 - [x] Prompt-based citation checking (replaces keywords)
-- [x] Real API queries to Perplexity, OpenAI, Anthropic
+- [x] Real API queries to Perplexity, OpenAI, Anthropic, **Google Gemini**
 - [x] Competitor citation tracking (who IS getting cited)
 - [x] AEO-specific recommendations
 - [x] Brand name detection
@@ -24,6 +26,20 @@
 - [x] Supabase storage for analyses
 - [x] Cost tracking for citation checks
 - [x] Analysis engine tests (16 tests for real vs simulated flows)
+- [x] Live Stripe payments (production mode)
+- [x] Hard paywall for expired trials
+
+### Security & Compliance
+- [x] Two-factor authentication (TOTP)
+- [x] GDPR compliance (data export, account deletion)
+- [x] Cookie consent banner
+- [x] Security audit logging
+- [x] Input sanitization (XSS, SQL injection prevention)
+
+### Lead Generation
+- [x] Free Report page with real AI analysis
+- [x] Email capture and upsell flow
+- [x] Abuse prevention (rate limiting, honeypot)
 
 ---
 
@@ -41,10 +57,10 @@
 - Export charts for reports
 
 ### 3. More AI Providers
-- Google Gemini
-- Microsoft Bing Chat / Copilot
-- Meta AI
-- Other emerging AI assistants
+- [x] ~~Google Gemini~~ (Added 2026-01-17)
+- [ ] Microsoft Bing Chat / Copilot
+- [ ] Meta AI
+- [ ] Other emerging AI assistants
 
 ### 4. Enhanced Competitor Intelligence
 - Track specific competitors over time
@@ -60,8 +76,9 @@
 
 ## Future Considerations
 
-- API access for enterprise customers
-- White-label reports
-- Team collaboration features
-- Integration with CMS platforms (WordPress, etc.)
-- Chrome extension for quick checks
+- [x] ~~API access for enterprise customers~~ (Added 2026-01-09)
+- [x] ~~White-label/branded reports~~ (Added 2026-01-09 - company logo on PDF exports)
+- [ ] Team collaboration features
+- [ ] Integration with CMS platforms (WordPress, etc.)
+- [ ] Chrome extension for quick checks
+- [ ] OAuth providers (Google, GitHub login)
