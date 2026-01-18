@@ -101,6 +101,87 @@ Future payments will show in Stripe dashboard:
 
 ---
 
+## 2026-01-18: Fix 403 Error on Payment Record Insert
+
+**Commit:** `Remove redundant frontend payment INSERT - webhook handles it`
+
+### Context
+
+After a successful payment, the console showed:
+```
+[Database] [LIVE] INSERT payment record on payments - Failed
+Failed to load resource: the server responded with a status of 403 ()
+[Database] [LIVE] INSERT payment record on payments - Success
+```
+
+The payment succeeded, but there was a 403 error followed by success. Investigation revealed the frontend was trying to INSERT into `payments` table, which was blocked by RLS.
+
+### Root Cause
+
+The `payments` table RLS policies only allow:
+- **SELECT** for authenticated users (read own payments)
+- **ALL** for service_role only
+
+There was **no INSERT policy for authenticated users**. The frontend INSERT failed (403), but the Stripe webhook (using service_role) succeeded - creating duplicate attempts.
+
+### Solution
+
+Removed the redundant frontend INSERT from `handlePaymentSuccess()`. The Stripe webhook already handles payment recording with proper service_role credentials.
+
+**Before:**
+```
+Frontend: UPDATE users (subscription) ✓
+Frontend: INSERT payments ✗ (403 - no RLS policy)
+Webhook:  INSERT payments ✓ (service_role)
+```
+
+**After:**
+```
+Frontend: UPDATE users (subscription) ✓
+Webhook:  INSERT payments ✓ (service_role)
+```
+
+### Why This Approach
+
+Two options were considered:
+1. Add INSERT policy for authenticated users
+2. Remove frontend INSERT (let webhook handle it)
+
+**Chose option 2** because:
+- Single source of truth (webhook only)
+- No duplicate insert attempts
+- Service role is more secure for payment records
+- Webhook is the canonical source for Stripe events
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/services/paymentService.ts` | Remove INSERT into `payments` from `handlePaymentSuccess()` |
+
+### Testing Performed
+
+```
+npm run test:run && npm run build
+
+Test Files  18 passed (18)
+     Tests  577 passed (577)
+  Duration  16.38s
+```
+
+Build: Passes
+
+### Data Flow Clarification
+
+| Data | Table | Updated By | Persists Across Logins |
+|------|-------|------------|------------------------|
+| Subscription level | `users` | Frontend | Yes |
+| Payment history | `payments` | Webhook | Yes |
+
+The subscription is stored in `users` table and fetched fresh on every login via `AuthService.getCurrentSession()`.
+
+---
+
 ## Template for Future Entries
 
 ```markdown

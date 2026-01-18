@@ -216,22 +216,8 @@ export class PaymentService {
 
       PaymentLogger.trackDatabaseUpdate('users', 'UPDATE subscription', true, { userId, plan });
 
-      // Log the payment
-      const paymentData = {
-        user_id: userId,
-        stripe_payment_intent_id: paymentIntentId,
-        plan,
-        amount: STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS]?.amount || 0,
-        currency: 'usd',
-        status: 'succeeded',
-        created_at: new Date().toISOString()
-      };
-      
-      PaymentLogger.trackDatabaseUpdate('payments', 'INSERT payment record', false, paymentData);
-      
-      await supabase.from('payments').insert(paymentData);
-
-      PaymentLogger.trackDatabaseUpdate('payments', 'INSERT payment record', true, { userId, paymentIntentId });
+      // Note: Payment record is inserted by the Stripe webhook (uses service_role)
+      // Frontend only updates user subscription for immediate UI feedback
       PaymentLogger.trackPaymentFlow('Payment success handled completely', { userId, plan });
       
       return { success: true };

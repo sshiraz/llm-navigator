@@ -436,3 +436,4 @@
 | 2026-01-17 | Unit tests for admin auth and user utilities (577 total tests) |
 | 2026-01-18 | Stripe customer name and payment method storage for recurring billing |
 | 2026-01-18 | Payment metadata fix: real userId and email instead of placeholders |
+| 2026-01-18 | Fix 403 error: remove redundant frontend payment INSERT (webhook handles it) |
