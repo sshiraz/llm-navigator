@@ -12,7 +12,7 @@
 | Auth | Supabase Auth |
 | Backend | Supabase Edge Functions (Deno) |
 | Payments | Stripe (test + live mode) |
-| Deployment | Netlify (https://lucent-elf-359aef.netlify.app) |
+| Deployment | Netlify (https://llmsearchinsight.com) |
 
 ## Project Structure
 

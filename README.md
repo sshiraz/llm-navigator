@@ -30,7 +30,7 @@ Answer Engine Optimization (AEO) platform that helps websites get cited by AI as
 - **Frontend:** React 18 + TypeScript + Vite + Tailwind CSS
 - **Backend:** Supabase (PostgreSQL + Edge Functions)
 - **Payments:** Stripe
-- **Deployment:** Netlify (https://lucent-elf-359aef.netlify.app)
+- **Deployment:** Netlify (https://llmsearchinsight.com)
 
 ## Getting Started
 

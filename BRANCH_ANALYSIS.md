@@ -223,6 +223,40 @@ Build: Static files in `public/` are served as-is by Netlify.
 
 ---
 
+## 2026-01-18: Fix Email CTA Link to Use Custom Domain
+
+**Commit:** `Fix free report email CTA to use llmsearchinsight.com`
+
+### Context
+
+The free report email "Start Free Trial" button was linking to the old Netlify subdomain (`lucent-elf-359aef.netlify.app`) instead of the custom domain (`llmsearchinsight.com`).
+
+### Changes
+
+| File | Change |
+|------|--------|
+| `supabase/functions/send-free-report-email/index.ts` | Update CTA href to `https://llmsearchinsight.com/#auth` |
+| `README.md` | Update deployment URL to custom domain |
+| `ARCHITECTURE.md` | Update deployment URL to custom domain |
+
+### Deployment Required
+
+```bash
+npx supabase functions deploy send-free-report-email
+```
+
+### Testing Performed
+
+```
+npm run test:run
+
+Test Files  18 passed (18)
+     Tests  577 passed (577)
+  Duration  16.63s
+```
+
+---
+
 ## Template for Future Entries
 
 ```markdown

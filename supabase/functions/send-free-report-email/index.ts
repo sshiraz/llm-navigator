@@ -226,7 +226,7 @@ function generateEmailHtml(data: FreeReportEmailRequest): string {
 
               <!-- CTA -->
               <div style="text-align: center; padding-top: 16px;">
-                <a href="https://lucent-elf-359aef.netlify.app/#auth"
+                <a href="https://llmsearchinsight.com/#auth"
                    style="display: inline-block; background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
                   Start Free Trial - Get Full Analysis
                 </a>

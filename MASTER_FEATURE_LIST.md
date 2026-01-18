@@ -438,3 +438,4 @@
 | 2026-01-18 | Payment metadata fix: real userId and email instead of placeholders |
 | 2026-01-18 | Fix 403 error: remove redundant frontend payment INSERT (webhook handles it) |
 | 2026-01-18 | Add sitemap.xml and robots.txt for SEO |
+| 2026-01-18 | Fix free report email CTA to use llmsearchinsight.com domain |
