@@ -93,19 +93,38 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
       // For live mode, we should create a real payment intent on the server
       if (isLiveMode) {
         try {
-          // Create payment intent using PaymentService
+          // Get actual user data from localStorage
+          const currentUserStr = localStorage.getItem('currentUser');
+          let userId = '';
+          let userEmail = '';
+
+          if (currentUserStr) {
+            try {
+              const currentUser = JSON.parse(currentUserStr);
+              userId = currentUser.id || '';
+              userEmail = currentUser.email || '';
+            } catch (e) {
+              console.error('Failed to parse current user:', e);
+            }
+          }
+
+          if (!userId || !userEmail) {
+            throw new Error('Please log in to complete your purchase');
+          }
+
+          // Create payment intent using PaymentService with real user data
           const result = await PaymentService.createPaymentIntent(
-            'current-user', // In a real app, get this from auth
+            userId,
             plan,
-            cardName // Using name as email for demo
+            userEmail
           );
 
           if (!result.success) {
             throw new Error(result.error || 'Failed to create payment intent');
           }
-          
+
           const { clientSecret } = result.data;
-          
+
           // Confirm the payment with the client secret
           const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
             clientSecret,
@@ -114,6 +133,7 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
                 card: cardElement,
                 billing_details: {
                   name: cardName,
+                  email: userEmail,
                 }
               }
             }

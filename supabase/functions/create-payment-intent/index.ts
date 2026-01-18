@@ -22,11 +22,44 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    // Create payment intent
+    // Extract user info from metadata
+    const userEmail = metadata?.email || null;
+    const userId = metadata?.userId || null;
+
+    // Create or retrieve Stripe Customer to avoid "Guest" status
+    let customerId: string | undefined;
+
+    if (userEmail) {
+      // Check if customer already exists
+      const existingCustomers = await stripe.customers.list({
+        email: userEmail,
+        limit: 1,
+      });
+
+      if (existingCustomers.data.length > 0) {
+        // Use existing customer
+        customerId = existingCustomers.data[0].id;
+        console.log("Found existing Stripe customer:", customerId);
+      } else {
+        // Create new customer
+        const newCustomer = await stripe.customers.create({
+          email: userEmail,
+          metadata: {
+            userId: userId || 'unknown',
+          },
+        });
+        customerId = newCustomer.id;
+        console.log("Created new Stripe customer:", customerId);
+      }
+    }
+
+    // Create payment intent attached to the customer
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency,
       metadata,
+      customer: customerId,
+      receipt_email: userEmail,
       automatic_payment_methods: {
         enabled: true,
       },

@@ -5,6 +5,118 @@
 
 ---
 
+## 2026-01-18: Fix Payment Customer Tracking and Metadata
+
+### Context
+
+Live payments were showing as "Guest" customers in Stripe with incorrect metadata:
+- `email: "Sabri Shiraz"` (was passing cardholder name instead of email)
+- `userId: "current-user"` (hardcoded placeholder instead of real user ID)
+
+This caused two issues:
+1. **Stripe Dashboard** showed "Guest" customers that couldn't be edited
+2. **Webhooks failed** because they couldn't find user with ID "current-user"
+
+The subscription still worked because the frontend callback updated the database directly using localStorage user data, but Stripe's records were messy.
+
+### Root Cause
+
+The bug only affected **live mode** because test mode used a different code path that skipped the real payment intent creation:
+
+```typescript
+// CreditCardForm.tsx - BEFORE
+if (isLiveMode) {
+  const result = await PaymentService.createPaymentIntent(
+    'current-user',  // ❌ Hardcoded placeholder
+    plan,
+    cardName         // ❌ Cardholder name, not email
+  );
+}
+// Test mode skipped this block entirely
+```
+
+### Changes
+
+#### 1. CreditCardForm.tsx - Get Real User Data
+
+```typescript
+// AFTER - Extract actual user data from localStorage
+const currentUserStr = localStorage.getItem('currentUser');
+if (currentUserStr) {
+  const currentUser = JSON.parse(currentUserStr);
+  userId = currentUser.id;
+  userEmail = currentUser.email;
+}
+
+const result = await PaymentService.createPaymentIntent(
+  userId,      // ✅ Real user UUID
+  plan,
+  userEmail    // ✅ Real email address
+);
+```
+
+Also added validation to fail loudly if user data is missing.
+
+#### 2. create-payment-intent Edge Function - Create Stripe Customer
+
+```typescript
+// BEFORE - PaymentIntent without customer (creates "Guest")
+const paymentIntent = await stripe.paymentIntents.create({
+  amount, currency, metadata,
+  automatic_payment_methods: { enabled: true },
+});
+
+// AFTER - Create/retrieve customer first
+if (userEmail) {
+  const existingCustomers = await stripe.customers.list({ email: userEmail, limit: 1 });
+  if (existingCustomers.data.length > 0) {
+    customerId = existingCustomers.data[0].id;
+  } else {
+    const newCustomer = await stripe.customers.create({
+      email: userEmail,
+      metadata: { userId },
+    });
+    customerId = newCustomer.id;
+  }
+}
+
+const paymentIntent = await stripe.paymentIntents.create({
+  amount, currency, metadata,
+  customer: customerId,        // ✅ Linked to real customer
+  receipt_email: userEmail,    // ✅ Receipt sent to email
+  automatic_payment_methods: { enabled: true },
+});
+```
+
+### Why Test Mode Didn't Catch This
+
+Test mode bypassed the `if (isLiveMode)` block entirely, generating a fake payment ID locally. The bug only manifested when real Stripe API calls were made in live mode.
+
+**Lesson:** Test mode should use the same code path as live mode, just with different Stripe keys.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/Payment/CreditCardForm.tsx` | Get real userId/email from localStorage |
+| `supabase/functions/create-payment-intent/index.ts` | Create Stripe customer, add receipt_email |
+
+### Test Status
+
+```
+✓ 577 tests passing (18 test files)
+✓ Build succeeds with no type errors
+```
+
+### Deployment
+
+```bash
+npx supabase functions deploy create-payment-intent
+git push  # Triggers Netlify deploy
+```
+
+---
+
 ## 2026-01-17: Unit Tests for Admin Authentication Fixes (delete-user, admin-reset-password)
 
 ### Context
