@@ -1,6 +1,6 @@
 # Testing Guide
 
-> Last updated: 2026-01-16
+> Last updated: 2026-01-17
 
 This document provides an overview of all automated tests in the LLM Navigator project.
 
@@ -13,7 +13,7 @@ This document provides an overview of all automated tests in the LLM Navigator p
 npm run test:run && npm run build
 ```
 
-Current test count: **518 tests** (17 test files)
+Current test count: **577 tests** (18 test files)
 
 ## Quick Reference
 
@@ -88,6 +88,13 @@ Tests the AuthService class for user authentication flows.
 | Edit User Modal | Open/close modal, form fields, Save/Cancel |
 | Table Sorting | Sortable columns (Name, Email, Subscription, Created) |
 | New User Registration | Display new users, update counts, Refresh button |
+| **Admin Authentication - Delete User** | Session token authentication, error handling for missing session, request body validation, API error handling |
+| **Admin Authentication - Reset Password** | Session token authentication, password validation, API error handling, modal close on success |
+
+**Security Coverage:**
+- Verifies JWT session token is used instead of anon key for admin operations
+- Tests error handling when no active session exists
+- Validates proper request body format for edge functions
 
 ### Navigation
 **File:** `src/test/navigation.test.tsx`
@@ -144,6 +151,30 @@ Tests the StorageManager localStorage abstraction (20 tests).
 | `getCurrentAnalysis` / `setCurrentAnalysis` | Analysis storage operations |
 | `getLastAnalysisWebsite` | Last website retrieval |
 | `clearAllAnalysisData` | Bulk clear operations |
+
+### User Utilities
+**File:** `src/utils/userUtils.test.ts`
+
+Tests the user utility functions for admin checks, subscriptions, and trial expiration (46 tests).
+
+| Test Suite | Coverage |
+|------------|----------|
+| `isUserAdmin` | Null/undefined handling, isAdmin flag, admin email detection, regular user |
+| `isCurrentUserAdmin` | localStorage checks, admin/non-admin detection, invalid JSON handling |
+| `getCurrentUser` | localStorage retrieval, null handling, JSON parsing |
+| `updateCurrentUser` | Partial updates, missing user handling |
+| `clearUserData` | Clear all user-related localStorage items |
+| `canBypassUsageLimits` | Admin bypass, paid plan bypass, trial/free restrictions |
+| `shouldUseRealAnalysis` | Admin users, paid subscriptions, trial/free users |
+| `isTrialExpired` | Null user, non-trial subscriptions, active trial, expired trial |
+| `hasActiveSubscription` | Admin access, paid plans, active trial, expired trial, free users |
+| `canRunAnalysis` | Login requirements, admin access, paid plans, trial expiration, free restrictions |
+| `getSubscriptionBadge` | Badge HTML generation for all subscription types |
+
+**Business Logic Coverage:**
+- Trial expiration detection with date comparison
+- Subscription status validation for paywall enforcement
+- Admin privilege checking for bypass scenarios
 
 ### Input Sanitization
 **File:** `src/utils/sanitize.test.ts`
@@ -343,14 +374,16 @@ set -a && . ./.env && set +a && npm run test:functions
 | Analysis Engine | analysisEngine.test.ts, analysisHelpers.test.ts | - |
 | Competitor Comparison | competitorComparison.test.ts | - |
 | Storage | storageManager.test.ts | - |
+| User Utilities | userUtils.test.ts (46 tests) | - |
 | Input Sanitization | sanitize.test.ts (115 tests) | - |
 | Payment/Stripe | paymentService.test.ts | test-payment-flow.ts |
 | Audit Logging | auditLogService.test.ts (28 tests) | - |
 | GDPR/Privacy | CookieConsent, PrivacyPolicy, AccountPage.gdpr | - |
 | Edge Functions | - | test-edge-functions.ts |
 | CORS Security | - | test-edge-functions.ts |
+| Admin Authentication | UserDashboard.test.tsx (delete/reset password) | - |
 
-**Total: 518 tests across 17 test files**
+**Total: 577 tests across 18 test files**
 
 ---
 

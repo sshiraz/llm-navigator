@@ -65,23 +65,30 @@ serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false }
     });
 
-    // Get the target user
+    // Get the target user (only query columns that exist)
     const { data: targetUser, error: userError } = await supabaseAdmin
       .from('users')
-      .select('id, email, is_admin')
+      .select('id, email')
       .eq('id', targetUserId)
       .single();
 
     if (userError || !targetUser) {
       console.error("❌ Target user not found:", userError);
       return new Response(
-        JSON.stringify({ error: "User not found" }),
+        JSON.stringify({ error: "User not found", details: userError?.message }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // Check if user is admin (column may not exist, handle gracefully)
+    const { data: adminCheck } = await supabaseAdmin
+      .from('users')
+      .select('is_admin')
+      .eq('id', targetUserId)
+      .single();
+
     // Prevent resetting password for admin accounts
-    if (targetUser.is_admin) {
+    if (adminCheck?.is_admin) {
       console.error("❌ Cannot reset password for admin account:", targetUser.email);
       return new Response(
         JSON.stringify({ error: "Cannot reset password for admin accounts" }),

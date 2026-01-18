@@ -5,6 +5,79 @@
 
 ---
 
+## 2026-01-17: Unit Tests for Admin Authentication Fixes (delete-user, admin-reset-password)
+
+### Context
+
+Previous commits fixed security issues in admin user management:
+1. **Token mismatch** - Frontend was sending `VITE_SUPABASE_ANON_KEY` instead of the user's JWT session token
+2. **Database schema mismatch** - Edge functions queried non-existent columns (`is_admin`, `stripe_subscription_id`)
+
+These fixes needed comprehensive test coverage to prevent regression.
+
+### Changes & Reasoning
+
+#### 1. User Utilities Tests
+
+**File:** `src/utils/userUtils.test.ts` (NEW - 46 tests)
+
+| Test Suite | Coverage |
+|------------|----------|
+| `isTrialExpired` | Active trials, expired trials, null users, non-trial subscriptions |
+| `hasActiveSubscription` | Admin bypass, paid plans, trial status, free users |
+| `canRunAnalysis` | All subscription states with proper error messages |
+
+**Why test time-based logic:** Trial expiration is critical for paywall enforcement. We use `vi.useFakeTimers()` and `vi.setSystemTime()` to test exact boundary conditions.
+
+```typescript
+// Testing expired trial
+vi.setSystemTime(new Date('2024-01-25'));
+const user = createMockUser({
+  subscription: 'trial',
+  trialEndsAt: new Date('2024-01-22').toISOString(),
+});
+expect(isTrialExpired(user)).toBe(true);
+```
+
+#### 2. Admin Authentication Tests
+
+**File:** `src/components/Admin/UserDashboard.test.tsx` (10 new tests)
+
+**Delete User Tests:**
+- Verifies session token is used (not anon key) via `Authorization: Bearer ${session.access_token}`
+- Tests error handling when no session exists
+- Validates request body format (`userIdToDelete`)
+- Tests API error response handling
+
+**Reset Password Tests:**
+- Verifies session token authentication
+- Tests password minimum length validation (client-side)
+- Tests API error response display in modal
+- Tests modal close on successful reset
+
+**Why mock fetch instead of supabase.functions.invoke:** The component uses raw `fetch()` calls to edge functions for better error handling and response parsing. Tests verify the exact Authorization header format.
+
+```typescript
+// Test verifies JWT token is used, not anon key
+expect(mockFetch).toHaveBeenCalledWith(
+  expect.stringContaining('/functions/v1/delete-user'),
+  expect.objectContaining({
+    headers: expect.objectContaining({
+      'Authorization': 'Bearer mock-jwt-token-abc123', // Session token
+    }),
+  })
+);
+```
+
+### Test Status
+
+```
+✓ 577 tests passing (18 test files)
+✓ Build succeeds with no type errors
+```
+
+---
+
 ## 2026-01-17: Free Report Enhancements - Abuse Prevention, Detailed Email, Tests
 
 **Commit:** `6d2c38d` - Enhance free report with abuse prevention, detailed email, and explainer

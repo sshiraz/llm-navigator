@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // Use vi.hoisted to create mutable mock data that can be changed per test
-const { mockSupabaseData } = vi.hoisted(() => ({
+const { mockSupabaseData, mockSessionData } = vi.hoisted(() => ({
   mockSupabaseData: {
     users: [
       {
@@ -32,6 +32,12 @@ const { mockSupabaseData } = vi.hoisted(() => ({
         created_at: '2024-01-05T10:00:00Z'
       }
     ]
+  },
+  mockSessionData: {
+    session: {
+      access_token: 'mock-jwt-token-abc123',
+      user: { id: 'admin-user', email: 'admin@test.com' }
+    }
   }
 }));
 
@@ -58,8 +64,15 @@ vi.mock('../../lib/supabase', () => ({
     functions: {
       invoke: vi.fn().mockResolvedValue({ data: null, error: null }),
     },
+    auth: {
+      getSession: vi.fn().mockResolvedValue({ data: mockSessionData, error: null }),
+    },
   },
 }));
+
+// Mock fetch for edge function calls
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
 
 import UserDashboard from './UserDashboard';
 
@@ -653,6 +666,374 @@ describe('UserDashboard Component', () => {
       await waitFor(() => {
         expect(screen.getByText('Clear filters')).toBeInTheDocument();
       });
+    });
+  });
+
+  describe('Admin Authentication - Delete User', () => {
+    beforeEach(() => {
+      mockFetch.mockReset();
+    });
+
+    it('should use session access token for delete user API call', async () => {
+      const user = userEvent.setup();
+
+      // Mock successful delete response
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ success: true, message: 'User deleted successfully' })
+      });
+
+      // Mock window.confirm to return true
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+      // Mock window.alert
+      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+      render(<UserDashboard />);
+
+      await waitFor(() => {
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
+      });
+
+      // Find and click delete button for John Doe (first non-admin user)
+      const deleteButtons = screen.getAllByText('Delete');
+      await user.click(deleteButtons[0]);
+
+      await waitFor(() => {
+        // Verify fetch was called with correct Authorization header using session token
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/functions/v1/delete-user'),
+          expect.objectContaining({
+            method: 'POST',
+            headers: expect.objectContaining({
+              'Authorization': 'Bearer mock-jwt-token-abc123', // Session token, not anon key
+              'Content-Type': 'application/json'
+            }),
+            body: expect.any(String)
+          })
+        );
+      });
+
+      confirmSpy.mockRestore();
+      alertSpy.mockRestore();
+    });
+
+    it('should show error when no session available for delete user', async () => {
+      const user = userEvent.setup();
+
+      // Import supabase to override getSession for this test
+      const { supabase } = await import('../../lib/supabase');
+      vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
+        data: { session: null },
+        error: null
+      });
+
+      // Mock window.confirm to return true
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+      // Mock window.alert to capture error
+      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+      render(<UserDashboard />);
+
+      await waitFor(() => {
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
+      });
+
+      // Find and click delete button
+      const deleteButtons = screen.getAllByText('Delete');
+      await user.click(deleteButtons[0]);
+
+      await waitFor(() => {
+        // Verify error is shown to user
+        expect(alertSpy).toHaveBeenCalledWith(
+          expect.stringContaining('No active session')
+        );
+      });
+
+      confirmSpy.mockRestore();
+      alertSpy.mockRestore();
+    });
+
+    it('should send userIdToDelete in request body', async () => {
+      const user = userEvent.setup();
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ success: true, message: 'User deleted successfully' })
+      });
+
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+      render(<UserDashboard />);
+
+      await waitFor(() => {
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
+      });
+
+      const deleteButtons = screen.getAllByText('Delete');
+      await user.click(deleteButtons[0]);
+
+      await waitFor(() => {
+        // Verify the request body contains userIdToDelete
+        const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+        expect(callBody).toHaveProperty('userIdToDelete');
+        expect(callBody.userIdToDelete).toBe('user-1');
+      });
+
+      confirmSpy.mockRestore();
+      alertSpy.mockRestore();
+    });
+
+    it('should handle delete API error response', async () => {
+      const user = userEvent.setup();
+
+      // Mock failed delete response
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        json: () => Promise.resolve({ error: 'User not found' })
+      });
+
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+      render(<UserDashboard />);
+
+      await waitFor(() => {
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
+      });
+
+      const deleteButtons = screen.getAllByText('Delete');
+      await user.click(deleteButtons[0]);
+
+      await waitFor(() => {
+        expect(alertSpy).toHaveBeenCalledWith(
+          expect.stringContaining('User not found')
+        );
+      });
+
+      confirmSpy.mockRestore();
+      alertSpy.mockRestore();
+    });
+  });
+
+  describe('Admin Authentication - Reset Password', () => {
+    beforeEach(() => {
+      mockFetch.mockReset();
+    });
+
+    it('should use session access token for reset password API call', async () => {
+      const user = userEvent.setup();
+
+      // Mock successful reset response
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ success: true, message: 'Password reset successfully' })
+      });
+
+      // Mock window.alert
+      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+      render(<UserDashboard />);
+
+      await waitFor(() => {
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
+      });
+
+      // Find and click Reset Password button for John Doe
+      const resetButtons = screen.getAllByText('Reset Password');
+      await user.click(resetButtons[0]);
+
+      // Wait for modal to appear
+      await waitFor(() => {
+        expect(screen.getByText('Set a new password for')).toBeInTheDocument();
+      });
+
+      // Enter new password
+      const passwordInput = screen.getByPlaceholderText('Enter new password (min 6 characters)');
+      await user.type(passwordInput, 'newpassword123');
+
+      // Click the Reset Password button in the modal (submit button with icon)
+      const modalButtons = screen.getAllByRole('button', { name: /Reset Password/i });
+      // The modal submit button is the one within the modal (usually the last one with that text)
+      const submitButton = modalButtons[modalButtons.length - 1];
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        // Verify fetch was called with correct Authorization header using session token
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/functions/v1/admin-reset-password'),
+          expect.objectContaining({
+            method: 'POST',
+            headers: expect.objectContaining({
+              'Authorization': 'Bearer mock-jwt-token-abc123', // Session token, not anon key
+              'Content-Type': 'application/json'
+            }),
+            body: expect.any(String)
+          })
+        );
+      });
+
+      alertSpy.mockRestore();
+    });
+
+    it('should send targetUserId and newPassword in request body', async () => {
+      const user = userEvent.setup();
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ success: true, message: 'Password reset successfully' })
+      });
+
+      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+      render(<UserDashboard />);
+
+      await waitFor(() => {
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
+      });
+
+      // Click Reset Password button
+      const resetButtons = screen.getAllByText('Reset Password');
+      await user.click(resetButtons[0]);
+
+      // Wait for modal
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText('Enter new password (min 6 characters)')).toBeInTheDocument();
+      });
+
+      // Enter password
+      const passwordInput = screen.getByPlaceholderText('Enter new password (min 6 characters)');
+      await user.type(passwordInput, 'securepassword456');
+
+      // Submit - find the modal submit button (last one with that name)
+      const modalButtons = screen.getAllByRole('button', { name: /Reset Password/i });
+      const submitButton = modalButtons[modalButtons.length - 1];
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+        expect(callBody).toHaveProperty('targetUserId', 'user-1');
+        expect(callBody).toHaveProperty('newPassword', 'securepassword456');
+      });
+
+      alertSpy.mockRestore();
+    });
+
+    it('should validate password minimum length', async () => {
+      const user = userEvent.setup();
+
+      render(<UserDashboard />);
+
+      await waitFor(() => {
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
+      });
+
+      // Click Reset Password button
+      const resetButtons = screen.getAllByText('Reset Password');
+      await user.click(resetButtons[0]);
+
+      // Wait for modal
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText('Enter new password (min 6 characters)')).toBeInTheDocument();
+      });
+
+      // Enter short password
+      const passwordInput = screen.getByPlaceholderText('Enter new password (min 6 characters)');
+      await user.type(passwordInput, '123');
+
+      // Submit - find the modal submit button (last one with that name)
+      const modalButtons = screen.getAllByRole('button', { name: /Reset Password/i });
+      const submitButton = modalButtons[modalButtons.length - 1];
+      await user.click(submitButton);
+
+      // Should show validation error, not make API call
+      await waitFor(() => {
+        expect(screen.getByText('Password must be at least 6 characters')).toBeInTheDocument();
+      });
+
+      // Verify fetch was NOT called
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('should handle reset password API error response', async () => {
+      const user = userEvent.setup();
+
+      // Mock failed reset response
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        json: () => Promise.resolve({ error: 'Cannot reset password for admin accounts' })
+      });
+
+      render(<UserDashboard />);
+
+      await waitFor(() => {
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
+      });
+
+      // Click Reset Password button
+      const resetButtons = screen.getAllByText('Reset Password');
+      await user.click(resetButtons[0]);
+
+      // Wait for modal
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText('Enter new password (min 6 characters)')).toBeInTheDocument();
+      });
+
+      // Enter password
+      const passwordInput = screen.getByPlaceholderText('Enter new password (min 6 characters)');
+      await user.type(passwordInput, 'validpassword');
+
+      // Submit - find the modal submit button (last one with that name)
+      const modalButtons = screen.getAllByRole('button', { name: /Reset Password/i });
+      const submitButton = modalButtons[modalButtons.length - 1];
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        // Error should be displayed in modal
+        expect(screen.getByText('Cannot reset password for admin accounts')).toBeInTheDocument();
+      });
+    });
+
+    it('should close modal on successful password reset', async () => {
+      const user = userEvent.setup();
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ success: true, message: 'Password reset successfully' })
+      });
+
+      const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+      render(<UserDashboard />);
+
+      await waitFor(() => {
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
+      });
+
+      // Click Reset Password button
+      const resetButtons = screen.getAllByText('Reset Password');
+      await user.click(resetButtons[0]);
+
+      // Wait for modal
+      await waitFor(() => {
+        expect(screen.getByText('Set a new password for')).toBeInTheDocument();
+      });
+
+      // Enter password
+      const passwordInput = screen.getByPlaceholderText('Enter new password (min 6 characters)');
+      await user.type(passwordInput, 'newpassword123');
+
+      // Submit - find the modal submit button (last one with that name)
+      const modalButtons = screen.getAllByRole('button', { name: /Reset Password/i });
+      const submitButton = modalButtons[modalButtons.length - 1];
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        // Modal should close after success
+        expect(screen.queryByText('Set a new password for')).not.toBeInTheDocument();
+      });
+
+      alertSpy.mockRestore();
     });
   });
 });
