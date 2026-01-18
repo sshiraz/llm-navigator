@@ -58,23 +58,30 @@ serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false }
     });
 
-    // Get the user to delete (including Stripe subscription info)
+    // Get the user to delete
+    // Query only columns that definitely exist - stripe info is in payments table
     const { data: userToDelete, error: userError } = await supabaseAdmin
       .from('users')
-      .select('id, email, is_admin, stripe_subscription_id, stripe_customer_id')
+      .select('id, email')
       .eq('id', userIdToDelete)
       .single();
 
     if (userError || !userToDelete) {
       console.error("❌ User to delete not found:", userError);
       return new Response(
-        JSON.stringify({ error: "User not found" }),
+        JSON.stringify({ error: "User not found", details: userError?.message }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Prevent deleting admin accounts
-    if (userToDelete.is_admin) {
+    // Check if user is admin (column may not exist, so we handle gracefully)
+    const { data: adminCheck } = await supabaseAdmin
+      .from('users')
+      .select('is_admin')
+      .eq('id', userIdToDelete)
+      .single();
+
+    if (adminCheck?.is_admin) {
       console.error("❌ Cannot delete admin account:", userToDelete.email);
       return new Response(
         JSON.stringify({ error: "Cannot delete admin accounts" }),
@@ -82,17 +89,28 @@ serve(async (req) => {
       );
     }
 
+    // Get Stripe subscription ID from payments table if exists
+    const { data: paymentData } = await supabaseAdmin
+      .from('payments')
+      .select('stripe_subscription_id')
+      .eq('user_id', userIdToDelete)
+      .not('stripe_subscription_id', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
     console.log("🗑️ Deleting user:", userToDelete.email);
 
     // Cancel Stripe subscription if exists
-    if (userToDelete.stripe_subscription_id) {
-      console.log("💳 Cancelling Stripe subscription:", userToDelete.stripe_subscription_id);
+    const stripeSubscriptionId = paymentData?.stripe_subscription_id;
+    if (stripeSubscriptionId) {
+      console.log("💳 Cancelling Stripe subscription:", stripeSubscriptionId);
 
       const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
       if (stripeSecretKey) {
         try {
           const response = await fetch(
-            `https://api.stripe.com/v1/subscriptions/${userToDelete.stripe_subscription_id}`,
+            `https://api.stripe.com/v1/subscriptions/${stripeSubscriptionId}`,
             {
               method: 'DELETE',
               headers: {

@@ -4265,6 +4265,88 @@ Each column now shows explanatory tooltip on hover:
 
 ---
 
+## 2026-01-17: Fix Admin User Management Authentication
+
+**Commit:** `pending`
+
+### Context
+
+Admin actions (delete user, reset password) were failing with "Invalid or expired token" error. After fixing authentication, delete user failed with "User not found" due to querying non-existent database columns.
+
+### Changes & Reasoning
+
+#### 1. Fix Authentication Token (`src/components/Admin/UserDashboard.tsx`)
+
+**Problem:** Admin functions sent the Supabase **anon key** instead of the user's **JWT session token**.
+
+```typescript
+// BEFORE (wrong - anon key has no user identity)
+'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+
+// AFTER (correct - user's JWT contains their identity)
+const { data: { session } } = await supabase.auth.getSession();
+'Authorization': `Bearer ${session.access_token}`,
+```
+
+The edge function uses `verifyAdminFromJwt()` which extracts user identity from the JWT token. The anon key is a public API key with no user context.
+
+**Fixed in:**
+- `handleDeleteUser()` - Delete user function
+- `handleResetPassword()` - Reset password function
+
+#### 2. Fix Database Query (`supabase/functions/delete-user/index.ts`)
+
+**Problem:** Edge function queried columns that don't exist in the `users` table:
+- `is_admin` - may not exist
+- `stripe_subscription_id` - exists in `payments` table, not `users`
+- `stripe_customer_id` - doesn't exist
+
+```typescript
+// BEFORE (queries non-existent columns, causes "User not found")
+.select('id, email, is_admin, stripe_subscription_id, stripe_customer_id')
+
+// AFTER (query only columns that exist)
+.select('id, email')
+```
+
+**Solution:**
+1. Query only `id, email` from users table
+2. Check `is_admin` in separate query with graceful fallback
+3. Get Stripe subscription from `payments` table
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/Admin/UserDashboard.tsx` | Use session token instead of anon key |
+| `supabase/functions/delete-user/index.ts` | Query only existing columns |
+
+### Testing Performed
+
+```bash
+npm run test:run && npm run build
+```
+
+- **Test Suite:** 462 passed, 0 failed
+- **Build:** Passes
+- **Manual:** Successfully deleted test user from admin dashboard
+
+### Root Cause Analysis
+
+Two separate bugs compounded:
+1. **Auth bug:** Frontend sent wrong token type (anon key vs JWT)
+2. **Schema bug:** Edge function assumed columns that were never added to database
+
+The `is_admin`, `stripe_subscription_id`, `stripe_customer_id` columns exist in TypeScript types but were never added via migrations. The edge function now handles this gracefully.
+
+### Deployment
+
+```bash
+npx supabase functions deploy delete-user
+```
+
+---
+
 ## Template for Future Entries
 
 ```markdown

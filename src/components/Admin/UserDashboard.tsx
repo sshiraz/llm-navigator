@@ -295,6 +295,12 @@ export default function UserDashboard() {
     setDeletingUserId(userToDelete.id);
 
     try {
+      // Get the current user's session token for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No active session. Please log in again.');
+      }
+
       // Call the delete-user Edge Function
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`,
@@ -302,11 +308,10 @@ export default function UserDashboard() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Authorization': `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
-            userIdToDelete: userToDelete.id,
-            adminUserId: currentUser.id
+            userIdToDelete: userToDelete.id
           })
         }
       );
@@ -357,18 +362,23 @@ export default function UserDashboard() {
     setResetPasswordError(null);
 
     try {
+      // Get the current user's session token for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No active session. Please log in again.');
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-reset-password`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Authorization': `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
             targetUserId: resetPasswordUser.id,
-            newPassword: sanitizedPassword,
-            adminUserId: currentUser.id
+            newPassword: sanitizedPassword
           })
         }
       );
