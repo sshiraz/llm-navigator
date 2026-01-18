@@ -257,6 +257,22 @@ Test Files  18 passed (18)
 
 ---
 
+## 2026-01-18: Update Free Report Form Label
+
+**Commit:** `Change "Work Email" to "Email" on free report page`
+
+### Context
+
+The free report form label said "Work Email" which may discourage users with personal email addresses. Changed to simply "Email" to be more inclusive.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/FreeReport/FreeReportPage.tsx` | Change label from "Work Email" to "Email" |
+
+---
+
 ## Template for Future Entries
 
 ```markdown

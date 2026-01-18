@@ -563,7 +563,7 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Work Email
+                      Email
                     </label>
                     <div className="relative">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />

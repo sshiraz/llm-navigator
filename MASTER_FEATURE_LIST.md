@@ -439,3 +439,4 @@
 | 2026-01-18 | Fix 403 error: remove redundant frontend payment INSERT (webhook handles it) |
 | 2026-01-18 | Add sitemap.xml and robots.txt for SEO |
 | 2026-01-18 | Fix free report email CTA to use llmsearchinsight.com domain |
+| 2026-01-18 | Change "Work Email" to "Email" on free report page |
