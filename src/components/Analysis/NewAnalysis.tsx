@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Globe, MessageSquare, Sparkles, ArrowRight, Lightbulb, Zap, AlertCircle, Plus, X, Building2, CheckCircle, History } from 'lucide-react';
+import { Globe, MessageSquare, Sparkles, ArrowRight, Lightbulb, Zap, AlertCircle, Plus, X, Building2, CheckCircle, History, Lock } from 'lucide-react';
 import AnalysisProgress from './AnalysisProgress';
 import UsageLimitsBanner from './UsageLimitsBanner';
 import { User, Analysis, AnalysisProvider } from '../../types';
 import { AnalysisEngine } from '../../utils/analysisEngine';
 import { useUsageMonitoring } from '../../utils/costTracker';
 import { sanitizeUrl, sanitizeText, sanitizeSearchQuery } from '../../utils/sanitize';
+import { canRunAnalysis, isTrialExpired } from '../../utils/userUtils';
 
 // Generate a unique ID for prompts
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -250,6 +251,70 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
         onComplete={handleAnalysisComplete}
         onError={handleAnalysisError}
       />
+    );
+  }
+
+  // Check if user can run analyses (trial expiration check)
+  const analysisAccess = canRunAnalysis(user || null);
+
+  // Show paywall if trial expired or no access
+  if (!analysisAccess.canRun) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-8 text-center">
+          <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Lock className="w-8 h-8 text-yellow-400" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-4">
+            {isTrialExpired(user || null) ? 'Your Trial Has Expired' : 'Upgrade Required'}
+          </h1>
+          <p className="text-slate-400 mb-6">
+            {analysisAccess.reason}
+          </p>
+
+          {/* Show what they're missing */}
+          <div className="bg-slate-900/50 rounded-xl p-6 mb-8 text-left">
+            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">
+              With a paid plan, you get:
+            </h3>
+            <ul className="space-y-3">
+              <li className="flex items-center text-slate-300">
+                <CheckCircle className="w-5 h-5 text-green-400 mr-3 flex-shrink-0" />
+                <span>Real AI citation checking across ChatGPT, Claude, Gemini & Perplexity</span>
+              </li>
+              <li className="flex items-center text-slate-300">
+                <CheckCircle className="w-5 h-5 text-green-400 mr-3 flex-shrink-0" />
+                <span>Detailed competitor analysis</span>
+              </li>
+              <li className="flex items-center text-slate-300">
+                <CheckCircle className="w-5 h-5 text-green-400 mr-3 flex-shrink-0" />
+                <span>Actionable recommendations to improve visibility</span>
+              </li>
+              <li className="flex items-center text-slate-300">
+                <CheckCircle className="w-5 h-5 text-green-400 mr-3 flex-shrink-0" />
+                <span>Priority support</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={() => window.location.hash = 'pricing'}
+              className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-blue-500/25"
+            >
+              View Pricing Plans
+            </button>
+            {(hasLastAnalysis || localStorage.getItem('currentAnalysis')) && (
+              <button
+                onClick={() => window.location.hash = 'analysis-results'}
+                className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl transition-colors"
+              >
+                View Past Results
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
     );
   }
 

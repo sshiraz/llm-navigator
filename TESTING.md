@@ -13,7 +13,7 @@ This document provides an overview of all automated tests in the LLM Navigator p
 npm run test:run && npm run build
 ```
 
-Current test count: **462 tests** (16 test files)
+Current test count: **518 tests** (17 test files)
 
 ## Quick Reference
 
@@ -350,7 +350,7 @@ set -a && . ./.env && set +a && npm run test:functions
 | Edge Functions | - | test-edge-functions.ts |
 | CORS Security | - | test-edge-functions.ts |
 
-**Total: 462 tests across 16 test files**
+**Total: 518 tests across 17 test files**
 
 ---
 

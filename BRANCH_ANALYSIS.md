@@ -4347,6 +4347,99 @@ npx supabase functions deploy delete-user
 
 ---
 
+## 2026-01-17: Add Hard Paywall for Expired Trials
+
+**Commit:** `pending`
+
+### Context
+
+Previously, when a user's trial expired, they could still run analyses (with simulated data). This was a "soft paywall" that didn't create urgency to upgrade. Implemented "hard paywall" - users with expired trials are blocked from running new analyses and redirected to pricing.
+
+### Changes & Reasoning
+
+#### 1. Trial Expiration Utilities (`src/utils/userUtils.ts`)
+
+Added three new helper functions:
+
+```typescript
+// Check if trial has expired
+export const isTrialExpired = (user: User | null): boolean
+
+// Check if user has active subscription (paid or valid trial)
+export const hasActiveSubscription = (user: User | null): boolean
+
+// Check if user can run analyses with reason
+export const canRunAnalysis = (user: User | null): { canRun: boolean; reason?: string }
+```
+
+**Logic:**
+- Admins always have access
+- Paid plans (starter, professional, enterprise) always have access
+- Trial users - check `trialEndsAt` date
+- Free users cannot run analyses
+
+#### 2. Analysis Paywall (`src/components/Analysis/NewAnalysis.tsx`)
+
+**Problem:** Expired trial users could still access analysis form.
+
+**Solution:** Added paywall screen that shows when `canRunAnalysis()` returns false:
+- Lock icon with clear messaging
+- Lists benefits of upgrading
+- "View Pricing Plans" button redirects to `#pricing`
+- "View Past Results" button if they have previous analyses
+
+#### 3. Header Upgrade CTA (`src/components/Layout/Header.tsx`)
+
+**Problem:** Trial expired message was passive and not clickable.
+
+**Solution:** Converted to prominent clickable button:
+- Gradient background (yellow/orange) to stand out
+- Clicking redirects to `#pricing`
+- Added hover effects and shadow
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/utils/userUtils.ts` | Add trial expiration utilities |
+| `src/components/Analysis/NewAnalysis.tsx` | Add paywall for expired trials |
+| `src/components/Layout/Header.tsx` | Make trial expired CTA clickable |
+
+### Testing Performed
+
+```bash
+npm run test:run && npm run build
+```
+
+- **Test Suite:** 518 passed, 0 failed
+- **Build:** Passes
+- **Manual:** Verified paywall shows for expired trial user
+
+### User Flow
+
+```
+Trial Active:
+  User → NewAnalysis → Can run analyses (simulated)
+
+Trial Expired:
+  User → NewAnalysis → Paywall → "View Pricing" → PricingPage
+                              → "View Past Results" → AnalysisResults
+```
+
+### What Users See
+
+**Expired Trial - Analysis Page:**
+- Lock icon
+- "Your Trial Has Expired"
+- Reason message
+- Benefits list
+- Upgrade CTA
+
+**Expired Trial - Header:**
+- Prominent yellow/orange "Trial expired - Upgrade now" button
+
+---
+
 ## Template for Future Entries
 
 ```markdown

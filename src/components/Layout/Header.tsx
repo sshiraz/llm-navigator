@@ -36,12 +36,15 @@ export default function Header({ user }: HeaderProps) {
           )}
 
           {trialStatus && !trialStatus.isActive && (
-            <div className="flex items-center space-x-2 px-3 py-2 bg-yellow-900/50 border border-yellow-700 rounded-lg">
-              <Clock className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm font-medium text-yellow-200">
+            <button
+              onClick={() => window.location.hash = 'pricing'}
+              className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 border border-yellow-500 rounded-lg transition-all shadow-lg hover:shadow-yellow-500/25"
+            >
+              <Clock className="w-4 h-4 text-white" />
+              <span className="text-sm font-semibold text-white">
                 Trial expired - Upgrade now
               </span>
-            </div>
+            </button>
           )}
 
           <div
