@@ -116,7 +116,8 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
           const result = await PaymentService.createPaymentIntent(
             userId,
             plan,
-            userEmail
+            userEmail,
+            cardName // Pass cardholder name for Stripe customer
           );
 
           if (!result.success) {

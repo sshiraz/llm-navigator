@@ -25,6 +25,7 @@ serve(async (req) => {
     // Extract user info from metadata
     const userEmail = metadata?.email || null;
     const userId = metadata?.userId || null;
+    const customerName = metadata?.customerName || null;
 
     // Create or retrieve Stripe Customer to avoid "Guest" status
     let customerId: string | undefined;
@@ -40,26 +41,35 @@ serve(async (req) => {
         // Use existing customer
         customerId = existingCustomers.data[0].id;
         console.log("Found existing Stripe customer:", customerId);
+
+        // Update customer name if provided and different
+        if (customerName && existingCustomers.data[0].name !== customerName) {
+          await stripe.customers.update(customerId, { name: customerName });
+          console.log("Updated customer name to:", customerName);
+        }
       } else {
-        // Create new customer
+        // Create new customer with name and email
         const newCustomer = await stripe.customers.create({
           email: userEmail,
+          name: customerName || undefined,
           metadata: {
             userId: userId || 'unknown',
           },
         });
         customerId = newCustomer.id;
-        console.log("Created new Stripe customer:", customerId);
+        console.log("Created new Stripe customer:", customerId, "with name:", customerName);
       }
     }
 
     // Create payment intent attached to the customer
+    // setup_future_usage saves the payment method for recurring charges
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency,
       metadata,
       customer: customerId,
       receipt_email: userEmail,
+      setup_future_usage: 'off_session', // Save payment method for future subscription renewals
       automatic_payment_methods: {
         enabled: true,
       },

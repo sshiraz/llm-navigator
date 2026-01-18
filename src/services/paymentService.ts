@@ -33,10 +33,11 @@ export class PaymentService {
   static async createPaymentIntent(
     userId: string,
     plan: string,
-    email: string
+    email: string,
+    customerName?: string
   ): Promise<{ success: boolean; data?: PaymentIntent; error?: string }> {
-    PaymentLogger.trackPaymentFlow('Creating payment intent', { userId, plan, email });
-    
+    PaymentLogger.trackPaymentFlow('Creating payment intent', { userId, plan, email, customerName });
+
     try {
       const planConfig = STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS];
       if (!planConfig) {
@@ -44,7 +45,7 @@ export class PaymentService {
         return { success: false, error: 'Invalid plan selected' };
       }
 
-      PaymentLogger.trackPaymentFlow('Calling Supabase Edge Function', { 
+      PaymentLogger.trackPaymentFlow('Calling Supabase Edge Function', {
         function: 'create-payment-intent',
         amount: planConfig.amount,
         currency: planConfig.currency
@@ -59,6 +60,7 @@ export class PaymentService {
             userId,
             plan,
             email,
+            customerName,
             type: 'one_time_payment'
           }
         }

@@ -1,6 +1,6 @@
 # Testing Guide
 
-> Last updated: 2026-01-17
+> Last updated: 2026-01-18
 
 This document provides an overview of all automated tests in the LLM Navigator project.
 
