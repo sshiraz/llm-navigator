@@ -182,6 +182,47 @@ The subscription is stored in `users` table and fetched fresh on every login via
 
 ---
 
+## 2026-01-18: Add SEO Files (sitemap.xml, robots.txt)
+
+**Commit:** `Add sitemap.xml and robots.txt for SEO`
+
+### Context
+
+Adding standard SEO files to improve search engine discoverability for the public-facing pages.
+
+### Files Added
+
+| File | Purpose |
+|------|---------|
+| `public/sitemap.xml` | Lists public pages for search engine crawlers |
+| `public/robots.txt` | Allows all crawlers, references sitemap |
+
+### Sitemap Contents
+
+| URL | Priority |
+|-----|----------|
+| `/` (landing) | 1.0 |
+| `/free-report` | 0.9 |
+| `/pricing` | 0.9 |
+| `/login` | default |
+| `/signup` | default |
+| `/privacy` | default |
+| `/terms` | default |
+
+### Testing Performed
+
+```
+npm run test:run
+
+Test Files  18 passed (18)
+     Tests  577 passed (577)
+  Duration  16.48s
+```
+
+Build: Static files in `public/` are served as-is by Netlify.
+
+---
+
 ## Template for Future Entries
 
 ```markdown
