@@ -87,7 +87,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </h1>
 
             <p className="text-xl text-slate-400 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Optimize your content for AI-powered search engines like ChatGPT, Claude, and Perplexity.
+              Optimize your content for AI-powered search engines like ChatGPT, Claude, Perplexity, and Gemini.
               Get discovered when customers ask AI assistants about your industry.
             </p>
 
@@ -356,7 +356,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               </div>
               <h3 className="text-lg font-semibold text-white mb-2">Multi-Provider Testing</h3>
               <p className="text-slate-400 text-sm">
-                Test against ChatGPT, Claude, and Perplexity to ensure broad AI visibility.
+                Test against ChatGPT, Claude, Perplexity, and Gemini to ensure broad AI visibility.
               </p>
             </div>
           </div>

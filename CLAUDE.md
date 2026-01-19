@@ -248,7 +248,7 @@ AnalysisEngine.analyzeWebsite(url, prompts, user)
 ```
 
 **What exists:**
-- `check-citations` edge function - fully working, queries 3 AI providers
+- `check-citations` edge function - fully working, queries 4 AI providers (OpenAI, Anthropic, Perplexity, Gemini)
 - `analyzeAEO()` in analysisEngine.ts - orchestrates real/simulated flows
 - Types defined: `CitationResult`, `AEOAnalysis`, `CompetitorCitation`
 - UI shows summary stats (citation rate %) in AnalysisResults

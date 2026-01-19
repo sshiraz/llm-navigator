@@ -271,7 +271,7 @@ export default function ContactPage() {
             <div className="bg-slate-800 rounded-xl shadow-sm p-6 border border-slate-700">
               <h3 className="text-lg font-semibold text-white mb-3">How does the free trial work?</h3>
               <p className="text-slate-400">
-                Our 14-day free trial lets you explore all features with no credit card required. Trial analyses use simulated data to demonstrate the platform. Upgrade to a paid plan for real AI citation tracking with live queries to ChatGPT, Claude, and Perplexity.
+                Our 14-day free trial lets you explore all features with no credit card required. Trial analyses use simulated data to demonstrate the platform. Upgrade to a paid plan for real AI citation tracking with live queries to ChatGPT, Claude, Perplexity, and Gemini.
               </p>
             </div>
 

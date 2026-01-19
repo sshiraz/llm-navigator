@@ -86,7 +86,7 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
       metaDescription.setAttribute('name', 'description');
       document.head.appendChild(metaDescription);
     }
-    metaDescription.setAttribute('content', 'Get a free AI visibility report showing how your brand appears in ChatGPT, Claude, and Perplexity. Discover your AI search visibility in minutes.');
+    metaDescription.setAttribute('content', 'Get a free AI visibility report showing how your brand appears in ChatGPT, Claude, Perplexity, and Gemini. Discover your AI search visibility in minutes.');
 
     // Set or update canonical URL
     let canonical = document.querySelector('link[rel="canonical"]');
@@ -384,7 +384,7 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
           prompts: prompts.map(p => ({ id: p.id, text: p.text })),
           website: normalizedUrl,
           brandName: brandName,
-          providers: ['openai']
+          providers: ['perplexity']
         }
       });
 
@@ -870,7 +870,7 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
                     </div>
                   ))}
                 </div>
-                <p className="text-slate-500 text-xs mt-3">Powered by ChatGPT (GPT-4o)</p>
+                <p className="text-slate-500 text-xs mt-3">Powered by Perplexity AI</p>
               </div>
 
               {/* Competitor Leaderboard */}
@@ -931,7 +931,7 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
                   Want the Full Analysis?
                 </h3>
                 <p className="text-slate-300 text-sm mb-4">
-                  Get detailed citation tracking across 3 AI providers, competitor analysis, and actionable recommendations.
+                  Get detailed citation tracking across 4 AI providers, competitor analysis, and actionable recommendations.
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -952,7 +952,7 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
                   </span>
                   <span className="flex items-center space-x-1">
                     <CheckCircle className="w-3 h-3" />
-                    <span>3 AI providers</span>
+                    <span>4 AI providers</span>
                   </span>
                   <span className="flex items-center space-x-1">
                     <CheckCircle className="w-3 h-3" />

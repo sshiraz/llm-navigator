@@ -261,7 +261,7 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
               How does the free trial work?
             </h3>
             <p className="text-slate-400">
-              Our 14-day free trial lets you explore all features with no credit card required. Trial analyses use simulated data to demonstrate the platform. Upgrade to a paid plan for real AI citation tracking with live queries to ChatGPT, Claude, and Perplexity.
+              Our 14-day free trial lets you explore all features with no credit card required. Trial analyses use simulated data to demonstrate the platform. Upgrade to a paid plan for real AI citation tracking with live queries to ChatGPT, Claude, Perplexity, and Gemini.
             </p>
           </div>
 

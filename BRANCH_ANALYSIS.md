@@ -5,6 +5,59 @@
 
 ---
 
+## 2026-01-19: Free Report Competitor Analysis + 4 AI Providers
+
+**Changes:** Free report now shows competitor data; updated all marketing copy to reference 4 AI providers
+
+### Problem
+
+Free reports showed "Competitors Found: 0" even when competitors were being cited. The main app analysis showed competitors correctly.
+
+### Root Cause
+
+- **Free Report** used `providers: ['openai']`
+- **Main App** used `providers: ['perplexity', 'openai', 'anthropic']`
+
+OpenAI mentions companies by **name** (e.g., "Zapier", "HubSpot") without URLs. The competitor extraction only looks for URLs/domains, so it found nothing.
+
+Perplexity uses `return_citations: true` which returns **actual source URLs** that get extracted as competitors.
+
+### Solution
+
+Changed free report to use Perplexity instead of OpenAI:
+
+```typescript
+// Before
+providers: ['openai']
+
+// After
+providers: ['perplexity']
+```
+
+**Bonus:** Perplexity is ~4x cheaper than OpenAI ($0.003 vs $0.015 per 1K input tokens).
+
+### Additional Changes
+
+Updated all marketing copy to reference 4 AI providers (added Gemini):
+
+| File | Text Updated |
+|------|--------------|
+| `LandingPage.tsx` | Hero text + Multi-Provider Testing section |
+| `FreeReportPage.tsx` | Meta description, "Powered by" text, CTA copy |
+| `ContactPage.tsx` | FAQ section |
+| `PricingTiers.tsx` | FAQ section |
+| `CompetitorStrategy.tsx` | No data message |
+
+### Testing Performed
+
+```
+npm run build → Passes
+Test Files  19 passed (19)
+     Tests  588 passed (588)
+```
+
+---
+
 ## 2026-01-19: Rename App to LLM Navigator
 
 **Commit:** `Rename app from LLM Search Insight to LLM Navigator`
