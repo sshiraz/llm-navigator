@@ -5,6 +5,53 @@
 
 ---
 
+## 2026-01-19: Email Report White Theme + Competitors Card
+
+**Changes:** Email report switched to white background for printing; added "Competitors Found" score card
+
+### Problem
+
+1. Email reports had dark background - difficult to print
+2. Email was missing the "Competitors Found" count card that the web report shows
+
+### Solution
+
+**White Theme for Email:**
+- Body background: `#0f172a` → `#f8fafc` (light gray)
+- Main card: `#1e293b` → `#ffffff` (white)
+- Score cards: `#0f172a` → `#f1f5f9` (light gray)
+- Text colors: inverted for readability on light background
+- Borders: `#334155` → `#e2e8f0` (light gray)
+- Alert boxes: dark gradients → light backgrounds (`#fef2f2`)
+
+**Added Competitors Found Card:**
+- Now shows 3 score cards matching web report: AI Visibility Score, Citation Rate, Competitors Found
+- Color-coded: green (0), yellow (1-3), red (>3 competitors)
+
+**Note:** Web app (`FreeReportPage.tsx`) remains dark - only email template changed.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `supabase/functions/send-free-report-email/index.ts` | White theme + competitors card |
+
+### Testing Performed
+
+```
+npm run build → Passes
+Test Files  19 passed (19)
+     Tests  588 passed (588)
+```
+
+### Deployment Required
+
+```bash
+npx supabase functions deploy send-free-report-email
+```
+
+---
+
 ## 2026-01-19: Free Report Competitor Analysis + 4 AI Providers
 
 **Changes:** Free report now shows competitor data; updated all marketing copy to reference 4 AI providers
