@@ -145,7 +145,16 @@ Instead:
 ### Phase 4 — Competitor Intelligence + Agency Tools
 - org model
 - multi-tenant workspaces
-- white-label reports
+- white-label free report **landing page** (lead-gen-as-a-service)
+  - Agencies get their own branded `/free-report` page to capture leads
+  - Custom branding (logo, colors, company name)
+  - Custom email "from" address for lead delivery
+  - Leads go to agency's email/CRM, not ours
+  - Optional: custom domain support (audit.agencydomain.com)
+  - Optional: webhook integration to agency CRM
+  - Implementation: URL params (Phase 1) → DB config (Phase 2) → custom domains (Phase 3)
+  - Pricing: add-on to Professional ($99/mo) or included in Enterprise/Agency tier
+  - Note: Different from existing white-label PDF reports (which are already built)
 
 ### Phase 5 — Automation / Alerts
 - scheduled re-analysis
@@ -190,7 +199,7 @@ Test suites must cover:
 - Security (input sanitization, auth)
 - GDPR compliance (data export, deletion)
 
-**Current coverage:** 577 tests across 18 files
+**Current coverage:** 588 tests across 19 files
 
 ---
 
