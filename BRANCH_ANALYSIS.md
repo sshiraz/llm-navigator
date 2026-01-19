@@ -257,6 +257,96 @@ Test Files  18 passed (18)
 
 ---
 
+## 2026-01-18: Add Static SEO Landing Page for /free-report
+
+**Commit:** `Add static /free-report landing page for SEO indexing`
+
+### Context
+
+The free report section was only accessible via hash URL (`/#free-report`), which search engines cannot index. Created a static HTML landing page at `/free-report` that Google can crawl and index, with a CTA that links back to the SPA flow.
+
+### Problem
+
+- Hash-based URLs (`/#free-report`) are not indexable by search engines
+- The free report feature had no SEO presence
+- Potential organic traffic was being missed
+
+### Solution
+
+Created a static HTML page served directly by Netlify (before SPA catch-all), containing:
+- SEO meta tags (title, description, canonical URL)
+- Open Graph and Twitter Card tags
+- H1 heading and feature list
+- CTA button linking to `/#free-report`
+- No JavaScript required to render content
+
+### Architecture
+
+```
+/free-report (browser request)
+      ↓
+Netlify checks redirects in order:
+  1. /free-report → /free-report/index.html (200) ✓ MATCH
+  2. /* → /index.html (200) ← skipped
+      ↓
+Static HTML served (indexable by Google)
+      ↓
+User clicks CTA → /#free-report
+      ↓
+SPA loads and handles hash route
+```
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `public/free-report/index.html` | NEW - Static SEO landing page |
+| `netlify.toml` | Add redirect rule before SPA catch-all |
+| `src/utils/staticPages.test.ts` | NEW - Unit tests for static pages |
+| `ARCHITECTURE.md` | Document public/ folder structure |
+
+### SEO Features
+
+| Feature | Implementation |
+|---------|---------------|
+| Title | `<title>Free AI Visibility Report \| LLM Search Insight</title>` |
+| Meta description | AI-generated answers, ChatGPT, Claude, Perplexity |
+| Canonical URL | `https://llmsearchinsight.com/free-report` |
+| Open Graph | og:title, og:description, og:type, og:url |
+| Twitter Card | twitter:card, twitter:title, twitter:description |
+| Mobile | Viewport meta tag, responsive CSS |
+
+### Testing Performed
+
+```
+npm run test:run
+
+Test Files  19 passed (19)
+     Tests  606 passed (606)
+  Duration  16.58s
+```
+
+New tests added: 29 tests in `staticPages.test.ts` covering:
+- File existence
+- SEO meta tags
+- Content requirements
+- Technical requirements
+- Navigation links
+- Sitemap validation
+- robots.txt validation
+- Netlify redirect ordering
+
+### Verification After Deploy
+
+```
+[ ] curl -I https://llmsearchinsight.com/free-report → HTTP 200
+[ ] View source shows real HTML (not SPA shell)
+[ ] CTA button navigates to /#free-report
+[ ] Google Search Console can fetch the page
+```
+
+---
+
 ## 2026-01-18: Update Free Report Form Label
 
 **Commit:** `Change "Work Email" to "Email" on free report page`

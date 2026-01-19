@@ -79,6 +79,12 @@ llm-navigator/
 ├── scripts/
 │   ├── test-payment-flow.ts    # Payment integration tests
 │   └── test-edge-functions.ts  # Edge function tests
+│
+├── public/
+│   ├── free-report/            # Static SEO landing page
+│   │   └── index.html          # Indexable by search engines
+│   ├── sitemap.xml             # Search engine sitemap
+│   └── robots.txt              # Crawler directives
 ```
 
 ## Data Flow

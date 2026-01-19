@@ -7,6 +7,12 @@
   # Default build command
   command = "npm run build"
 
+# Static page for /free-report (SEO - must come BEFORE SPA catch-all)
+[[redirects]]
+  from = "/free-report"
+  to = "/free-report/index.html"
+  status = 200
+
 # Redirects for SPA routing
 [[redirects]]
   from = "/*"
