@@ -228,3 +228,17 @@ See [TESTING.md](./TESTING.md) for full documentation.
 - **Frontend**: Netlify (auto-deploys from main branch)
 - **Edge Functions**: `npx supabase functions deploy <function-name>`
 - **Database**: Managed by Supabase
+
+### Netlify Configuration
+
+The `netlify.toml` uses `force = true` on the SPA catch-all redirect:
+
+```toml
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = true
+```
+
+**Why `force = true`?** Static files in `public/` (like `free-report/index.html` for SEO) would otherwise take precedence over the SPA redirect. The `force` flag ensures React handles all routes while static HTML is still available for search engine crawlers that don't execute JavaScript.

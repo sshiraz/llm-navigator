@@ -8,12 +8,12 @@
   command = "npm run build"
 
 # Redirects for SPA routing
-# Note: /free-report is handled by the SPA, not static HTML
-# The static HTML at public/free-report/index.html serves as SEO fallback
+# force = true ensures SPA handles routes even if static files exist
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+  force = true
 
 # Environment variable inheritance
 [build.environment]

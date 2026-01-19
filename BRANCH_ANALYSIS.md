@@ -267,20 +267,11 @@ Multiple issues were discovered and fixed in this session:
 1. The `/free-report` page was showing static HTML instead of the React form
 2. AI models in check-citations were outdated (Gemini 1.5 and Claude 3 Haiku were retired)
 3. The `handleHashChange` function was overriding path-based routes
+4. Netlify was serving static files even without explicit redirects
 
 ### Problem 1: Static HTML Blocking React Form
 
-The Netlify redirect was serving `public/free-report/index.html` directly instead of letting the SPA handle the route:
-
-```toml
-# This was WRONG - blocked the React app
-[[redirects]]
-  from = "/free-report"
-  to = "/free-report/index.html"
-  status = 200
-```
-
-Users saw a static page with a non-functional button instead of the actual free report form.
+Even after removing the explicit redirect, Netlify was serving `public/free-report/index.html` because it physically existed at `dist/free-report/index.html`. The SPA redirect didn't take precedence over static files.
 
 ### Problem 2: handleHashChange Overriding Path Routes
 
@@ -288,16 +279,27 @@ When visiting `/free-report`, the `handleHashChange` function ran and set `activ
 
 ### Solution
 
-1. **Removed static HTML redirect** - SPA now handles `/free-report`
+1. **Added `force = true` to SPA redirect** - Forces SPA to handle all routes even when static files exist:
+   ```toml
+   [[redirects]]
+     from = "/*"
+     to = "/index.html"
+     status = 200
+     force = true
+   ```
 2. **Fixed handleHashChange** - Now checks pathname before defaulting to 'landing'
 3. **Updated static HTML** - Added Gemini mention for SEO crawlers
 4. **Updated AI models** - See separate entry below
+
+### Why `force = true`?
+
+By default, Netlify serves static files if they exist, even with SPA redirects configured. The `force = true` flag tells Netlify to apply the redirect rule regardless of whether a matching static file exists. This is critical for SPAs where you want React Router (or hash-based routing) to handle all paths.
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `netlify.toml` | Remove /free-report redirect |
+| `netlify.toml` | Add `force = true` to SPA catch-all redirect |
 | `src/App.tsx` | Fix handleHashChange to respect path-based routes |
 | `public/free-report/index.html` | Add Gemini to all mentions |
 | `src/utils/staticPages.test.ts` | Update test expectations |
@@ -309,14 +311,25 @@ npm run test:run
 
 Test Files  19 passed (19)
      Tests  606 passed (606)
-  Duration  16.73s
+  Duration  17.36s
 ```
+
+Build: Passes
 
 ### User Flow After Deploy
 
 ```
-/free-report → SPA loads → React FreeReportPage → Form works
+/free-report → Netlify forces SPA → React FreeReportPage → Form works
 ```
+
+### Note on Static HTML
+
+The static HTML at `public/free-report/index.html` is still useful for:
+- SEO crawlers that don't execute JavaScript
+- Social media previews (Open Graph tags)
+- Search engine indexing
+
+With `force = true`, users always get the React app, while crawlers that fetch the raw HTML still see SEO-optimized content.
 
 ---
 
