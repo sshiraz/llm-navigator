@@ -407,7 +407,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
                   <Search className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-slate-400 text-sm">© 2024 LLM Navigator</span>
+                <span className="text-slate-400 text-sm">© 2025 LLM Navigator</span>
               </div>
               <p className="text-slate-500 text-xs">LLM Navigator is an AI search visibility platform created by Convologix.</p>
             </div>
