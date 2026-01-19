@@ -119,7 +119,7 @@ function generateEmailHtml(data: FreeReportEmailRequest): string {
           <!-- Header -->
           <tr>
             <td style="padding-bottom: 32px; text-align: center;">
-              <h1 style="margin: 0; color: #f1f5f9; font-size: 24px;">LLM Search Insight</h1>
+              <h1 style="margin: 0; color: #f1f5f9; font-size: 24px;">LLM Navigator</h1>
             </td>
           </tr>
 
@@ -245,7 +245,7 @@ function generateEmailHtml(data: FreeReportEmailRequest): string {
                 You received this email because you requested a free AI visibility report.
               </p>
               <p style="color: #64748b; margin: 8px 0 0 0; font-size: 12px;">
-                LLM Search Insight | AI Visibility Analytics
+                LLM Navigator | AI Visibility Analytics
               </p>
             </td>
           </tr>
@@ -309,7 +309,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'LLM Search Insight <reports@mail.llmsearchinsight.com>',
+        from: 'LLM Navigator <reports@mail.llmsearchinsight.com>',
         to: [email],
         subject: `Your AI Visibility Report for ${domain}`,
         html: htmlContent,

@@ -5,6 +5,59 @@
 
 ---
 
+## 2026-01-19: Rename App to LLM Navigator
+
+**Commit:** `Rename app from LLM Search Insight to LLM Navigator`
+
+### Context
+
+The app was previously branded as "LLM Search Insight" but LinkedIn posts and marketing materials refer to it as "LLM Navigator". Renamed the product to align with existing marketing while keeping the domain `llmsearchinsight.com` (good for SEO keywords).
+
+### Branding Strategy
+
+| Element | Value |
+|---------|-------|
+| **Product Name** | LLM Navigator |
+| **Domain** | llmsearchinsight.com |
+| **Tagline** | Answer Engine Optimization |
+| **Entity Statement** | "LLM Navigator is an AI search visibility platform created by Convologix." |
+
+### Changes
+
+Renamed "LLM Search Insight" to "LLM Navigator" in:
+
+| File | Location |
+|------|----------|
+| `src/components/Landing/LandingPage.tsx` | Header logo, footer copyright, entity statement |
+| `src/components/Layout/Sidebar.tsx` | Dashboard sidebar logo |
+| `src/components/FreeReport/FreeReportPage.tsx` | Page title, header logo |
+| `supabase/functions/send-free-report-email/index.ts` | Email header, footer, "from" field |
+
+**Already had correct name:**
+- `index.html` (page title was already "LLM Navigator")
+- Legal pages (Privacy, Terms, DPA)
+
+### Testing Performed
+
+```
+npm run test:run
+
+Test Files  19 passed (19)
+     Tests  588 passed (588)
+  Duration  16.63s
+```
+
+Build: Passes
+
+### Deployment Note
+
+After committing, deploy the email edge function:
+```bash
+npx supabase functions deploy send-free-report-email
+```
+
+---
+
 ## 2026-01-19: Fix Privacy and Terms Page Readability
 
 **Commit:** `Fix Privacy and Terms pages text readability`

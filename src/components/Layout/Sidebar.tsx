@@ -54,7 +54,7 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
             <Search className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white">LLM Search Insight</h1>
+            <h1 className="text-lg font-bold text-white">LLM Navigator</h1>
             <p className="text-xs text-slate-400">Answer Engine Optimization</p>
           </div>
         </button>

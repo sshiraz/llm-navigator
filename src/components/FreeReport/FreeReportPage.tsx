@@ -77,7 +77,7 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
   // Set SEO metadata on mount
   useEffect(() => {
     // Set page title
-    document.title = 'Free AI Visibility Report | LLM Search Insight';
+    document.title = 'Free AI Visibility Report | LLM Navigator';
 
     // Set or update meta description
     let metaDescription = document.querySelector('meta[name="description"]');
@@ -99,7 +99,7 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
 
     // Cleanup on unmount - restore default title
     return () => {
-      document.title = 'LLM Search Insight';
+      document.title = 'LLM Navigator';
     };
   }, []);
 
@@ -551,7 +551,7 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
               <Search className="w-4 h-4 text-white" />
             </div>
-            <span className="text-xl font-bold text-white">LLM Search Insight</span>
+            <span className="text-xl font-bold text-white">LLM Navigator</span>
           </div>
           <button
             onClick={onGetStarted}

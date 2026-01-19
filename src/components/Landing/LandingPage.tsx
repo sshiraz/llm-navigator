@@ -22,7 +22,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               <Search className="w-6 h-6 text-white" />
             </div>
             <div className="text-left">
-              <h1 className="text-xl font-bold text-white">LLM Search Insight</h1>
+              <h1 className="text-xl font-bold text-white">LLM Navigator</h1>
               <p className="text-xs text-slate-400">Answer Engine Optimization</p>
             </div>
           </div>
@@ -402,11 +402,14 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       <footer className="border-t border-slate-800 py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                <Search className="w-4 h-4 text-white" />
+            <div className="flex flex-col items-center md:items-start space-y-1">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <Search className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-slate-400 text-sm">© 2024 LLM Navigator</span>
               </div>
-              <span className="text-slate-400 text-sm">© 2024 LLM Search Insight</span>
+              <p className="text-slate-500 text-xs">LLM Navigator is an AI search visibility platform created by Convologix.</p>
             </div>
 
             <div className="flex items-center space-x-6 text-slate-400 text-sm">
