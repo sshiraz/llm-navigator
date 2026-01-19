@@ -31,12 +31,12 @@ interface CheckCitationsRequest {
   providers: ('openai' | 'anthropic' | 'perplexity' | 'gemini')[];
 }
 
-// Cost per 1K tokens (approximate)
+// Cost per 1K tokens (approximate) - Updated January 2026
 const COSTS: Record<string, { input: number; output: number }> = {
-  openai: { input: 0.01, output: 0.03 },      // GPT-4o
-  anthropic: { input: 0.003, output: 0.015 }, // Claude 3 Haiku (cost-effective)
-  perplexity: { input: 0.001, output: 0.001 }, // Perplexity Sonar
-  gemini: { input: 0.00025, output: 0.0005 }  // Gemini 1.5 Flash (very cost-effective)
+  openai: { input: 0.015, output: 0.06 },     // GPT-5.2
+  anthropic: { input: 0.001, output: 0.005 }, // Claude Haiku 4.5
+  perplexity: { input: 0.003, output: 0.015 }, // Perplexity Sonar Pro
+  gemini: { input: 0.00025, output: 0.001 }   // Gemini 2.5 Flash
 };
 
 // Extract domain from URL
@@ -174,7 +174,7 @@ async function queryOpenAI(
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model: 'gpt-5.2',
       messages: [
         {
           role: 'system',
@@ -196,7 +196,7 @@ async function queryOpenAI(
   return {
     response: data.choices[0]?.message?.content || '',
     tokensUsed: data.usage?.total_tokens || 0,
-    model: data.model || 'gpt-4o'
+    model: data.model || 'gpt-5.2'
   };
 }
 
@@ -213,7 +213,7 @@ async function queryAnthropic(
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'claude-3-haiku-20240307',
+      model: 'claude-haiku-4-5-20251016',
       max_tokens: 1000,
       system: 'You are a helpful assistant. Provide informative, factual answers. When relevant, mention specific websites, companies, or resources that could help the user.',
       messages: [
@@ -234,7 +234,7 @@ async function queryAnthropic(
   return {
     response: data.content[0]?.text || '',
     tokensUsed: inputTokens + outputTokens,
-    model: data.model || 'claude-3-haiku-20240307'
+    model: data.model || 'claude-haiku-4-5-20251016'
   };
 }
 
@@ -250,7 +250,7 @@ async function queryPerplexity(
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'sonar',
+      model: 'sonar-pro',
       messages: [
         { role: 'user', content: prompt }
       ],
@@ -276,7 +276,7 @@ async function queryPerplexity(
   return {
     response: data.choices[0]?.message?.content || '',
     tokensUsed: data.usage?.total_tokens || 0,
-    model: data.model || 'sonar',
+    model: data.model || 'sonar-pro',
     sources
   };
 }
@@ -287,7 +287,7 @@ async function queryGemini(
   apiKey: string
 ): Promise<{ response: string; tokensUsed: number; model: string }> {
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: {
@@ -328,7 +328,7 @@ async function queryGemini(
   return {
     response: text,
     tokensUsed: inputTokens + outputTokens,
-    model: 'gemini-1.5-flash'
+    model: 'gemini-2.5-flash'
   };
 }
 

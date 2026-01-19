@@ -257,6 +257,129 @@ Test Files  18 passed (18)
 
 ---
 
+## 2026-01-19: Fix /free-report Route and Update AI Models
+
+**Commit:** `Fix /free-report to show React form, update AI models to latest versions`
+
+### Context
+
+Multiple issues were discovered and fixed in this session:
+1. The `/free-report` page was showing static HTML instead of the React form
+2. AI models in check-citations were outdated (Gemini 1.5 and Claude 3 Haiku were retired)
+3. The `handleHashChange` function was overriding path-based routes
+
+### Problem 1: Static HTML Blocking React Form
+
+The Netlify redirect was serving `public/free-report/index.html` directly instead of letting the SPA handle the route:
+
+```toml
+# This was WRONG - blocked the React app
+[[redirects]]
+  from = "/free-report"
+  to = "/free-report/index.html"
+  status = 200
+```
+
+Users saw a static page with a non-functional button instead of the actual free report form.
+
+### Problem 2: handleHashChange Overriding Path Routes
+
+When visiting `/free-report`, the `handleHashChange` function ran and set `activeSection` to `'landing'` because there was no hash, overriding the initial path-based detection.
+
+### Solution
+
+1. **Removed static HTML redirect** - SPA now handles `/free-report`
+2. **Fixed handleHashChange** - Now checks pathname before defaulting to 'landing'
+3. **Updated static HTML** - Added Gemini mention for SEO crawlers
+4. **Updated AI models** - See separate entry below
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `netlify.toml` | Remove /free-report redirect |
+| `src/App.tsx` | Fix handleHashChange to respect path-based routes |
+| `public/free-report/index.html` | Add Gemini to all mentions |
+| `src/utils/staticPages.test.ts` | Update test expectations |
+
+### Testing Performed
+
+```
+npm run test:run
+
+Test Files  19 passed (19)
+     Tests  606 passed (606)
+  Duration  16.73s
+```
+
+### User Flow After Deploy
+
+```
+/free-report → SPA loads → React FreeReportPage → Form works
+```
+
+---
+
+## 2026-01-19: Update AI Models to Latest Versions
+
+**Commit:** `Update AI models to latest versions (GPT-5.2, Claude Haiku 4.5, Sonar Pro, Gemini 2.5)`
+
+### Context
+
+The check-citations edge function was using outdated AI models, some of which have been retired and were returning errors. Updated all providers to their current flagship models.
+
+### Problem
+
+| Provider | Old Model | Status |
+|----------|-----------|--------|
+| OpenAI | `gpt-4o` | 2 generations behind |
+| Anthropic | `claude-3-haiku-20240307` | **RETIRED** July 2025 |
+| Perplexity | `sonar` | Working but basic |
+| Gemini | `gemini-1.5-flash` | **RETIRED** April 2025 (404 errors) |
+
+### Solution
+
+Updated all models to current versions:
+
+| Provider | New Model | Benefit |
+|----------|-----------|---------|
+| OpenAI | `gpt-5.2` | Matches what ChatGPT users actually query |
+| Anthropic | `claude-haiku-4-5-20251016` | Latest Haiku, not retired |
+| Perplexity | `sonar-pro` | Better retrieval and reasoning |
+| Gemini | `gemini-2.5-flash` | Actually works (1.5 was retired) |
+
+### Cost Impact
+
+Updated cost estimates in the COSTS object:
+- OpenAI: $0.015/$0.06 per 1K tokens (was $0.01/$0.03)
+- Anthropic: $0.001/$0.005 per 1K tokens (was $0.003/$0.015)
+- Perplexity: $0.003/$0.015 per 1K tokens (was $0.001/$0.001)
+- Gemini: $0.00025/$0.001 per 1K tokens (similar)
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `supabase/functions/check-citations/index.ts` | Update all 4 model versions + cost estimates |
+
+### Testing Performed
+
+```
+npm run test:run
+
+Test Files  19 passed (19)
+     Tests  606 passed (606)
+  Duration  16.53s
+```
+
+### Deployment Required
+
+```bash
+npx supabase functions deploy check-citations
+```
+
+---
+
 ## 2026-01-18: Convert /free-report to Real SEO Route
 
 **Commit:** `Convert #free-report hash route to real /free-report path for SEO`

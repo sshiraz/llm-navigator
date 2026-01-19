@@ -23,7 +23,7 @@ describe('Static Pages', () => {
 
       it('should have meta description', () => {
         expect(html).toContain('<meta name="description"');
-        expect(html).toContain('how your brand appears in AI-generated answers');
+        expect(html).toContain('ChatGPT, Claude, Perplexity, Gemini');
       });
 
       it('should have canonical URL', () => {
@@ -182,20 +182,16 @@ describe('Static Pages', () => {
       expect(existsSync(netlifyPath)).toBe(true);
     });
 
-    it('should have /free-report redirect before SPA catch-all', () => {
+    it('should have SPA catch-all redirect', () => {
       const config = readFileSync(netlifyPath, 'utf-8');
-      const freeReportIndex = config.indexOf('from = "/free-report"');
-      const catchAllIndex = config.indexOf('from = "/*"');
-
-      // /free-report rule must come BEFORE /* rule
-      expect(freeReportIndex).toBeGreaterThan(-1);
-      expect(catchAllIndex).toBeGreaterThan(-1);
-      expect(freeReportIndex).toBeLessThan(catchAllIndex);
+      expect(config).toContain('from = "/*"');
+      expect(config).toContain('to = "/index.html"');
     });
 
-    it('should serve static HTML for /free-report', () => {
+    it('should NOT have separate /free-report redirect (SPA handles it)', () => {
       const config = readFileSync(netlifyPath, 'utf-8');
-      expect(config).toContain('to = "/free-report/index.html"');
+      // /free-report should be handled by the SPA, not a static redirect
+      expect(config).not.toContain('to = "/free-report/index.html"');
     });
   });
 });

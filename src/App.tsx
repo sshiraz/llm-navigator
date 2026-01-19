@@ -119,7 +119,23 @@ function App() {
       if (section) {
         setActiveSection(section);
       } else {
-        setActiveSection('landing');
+        // Don't override path-based routes (SEO pages)
+        const pathname = window.location.pathname;
+        if (pathname === '/free-report' || pathname === '/free-report/') {
+          setActiveSection('free-report');
+        } else if (pathname === '/pricing' || pathname === '/pricing/') {
+          setActiveSection('pricing');
+        } else if (pathname === '/privacy' || pathname === '/privacy/') {
+          setActiveSection('privacy');
+        } else if (pathname === '/terms' || pathname === '/terms/') {
+          setActiveSection('terms');
+        } else if (pathname === '/login' || pathname === '/login/') {
+          setActiveSection('auth');
+        } else if (pathname === '/signup' || pathname === '/signup/') {
+          setActiveSection('auth');
+        } else {
+          setActiveSection('landing');
+        }
       }
 
       // If we're on the analysis-results page, try to load the analysis from storage
