@@ -5,6 +5,63 @@
 
 ---
 
+## 2026-01-19: Free Report Rate Limiting Fix
+
+**Changes:** Fixed rate limiting for free reports; added admin whitelist; created missing database table
+
+### Problem
+
+Rate limiting for free reports was not working. The `free_report_leads` table had no migration, so it either didn't exist or had no RLS policies allowing anonymous access.
+
+### Solution
+
+**1. Added admin whitelist:**
+```typescript
+const unlimitedEmails = ['info@convologix.com'];
+const isUnlimited = unlimitedEmails.includes(email.toLowerCase());
+```
+
+**2. Fixed error handling:**
+- Database query errors were being silently ignored
+- Now logs errors to console for debugging
+- Rate limiting only blocks if query succeeds AND finds records
+
+**3. Created migration for `free_report_leads` table:**
+- Columns: id, email, website, is_cited, ai_score, citation_rate, industry, competitor_count, created_at
+- Indexes on (email, created_at) and (website, created_at) for efficient queries
+- RLS policies: anonymous users can INSERT and SELECT
+
+### Rate Limiting Rules
+
+| Check | Limit | Bypass |
+|-------|-------|--------|
+| Same email | 1 per 24 hours | Whitelisted emails |
+| Same website | 3 per 24 hours | Whitelisted emails |
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/FreeReport/FreeReportPage.tsx` | Whitelist + error handling |
+| `supabase/migrations/20260119_create_free_report_leads.sql` | New table |
+| `src/types/database.ts` | TypeScript types |
+
+### Testing Performed
+
+```
+npm run build → Passes
+Test Files  19 passed (19)
+     Tests  588 passed (588)
+```
+
+### Deployment Required
+
+```bash
+npx supabase db push
+```
+
+---
+
 ## 2026-01-19: Email Report White Theme + Competitors Card
 
 **Changes:** Email report switched to white background for printing; added "Competitors Found" score card

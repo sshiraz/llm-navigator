@@ -372,11 +372,12 @@ A free AI visibility report that serves as the primary lead generation tool.
 10. Send email → send-free-report-email edge function (async)
 ```
 
-**RLS requirement:** The `free_report_leads` table needs a policy allowing anonymous reads for abuse checks:
-```sql
-CREATE POLICY "Allow read for abuse check" ON free_report_leads
-  FOR SELECT USING (true);
-```
+**Rate Limiting:**
+- 1 report per email per 24 hours
+- 3 reports per website per 24 hours
+- Whitelist bypass: `info@convologix.com` (unlimited)
+
+**RLS:** Migration `20260119_create_free_report_leads.sql` creates table with policies for anonymous INSERT and SELECT.
 
 ## Don't
 

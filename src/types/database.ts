@@ -300,6 +300,40 @@ export interface Database {
           revoked_at?: string;
         };
       };
+      free_report_leads: {
+        Row: {
+          id: string;
+          email: string;
+          website: string;
+          is_cited: boolean;
+          ai_score: number | null;
+          citation_rate: number | null;
+          industry: string | null;
+          competitor_count: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          website: string;
+          is_cited?: boolean;
+          ai_score?: number | null;
+          citation_rate?: number | null;
+          industry?: string | null;
+          competitor_count?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          website?: string;
+          is_cited?: boolean;
+          ai_score?: number | null;
+          citation_rate?: number | null;
+          industry?: string | null;
+          competitor_count?: number;
+        };
+      };
     };
     Views: {
       [_ in never]: never;

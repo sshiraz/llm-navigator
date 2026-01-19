@@ -282,39 +282,49 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
     setIsLoading(true);
     setLoadingStatus('Checking eligibility...');
 
+    // Whitelist for unlimited free reports (admin/testing)
+    const unlimitedEmails = ['info@convologix.com'];
+    const isUnlimited = unlimitedEmails.includes(email.toLowerCase());
+
     // Abuse prevention: Check for recent reports with same email or domain
-    try {
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    if (!isUnlimited) {
+      try {
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-      // Check if this email has already received a report in the last 24 hours
-      const { data: emailCheck } = await supabase
-        .from('free_report_leads')
-        .select('id, created_at')
-        .eq('email', email.toLowerCase())
-        .gte('created_at', twentyFourHoursAgo)
-        .limit(1);
+        // Check if this email has already received a report in the last 24 hours
+        const { data: emailCheck, error: emailCheckErr } = await supabase
+          .from('free_report_leads')
+          .select('id, created_at')
+          .eq('email', email.toLowerCase())
+          .gte('created_at', twentyFourHoursAgo)
+          .limit(1);
 
-      if (emailCheck && emailCheck.length > 0) {
-        setError('You already received a free report in the last 24 hours. Please try again later or start a free trial for unlimited analyses.');
-        setIsLoading(false);
-        return;
+        if (emailCheckErr) {
+          console.warn('Email rate limit check failed:', emailCheckErr);
+        } else if (emailCheck && emailCheck.length > 0) {
+          setError('You already received a free report in the last 24 hours. Please try again later or start a free trial for unlimited analyses.');
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if this domain has been analyzed too many times in the last 24 hours (max 3)
+        const { data: domainCheck, error: domainCheckErr } = await supabase
+          .from('free_report_leads')
+          .select('id')
+          .eq('website', normalizedUrl)
+          .gte('created_at', twentyFourHoursAgo);
+
+        if (domainCheckErr) {
+          console.warn('Domain rate limit check failed:', domainCheckErr);
+        } else if (domainCheck && domainCheck.length >= 3) {
+          setError('This website has already been analyzed multiple times today. Please try again tomorrow or start a free trial.');
+          setIsLoading(false);
+          return;
+        }
+      } catch (abuseCheckErr) {
+        // If abuse check fails, continue anyway (don't block legitimate users)
+        console.warn('Abuse check failed:', abuseCheckErr);
       }
-
-      // Check if this domain has been analyzed too many times in the last 24 hours (max 3)
-      const { data: domainCheck } = await supabase
-        .from('free_report_leads')
-        .select('id')
-        .eq('website', normalizedUrl)
-        .gte('created_at', twentyFourHoursAgo);
-
-      if (domainCheck && domainCheck.length >= 3) {
-        setError('This website has already been analyzed multiple times today. Please try again tomorrow or start a free trial.');
-        setIsLoading(false);
-        return;
-      }
-    } catch (abuseCheckErr) {
-      // If abuse check fails, continue anyway (don't block legitimate users)
-      console.warn('Abuse check failed:', abuseCheckErr);
     }
 
     setLoadingStatus('Crawling website...');
