@@ -81,8 +81,6 @@ llm-navigator/
 │   └── test-edge-functions.ts  # Edge function tests
 │
 ├── public/
-│   ├── free-report/            # Static SEO landing page
-│   │   └── index.html          # Indexable by search engines
 │   ├── sitemap.xml             # Search engine sitemap
 │   └── robots.txt              # Crawler directives
 ```
@@ -241,4 +239,4 @@ The `netlify.toml` uses `force = true` on the SPA catch-all redirect:
   force = true
 ```
 
-**Why `force = true`?** Static files in `public/` (like `free-report/index.html` for SEO) would otherwise take precedence over the SPA redirect. The `force` flag ensures React handles all routes while static HTML is still available for search engine crawlers that don't execute JavaScript.
+**Why `force = true`?** Without it, if a static file exists at a path (e.g., `dist/some-page/index.html`), Netlify serves that file instead of the SPA. The `force` flag ensures React always handles routing. Pass-through rules for `/assets/*`, `/sitemap.xml`, and `/robots.txt` are defined before the catch-all to ensure static assets are served correctly.
