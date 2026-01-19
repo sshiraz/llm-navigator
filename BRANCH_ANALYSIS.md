@@ -5,6 +5,113 @@
 
 ---
 
+## 2026-01-19: Fix Privacy and Terms Page Readability
+
+**Commit:** `Fix Privacy and Terms pages text readability`
+
+### Context
+
+The Privacy Policy and Terms of Service pages had unreadable text. The `prose-invert` Tailwind Typography class wasn't working correctly, resulting in dark text on a light/transparent background.
+
+### Problem
+
+- Text appeared as dark gray on a semi-transparent background
+- The `prose-invert` class relies on Tailwind's typography plugin configuration
+- Semi-transparent `bg-slate-800/50` wasn't providing enough contrast
+
+### Solution
+
+Replaced the `prose` approach with explicit Tailwind utility classes:
+
+1. **Solid background**: Changed `bg-slate-800/50` to `bg-slate-800` for consistent dark background
+2. **Explicit text colors**:
+   - Body text: `text-slate-200` (light gray, high contrast)
+   - Headings (h2): `text-white` + `text-2xl font-bold`
+   - Subheadings (h3): `text-slate-100` + `text-xl font-semibold`
+   - Emphasized text: `text-white font-semibold`
+   - Links: `text-indigo-400 hover:text-indigo-300`
+3. **Structured layout**: Wrapped sections in `<section>` tags with `space-y-6`
+4. **List styling**: Added `list-disc list-inside space-y-2 ml-4`
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/Legal/TermsOfService.tsx` | Replace prose with explicit Tailwind classes |
+| `src/components/Legal/PrivacyPolicy.tsx` | Replace prose with explicit Tailwind classes |
+
+### Testing Performed
+
+```
+npm run test:run
+
+Test Files  19 passed (19)
+     Tests  588 passed (588)
+  Duration  16.46s
+```
+
+Build: Passes
+
+### Result
+
+Both pages now have:
+- High contrast text (light gray on dark slate background)
+- Clear visual hierarchy (white headings, gray body text)
+- Consistent styling with the rest of the app's dark theme
+
+---
+
+## 2026-01-19: Remove Static SEO HTML, Add Asset Pass-through Rules
+
+**Commit:** `Remove static free-report HTML, add asset pass-through rules`
+
+### Context
+
+The `force = true` on the Netlify SPA redirect was breaking the app by redirecting asset requests (`/assets/*.js`, `/assets/*.css`) to `index.html`, causing MIME type errors.
+
+### Problem
+
+Console errors showed:
+- "Failed to load module script: Expected JavaScript but got text/html"
+- "Refused to apply style: MIME type text/html is not supported"
+
+### Solution
+
+1. **Added pass-through rules** for static assets before the catch-all redirect:
+   ```toml
+   [[redirects]]
+     from = "/assets/*"
+     to = "/assets/:splat"
+     status = 200
+   ```
+
+2. **Removed static HTML** at `public/free-report/index.html` since it was never being served anyway (due to `force = true`)
+
+3. **Updated tests** to reflect new configuration
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `netlify.toml` | Add pass-through rules for /assets/*, /sitemap.xml, /robots.txt |
+| `public/free-report/` | Deleted (static HTML no longer needed) |
+| `src/utils/staticPages.test.ts` | Remove HTML tests, add asset pass-through tests |
+| `ARCHITECTURE.md` | Update public/ folder structure and Netlify docs |
+
+### Testing Performed
+
+```
+npm run test:run
+
+Test Files  19 passed (19)
+     Tests  588 passed (588)
+  Duration  16.46s
+```
+
+Build: Passes
+
+---
+
 ## 2026-01-18: Fix Stripe Customer Name and Payment Method Storage
 
 **Commit:** `Fix Stripe customer name and payment method storage for recurring billing`
