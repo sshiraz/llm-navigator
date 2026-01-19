@@ -257,13 +257,94 @@ Test Files  18 passed (18)
 
 ---
 
+## 2026-01-18: Convert /free-report to Real SEO Route
+
+**Commit:** `Convert #free-report hash route to real /free-report path for SEO`
+
+### Context
+
+The free report section was only accessible via hash URL (`/#free-report`), which search engines cannot index. Converted to a real path-based route (`/free-report`) that Google can crawl and index.
+
+### Problem
+
+- Hash-based URLs (`/#free-report`) are not indexable by search engines
+- The free report feature had no SEO presence
+- Potential organic traffic was being missed
+
+### Solution
+
+1. **Path-based routing**: Updated App.tsx to detect `/free-report` pathname and render FreeReportPage
+2. **SEO metadata**: Added useEffect in FreeReportPage to set title, meta description, and canonical URL
+3. **Link updates**: Changed all `/#free-report` links to `/free-report` in LandingPage and static HTML
+4. **Legacy redirect**: Added client-side redirect from `#free-report` to `/free-report` for old links
+5. **Static fallback**: Kept static HTML page for non-JS crawlers
+
+### Architecture
+
+```
+/free-report (browser request)
+      ↓
+Netlify serves → static HTML (for crawlers)
+      ↓
+React hydrates → FreeReportPage component
+      ↓
+SEO metadata set via useEffect
+```
+
+Old links handled gracefully:
+```
+/#free-report → window.location.replace('/free-report')
+```
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/App.tsx` | Add pathname detection for /free-report, add #free-report redirect |
+| `src/components/FreeReport/FreeReportPage.tsx` | Add SEO metadata useEffect |
+| `src/components/Landing/LandingPage.tsx` | Update links to /free-report |
+| `public/free-report/index.html` | Update CTA link to /free-report |
+| `src/utils/staticPages.test.ts` | Update test expectations |
+
+### SEO Features
+
+| Feature | Implementation |
+|---------|---------------|
+| Title | `document.title = 'Free AI Visibility Report \| LLM Search Insight'` |
+| Meta description | Set via DOM manipulation in useEffect |
+| Canonical URL | `https://llmsearchinsight.com/free-report` |
+| Static fallback | `public/free-report/index.html` for non-JS crawlers |
+
+### Testing Performed
+
+```
+npm run test:run
+
+Test Files  19 passed (19)
+     Tests  606 passed (606)
+  Duration  16.53s
+```
+
+### Verification After Deploy
+
+```
+[ ] Visit /free-report → React component renders
+[ ] curl -I https://llmsearchinsight.com/free-report → HTTP 200
+[ ] View source shows static HTML (for SEO crawlers)
+[ ] Click CTA buttons on landing page → navigates to /free-report
+[ ] Visit /#free-report → redirects to /free-report
+[ ] Google Search Console can fetch the page
+```
+
+---
+
 ## 2026-01-18: Add Static SEO Landing Page for /free-report
 
 **Commit:** `Add static /free-report landing page for SEO indexing`
 
 ### Context
 
-The free report section was only accessible via hash URL (`/#free-report`), which search engines cannot index. Created a static HTML landing page at `/free-report` that Google can crawl and index, with a CTA that links back to the SPA flow.
+Created initial static HTML landing page at `/free-report` that Google can crawl and index. This provides a fallback for non-JS crawlers.
 
 ### Problem
 

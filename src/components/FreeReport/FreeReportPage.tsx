@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Mail, Globe, CheckCircle, ArrowRight, BarChart3, Eye, Target, Zap, Shield, TrendingUp, ExternalLink, AlertTriangle, Award, Users, Info, Clock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { detectIndustry } from '../../utils/industryDetector';
@@ -73,6 +73,35 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
   const [error, setError] = useState('');
   const [reportGenerated, setReportGenerated] = useState(false);
   const [reportData, setReportData] = useState<ReportData | null>(null);
+
+  // Set SEO metadata on mount
+  useEffect(() => {
+    // Set page title
+    document.title = 'Free AI Visibility Report | LLM Search Insight';
+
+    // Set or update meta description
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute('content', 'Get a free AI visibility report showing how your brand appears in ChatGPT, Claude, and Perplexity. Discover your AI search visibility in minutes.');
+
+    // Set or update canonical URL
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', 'https://llmsearchinsight.com/free-report');
+
+    // Cleanup on unmount - restore default title
+    return () => {
+      document.title = 'LLM Search Insight';
+    };
+  }, []);
 
   // Industry keywords for content-based detection
   const INDUSTRY_CONTENT_KEYWORDS: Record<string, string[]> = {

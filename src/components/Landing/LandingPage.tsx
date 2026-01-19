@@ -31,7 +31,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
           <div className="flex items-center space-x-3">
             <button
               onClick={() => {
-                window.location.hash = '#free-report';
+                window.location.href = '/free-report';
               }}
               className="hidden sm:flex items-center space-x-2 px-4 py-2 text-blue-400 hover:text-blue-300 transition-colors"
             >
@@ -102,7 +102,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               </button>
 
               <button
-                onClick={() => { window.location.hash = '#free-report'; }}
+                onClick={() => { window.location.href = '/free-report'; }}
                 className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white text-lg font-semibold rounded-xl transition-all border border-slate-600 flex items-center space-x-2"
               >
                 <span>Get Free Report</span>

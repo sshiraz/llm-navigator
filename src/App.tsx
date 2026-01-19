@@ -29,6 +29,26 @@ import { StorageManager } from './utils/storageManager';
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [activeSection, setActiveSection] = useState(() => {
+    // Check for path-based routes first (SEO-friendly)
+    const pathname = window.location.pathname;
+    if (pathname === '/free-report' || pathname === '/free-report/') {
+      return 'free-report';
+    }
+    if (pathname === '/pricing' || pathname === '/pricing/') {
+      return 'pricing';
+    }
+    if (pathname === '/privacy' || pathname === '/privacy/') {
+      return 'privacy';
+    }
+    if (pathname === '/terms' || pathname === '/terms/') {
+      return 'terms';
+    }
+    if (pathname === '/login' || pathname === '/login/') {
+      return 'auth';
+    }
+    if (pathname === '/signup' || pathname === '/signup/') {
+      return 'auth';
+    }
     // Check URL hash for initial section (strip query params)
     const hash = window.location.hash.slice(1).split('?')[0];
     return hash || 'landing';
@@ -55,6 +75,13 @@ function App() {
   useEffect(() => {
     // Clear stale 'users' localStorage key - Supabase is the source of truth
     localStorage.removeItem('users');
+
+    // Redirect old hash-based URLs to path-based URLs for SEO
+    const hash = window.location.hash;
+    if (hash === '#free-report') {
+      window.location.replace('/free-report');
+      return;
+    }
 
     const handleHashChange = () => {
       const fullHash = window.location.hash.slice(1);

@@ -62,8 +62,8 @@ describe('Static Pages', () => {
         expect(html).toContain('Competitor visibility');
       });
 
-      it('should have CTA button linking to /#free-report', () => {
-        expect(html).toContain('href="/#free-report"');
+      it('should have CTA button linking to /free-report', () => {
+        expect(html).toContain('href="/free-report"');
         expect(html).toContain('Generate Free Report');
       });
 
