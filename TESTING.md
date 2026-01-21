@@ -1,6 +1,6 @@
 # Testing Guide
 
-> Last updated: 2026-01-18
+> Last updated: 2026-01-21
 
 This document provides an overview of all automated tests in the LLM Navigator project.
 
@@ -13,7 +13,7 @@ This document provides an overview of all automated tests in the LLM Navigator p
 npm run test:run && npm run build
 ```
 
-Current test count: **577 tests** (18 test files)
+Current test count: **608 tests** (20 test files)
 
 ## Quick Reference
 
@@ -216,6 +216,41 @@ Tests the PaymentService for Stripe integration (19 tests).
 | `createPaymentIntent` | Payment intent creation |
 | `getSubscriptionStatus` | Subscription status retrieval |
 
+### API Rate Limiting
+**File:** `src/services/apiRateLimiter.test.ts`
+
+Tests the API rate limiting logic patterns (18 tests).
+
+| Test Suite | Coverage |
+|------------|----------|
+| `Per-minute Rate Limiter` | First request allowed, 10 requests/min limit, 11th blocked, retry-after header, window reset after 60s, per-user tracking, count increments |
+| `Monthly Usage Limit` | Under limit allowed, at limit blocked (400), over limit blocked |
+| `Prompts Validation` | Undefined rejected, empty array rejected, non-array rejected, 1-10 allowed, >10 rejected |
+| `Rate Limit Constants` | Correct per-minute (10), monthly (400), max prompts (10) |
+
+**Rate Limiting Rules:**
+- Per-minute: 10 requests per user per minute (sliding window)
+- Monthly: 400 analyses per month (Enterprise plan)
+- Per-request: Maximum 10 prompts per API call
+
+### Free Report Page
+**File:** `src/components/FreeReport/FreeReportPage.test.tsx`
+
+Tests the free report form, rate limiting, and whitelist bypass (23 tests).
+
+| Test Suite | Coverage |
+|------------|----------|
+| Form Rendering | Email/website inputs, submit button, loading state |
+| Form Validation | Required fields, invalid inputs |
+| Rate Limiting | Database checks, email/website limits |
+| Whitelist Bypass | `info@convologix.com` bypasses rate limits, case-insensitive matching |
+| Report Generation | API calls, result display |
+
+**Security Coverage:**
+- Rate limiting: 1 report per email per 24 hours, 3 reports per website per 24 hours
+- Admin whitelist: Unlimited reports for `info@convologix.com`
+- Database-backed rate limiting via `free_report_leads` table
+
 ### Audit Log Service
 **File:** `src/services/auditLogService.test.ts`
 
@@ -377,13 +412,15 @@ set -a && . ./.env && set +a && npm run test:functions
 | User Utilities | userUtils.test.ts (46 tests) | - |
 | Input Sanitization | sanitize.test.ts (115 tests) | - |
 | Payment/Stripe | paymentService.test.ts | test-payment-flow.ts |
+| **API Rate Limiting** | apiRateLimiter.test.ts (18 tests) | - |
+| **Free Report Rate Limiting** | FreeReportPage.test.tsx (23 tests) | - |
 | Audit Logging | auditLogService.test.ts (28 tests) | - |
 | GDPR/Privacy | CookieConsent, PrivacyPolicy, AccountPage.gdpr | - |
 | Edge Functions | - | test-edge-functions.ts |
 | CORS Security | - | test-edge-functions.ts |
 | Admin Authentication | UserDashboard.test.tsx (delete/reset password) | - |
 
-**Total: 577 tests across 18 test files**
+**Total: 608 tests across 20 test files**
 
 ---
 

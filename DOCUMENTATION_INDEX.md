@@ -1,6 +1,6 @@
 # Documentation Index
 
-> Last updated: 2026-01-07
+> Last updated: 2026-01-21
 > This index organizes all documentation files in the LLM Navigator project.
 
 ---
@@ -68,7 +68,7 @@
 
 | File | Purpose | When to Use |
 |------|---------|-------------|
-| `TESTING.md` | **Comprehensive test documentation** (375 tests) | Primary test reference |
+| `TESTING.md` | **Comprehensive test documentation** (608 tests) | Primary test reference |
 | `APP_TESTING_GUIDE.md` | End-to-end manual testing guide | Manual QA testing |
 
 **Requirement:** All tests must pass (0 failures) before code is ready to merge.
@@ -76,7 +76,7 @@
 ### Test Commands
 ```bash
 npm run test           # Unit tests (watch)
-npm run test:run       # Unit tests (once) - 375 tests
+npm run test:run       # Unit tests (once) - 608 tests
 npm run test:functions # Edge Function tests
 npm run test:payment   # Payment flow tests
 ```

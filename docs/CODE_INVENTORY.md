@@ -69,6 +69,7 @@
 | `paymentService.ts` | Payment operations | `updateSubscription()`, `getSubscriptionStatus()` | `users` |
 | `projectService.ts` | Project CRUD | `createProject()`, `getProjects()`, `addCompetitor()` | `projects`, `competitors` |
 | `usageService.ts` | Usage tracking | `trackUsage()`, `getUsageStats()` | `api_usage` |
+| `apiRateLimiter.test.ts` | **Test file** | Rate limiting tests (per-minute, monthly, prompts validation) | - |
 
 ### Hooks (`src/hooks/`)
 
@@ -250,4 +251,4 @@ App.tsx
 
 ---
 
-*Last updated: 2024-12-30*
+*Last updated: 2026-01-21*

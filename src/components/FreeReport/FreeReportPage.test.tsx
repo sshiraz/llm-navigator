@@ -541,5 +541,66 @@ describe('FreeReportPage Component', () => {
         expect(emailUsedBuilder.eq).toHaveBeenCalledWith('email', 'repeat@example.com');
       });
     });
+
+    it('bypasses rate limiting for whitelisted email (info@convologix.com)', async () => {
+      // Mock that this email has been used many times (would normally be blocked)
+      const emailUsedBuilder = createMockQueryBuilder([
+        { id: '1', created_at: new Date().toISOString() },
+        { id: '2', created_at: new Date().toISOString() },
+        { id: '3', created_at: new Date().toISOString() },
+      ]);
+      vi.mocked(supabase.from).mockReturnValue(emailUsedBuilder as any);
+
+      vi.mocked(supabase.functions.invoke).mockResolvedValue({
+        data: {
+          success: true,
+          data: { results: createMockResults() },
+        },
+        error: null,
+      });
+
+      render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
+
+      // Use the whitelisted email
+      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'info@convologix.com');
+      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'test-domain.com');
+
+      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+
+      await waitFor(() => {
+        // Should proceed to analysis despite previous reports (whitelist bypasses rate limit)
+        expect(supabase.functions.invoke).toHaveBeenCalled();
+      });
+
+      // Should NOT show rate limit error
+      expect(screen.queryByText(/already received a free report/i)).not.toBeInTheDocument();
+    });
+
+    it('bypasses rate limiting for whitelisted email (case insensitive)', async () => {
+      // Mock that would normally block
+      const emailUsedBuilder = createMockQueryBuilder([{ id: '1', created_at: new Date().toISOString() }]);
+      vi.mocked(supabase.from).mockReturnValue(emailUsedBuilder as any);
+
+      vi.mocked(supabase.functions.invoke).mockResolvedValue({
+        data: {
+          success: true,
+          data: { results: createMockResults() },
+        },
+        error: null,
+      });
+
+      render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
+
+      // Use whitelisted email with different casing
+      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'INFO@CONVOLOGIX.COM');
+      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'test-domain.com');
+
+      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+
+      await waitFor(() => {
+        // Should proceed despite uppercase - whitelist check is case insensitive
+        expect(supabase.functions.invoke).toHaveBeenCalled();
+      });
+    });
   });
 });

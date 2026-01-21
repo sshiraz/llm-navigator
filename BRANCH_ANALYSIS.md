@@ -5,6 +5,65 @@
 
 ---
 
+## 2026-01-21: Rate Limiting Test Coverage
+
+**Changes:** Added comprehensive test coverage for API rate limiting and free report whitelist bypass
+
+### Problem
+
+Rate limiting logic for both the API and free report feature had no dedicated test coverage:
+1. API rate limiting (per-minute, monthly limits, prompts validation) was untested
+2. Free report whitelist bypass for `info@convologix.com` was untested
+
+### Solution
+
+**1. Created `src/services/apiRateLimiter.test.ts` (18 tests):**
+
+| Test Suite | Tests |
+|------------|-------|
+| Per-minute Rate Limiter | First request allowed, 10/min limit, 11th blocked, retry-after header, window reset, per-user tracking, count increments |
+| Monthly Usage Limit | Under limit (0, 100, 399) allowed, at limit (400) blocked, over limit blocked |
+| Prompts Validation | Undefined/empty/non-array rejected, 1-10 allowed, >10 rejected |
+| Rate Limit Constants | Verifies 10/min, 400/month, 10 prompts/request |
+
+**2. Added whitelist bypass tests to `FreeReportPage.test.tsx`:**
+
+```typescript
+it('bypasses rate limiting for whitelisted email (info@convologix.com)')
+it('bypasses rate limiting for whitelisted email (case insensitive)')
+```
+
+### Rate Limiting Logic Tested
+
+| Limit Type | Value | Location |
+|------------|-------|----------|
+| Per-minute API calls | 10 requests/user | `supabase/functions/api/index.ts` |
+| Monthly analyses | 400/month | Enterprise plan |
+| Prompts per request | 10 max | API validation |
+| Free report per email | 1/24 hours | `FreeReportPage.tsx` |
+| Free report per website | 3/24 hours | `FreeReportPage.tsx` |
+| Admin whitelist | Unlimited | `info@convologix.com` |
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/services/apiRateLimiter.test.ts` | New test file (18 tests) |
+| `src/components/FreeReport/FreeReportPage.test.tsx` | Added whitelist bypass tests |
+| `TESTING.md` | Updated test count (608), added rate limiting sections |
+| `DOCUMENTATION_INDEX.md` | Updated test count |
+| `docs/CODE_INVENTORY.md` | Added new test file |
+
+### Testing Performed
+
+```
+npm run test:run
+Test Files  20 passed (20)
+     Tests  608 passed (608)
+```
+
+---
+
 ## 2026-01-19: Free Report Rate Limiting Fix
 
 **Changes:** Fixed rate limiting for free reports; added admin whitelist; created missing database table
