@@ -283,14 +283,6 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
             </p>
           </div>
 
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-3">
-              How do Test Mode and Live Mode work?
-            </h3>
-            <p className="text-slate-400">
-              The platform automatically detects Test or Live mode based on your Stripe configuration. Development environments use test keys (no real charges), while production uses live keys for real payments. Administrators see a status indicator in their dashboard.
-            </p>
-          </div>
         </div>
       </div>
 

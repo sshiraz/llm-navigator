@@ -303,33 +303,6 @@ export default function ApiDocs() {
           </div>
         </section>
 
-        {/* Environment Mode */}
-        <section className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Test vs Live Mode</h2>
-          <p className="text-slate-400 mb-4">
-            The API automatically detects Test or Live mode based on your Stripe configuration:
-          </p>
-          <div className="space-y-3">
-            <div className="flex items-start space-x-3">
-              <span className="px-2 py-1 bg-yellow-900/50 text-yellow-400 text-xs font-bold rounded">TEST</span>
-              <div>
-                <p className="text-white font-medium">Test Mode</p>
-                <p className="text-slate-400 text-sm">Uses <code className="text-indigo-400">pk_test_</code> keys. No real charges. Safe for development.</p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <span className="px-2 py-1 bg-red-900/50 text-red-400 text-xs font-bold rounded">LIVE</span>
-              <div>
-                <p className="text-white font-medium">Live Mode</p>
-                <p className="text-slate-400 text-sm">Uses <code className="text-indigo-400">pk_live_</code> keys. Real payments processed. Production only.</p>
-              </div>
-            </div>
-          </div>
-          <p className="text-slate-500 text-sm mt-4">
-            Note: Mode indicators are shown to administrators only, not on customer-facing pages.
-          </p>
-        </section>
-
         {/* Support */}
         <section className="bg-indigo-900/30 border border-indigo-700 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-indigo-300 mb-2">Need Help?</h2>

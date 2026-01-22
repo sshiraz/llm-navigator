@@ -6,7 +6,6 @@ import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { STRIPE_CONFIG, stripePromise } from '../../utils/stripeUtils';
 import { PaymentService } from '../../services/paymentService';
 import { isLiveMode } from '../../utils/liveMode';
-import LiveModeIndicator from '../UI/LiveModeIndicator';
 import SecurePaymentNotice from '../UI/SecurePaymentNotice';
 
 interface CreditCardFormProps {
@@ -216,8 +215,6 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
   if (isSuccess) {
     return (
       <div className="max-w-md mx-auto bg-white rounded-xl border border-gray-200 p-8 text-center">
-        {isLiveMode && <LiveModeIndicator variant="warning" className="mb-6" />}
-        
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <CheckCircle className="w-8 h-8 text-green-600" />
         </div>
@@ -243,8 +240,6 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
   return (
     <div className="max-w-md mx-auto bg-white rounded-xl border border-gray-200 p-8">
       <div className="text-center mb-6">
-        {isLiveMode && <LiveModeIndicator variant="warning" className="mb-6" />}
-        
         <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <CreditCard className="w-8 h-8 text-blue-600" />
         </div>
@@ -293,12 +288,6 @@ function CreditCardFormContent({ plan, amount, onSuccess, onCancel }: CreditCard
           {cardError && (
             <p className="mt-1 text-sm text-red-600">{cardError}</p>
           )}
-          <p className="mt-1 text-xs text-gray-500">
-            {isLiveMode 
-              ? 'Use a real credit card - LIVE MODE ACTIVE' 
-              : 'Use test card: 4242 4242 4242 4242 with any future expiry date and any CVC'
-            }
-          </p>
         </div>
 
         {/* Security Notice */}
