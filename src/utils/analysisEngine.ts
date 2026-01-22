@@ -264,7 +264,9 @@ export class AnalysisEngine {
           issues,
           // Multi-page crawl data
           pagesAnalyzed: crawlData.pagesAnalyzed,
-          pages: crawlData.pages
+          pages: crawlData.pages,
+          // AI Readiness analysis
+          aiReadiness: crawlData.aiReadiness
         }
       };
     } catch (error) {

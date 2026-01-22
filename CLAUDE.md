@@ -259,6 +259,36 @@ AnalysisEngine.analyzeWebsite(url, prompts, user)
 - Historical trends (citation rate over time)
 - Per-provider breakdown in results
 
+### AI Platform Readiness Analysis
+Analyzes website's robots.txt for AI crawler rules and recommends platform registrations.
+
+```typescript
+// Entry point: crawl-website edge function
+// Types: AIReadinessAnalysis, RobotsTxtAnalysis, AICrawlerRule (in src/types/crawl.ts)
+// Component: AIReadinessSection.tsx
+
+// Flow:
+// 1. Crawl function fetches robots.txt from target website
+// 2. Parses rules for 17 AI crawlers (search + training)
+// 3. Detects e-commerce via Product schema
+// 4. Generates platform recommendations
+// 5. Returns overall status: good/warning/critical
+```
+
+**Crawlers checked:**
+- Search (important): OAI-SearchBot, PerplexityBot, ChatGPT-User, Applebot-Extended
+- Training (optional): GPTBot, ClaudeBot, Claude-Web, anthropic-ai, Google-Extended, etc.
+
+**Platform recommendations:**
+- ChatGPT Merchant Portal (e-commerce only)
+- Bing Webmaster Tools (powers ChatGPT browsing)
+- Google Search Console (powers Gemini)
+
+**Key files:**
+- `supabase/functions/crawl-website/index.ts` - `analyzeAIReadiness()` function
+- `src/types/crawl.ts` - AIReadinessAnalysis types
+- `src/components/Analysis/AIReadinessSection.tsx` - Display component
+
 ### User Data: Database vs localStorage
 ```typescript
 // Supabase = Source of truth (subscriptions, profiles, auth)

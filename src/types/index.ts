@@ -106,6 +106,8 @@ export interface Analysis {
       schemaCount: number;
       issues: string[];
     }[];
+    // AI Readiness analysis
+    aiReadiness?: import('./crawl').AIReadinessAnalysis;
   };
   // AEO citation results (for Answer Engine Optimization analyses)
   citationResults?: CitationResult[];

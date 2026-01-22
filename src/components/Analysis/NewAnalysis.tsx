@@ -30,7 +30,7 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     { id: generateId(), text: '' }
   ]);
   const [brandName, setBrandName] = useState('');
-  const [selectedProviders, setSelectedProviders] = useState<AnalysisProvider[]>(['perplexity', 'openai', 'anthropic']);
+  const [selectedProviders, setSelectedProviders] = useState<AnalysisProvider[]>(['perplexity', 'openai', 'anthropic', 'gemini']);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentAnalysis, setCurrentAnalysis] = useState<AnalysisState | null>(null);
   const [error, setError] = useState<string | null>(null);

@@ -253,7 +253,8 @@ export async function performRealAEOAnalysis(
       technicalSignals: crawlData.technicalSignals,
       issues: [],
       pagesAnalyzed: crawlData.pagesAnalyzed,
-      pages: crawlData.pages
+      pages: crawlData.pages,
+      aiReadiness: crawlData.aiReadiness
     } : undefined,
     recommendations,
     createdAt: new Date().toISOString(),

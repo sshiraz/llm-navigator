@@ -3,6 +3,7 @@ import { ArrowLeft, ExternalLink, Clock, Zap, AlertCircle, CheckCircle, Download
 import { Analysis } from '../../types';
 import MetricsBreakdown from './MetricsBreakdown';
 import CitationResultsDetail from './CitationResultsDetail';
+import AIReadinessSection from './AIReadinessSection';
 import { generatePDFReport } from '../../utils/pdfGenerator';
 import { AnalysisService } from '../../services/analysisService'; 
 
@@ -288,6 +289,13 @@ export default function AnalysisResults({ analysis, onBack, logoUrl }: AnalysisR
               citationResults={analysis.citationResults}
               overallCitationRate={analysis.overallCitationRate || 0}
             />
+          </div>
+        )}
+
+        {/* AI Platform Readiness - Show if aiReadiness data is available */}
+        {analysis.crawlData?.aiReadiness && (
+          <div className="mb-8">
+            <AIReadinessSection aiReadiness={analysis.crawlData.aiReadiness} />
           </div>
         )}
 

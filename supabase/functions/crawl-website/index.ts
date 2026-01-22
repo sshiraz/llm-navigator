@@ -8,6 +8,63 @@ const MAX_PAGES = 6; // Max pages to crawl (homepage + 5 subpages)
 const CRAWL_TIMEOUT = 8000; // 8 seconds per page
 const IMPORTANT_PATHS = ['/blog', '/services', '/about', '/contact', '/pricing', '/features', '/products', '/faq', '/help'];
 
+// AI Crawlers to check in robots.txt
+const AI_CRAWLERS = [
+  // Search/Citation Crawlers (Important for AI visibility)
+  { name: 'OAI-SearchBot', description: 'ChatGPT Search', isSearchCrawler: true },
+  { name: 'PerplexityBot', description: 'Perplexity Search', isSearchCrawler: true },
+  { name: 'ChatGPT-User', description: 'ChatGPT Browsing', isSearchCrawler: true },
+  { name: 'Applebot-Extended', description: 'Apple Intelligence', isSearchCrawler: true },
+  // Training Crawlers (Optional to block)
+  { name: 'GPTBot', description: 'OpenAI Training', isSearchCrawler: false },
+  { name: 'ClaudeBot', description: 'Claude Training', isSearchCrawler: false },
+  { name: 'Claude-Web', description: 'Claude Web', isSearchCrawler: false },
+  { name: 'anthropic-ai', description: 'Anthropic AI', isSearchCrawler: false },
+  { name: 'Google-Extended', description: 'Gemini Training', isSearchCrawler: false },
+  { name: 'Googlebot-Extended', description: 'Google AI Features', isSearchCrawler: false },
+  { name: 'Meta-ExternalAgent', description: 'Meta AI Training', isSearchCrawler: false },
+  { name: 'Meta-ExternalFetcher', description: 'Meta AI Fetcher', isSearchCrawler: false },
+  { name: 'FacebookBot', description: 'Meta/Facebook AI', isSearchCrawler: false },
+  { name: 'cohere-ai', description: 'Cohere AI', isSearchCrawler: false },
+  { name: 'Bytespider', description: 'ByteDance/TikTok AI', isSearchCrawler: false },
+  { name: 'CCBot', description: 'Common Crawl (AI Training)', isSearchCrawler: false },
+  { name: 'Amazonbot', description: 'Amazon AI', isSearchCrawler: false },
+];
+
+// Types for AI readiness analysis
+type AICrawlerStatus = 'allowed' | 'blocked' | 'not_specified';
+
+interface AICrawlerRule {
+  crawler: string;
+  description: string;
+  status: AICrawlerStatus;
+  isSearchCrawler: boolean;
+}
+
+interface RobotsTxtAnalysis {
+  exists: boolean;
+  fetchError?: string;
+  crawlers: AICrawlerRule[];
+  hasBlockedSearchCrawlers: boolean;
+  hasBlockedTrainingCrawlers: boolean;
+}
+
+interface AIPlatformRecommendation {
+  platform: string;
+  url: string;
+  description: string;
+  applicable: boolean;
+  reason: string;
+}
+
+interface AIReadinessAnalysis {
+  robotsTxt: RobotsTxtAnalysis;
+  platformRecommendations: AIPlatformRecommendation[];
+  isEcommerce: boolean;
+  overallStatus: 'good' | 'warning' | 'critical';
+  issues: string[];
+}
+
 interface Heading {
   level: number;
   text: string;
@@ -568,6 +625,232 @@ async function crawlPage(url: string, keywords: string[]): Promise<PageData | nu
   }
 }
 
+// Fetch and parse robots.txt for AI crawlers
+async function analyzeRobotsTxt(baseUrl: URL): Promise<RobotsTxtAnalysis> {
+  const robotsUrl = `${baseUrl.origin}/robots.txt`;
+
+  try {
+    const response = await fetch(robotsUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; LLMNavigator/1.0)',
+      },
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) {
+      return {
+        exists: false,
+        fetchError: `HTTP ${response.status}`,
+        crawlers: AI_CRAWLERS.map(c => ({
+          crawler: c.name,
+          description: c.description,
+          status: 'not_specified' as AICrawlerStatus,
+          isSearchCrawler: c.isSearchCrawler,
+        })),
+        hasBlockedSearchCrawlers: false,
+        hasBlockedTrainingCrawlers: false,
+      };
+    }
+
+    const content = await response.text();
+    const crawlerRules: AICrawlerRule[] = [];
+
+    // Parse robots.txt for each AI crawler
+    for (const crawler of AI_CRAWLERS) {
+      const status = parseRobotsTxtForCrawler(content, crawler.name);
+      crawlerRules.push({
+        crawler: crawler.name,
+        description: crawler.description,
+        status,
+        isSearchCrawler: crawler.isSearchCrawler,
+      });
+    }
+
+    const hasBlockedSearchCrawlers = crawlerRules.some(
+      r => r.isSearchCrawler && r.status === 'blocked'
+    );
+    const hasBlockedTrainingCrawlers = crawlerRules.some(
+      r => !r.isSearchCrawler && r.status === 'blocked'
+    );
+
+    return {
+      exists: true,
+      crawlers: crawlerRules,
+      hasBlockedSearchCrawlers,
+      hasBlockedTrainingCrawlers,
+    };
+  } catch (error) {
+    console.log('Error fetching robots.txt:', error);
+    return {
+      exists: false,
+      fetchError: error instanceof Error ? error.message : 'Unknown error',
+      crawlers: AI_CRAWLERS.map(c => ({
+        crawler: c.name,
+        description: c.description,
+        status: 'not_specified' as AICrawlerStatus,
+        isSearchCrawler: c.isSearchCrawler,
+      })),
+      hasBlockedSearchCrawlers: false,
+      hasBlockedTrainingCrawlers: false,
+    };
+  }
+}
+
+// Parse robots.txt content for a specific crawler
+function parseRobotsTxtForCrawler(content: string, crawlerName: string): AICrawlerStatus {
+  const lines = content.toLowerCase().split('\n');
+  const crawlerLower = crawlerName.toLowerCase();
+
+  let inCrawlerSection = false;
+  let inWildcardSection = false;
+  let crawlerDisallow = false;
+  let crawlerAllow = false;
+  let wildcardDisallow = false;
+  let wildcardAllow = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Skip comments and empty lines
+    if (trimmed.startsWith('#') || trimmed === '') continue;
+
+    // Check for user-agent directive
+    if (trimmed.startsWith('user-agent:')) {
+      const agent = trimmed.replace('user-agent:', '').trim();
+      inCrawlerSection = agent === crawlerLower;
+      inWildcardSection = agent === '*';
+      continue;
+    }
+
+    // Check for disallow/allow directives
+    if (trimmed.startsWith('disallow:')) {
+      const path = trimmed.replace('disallow:', '').trim();
+      if (path === '/' || path === '') {
+        if (inCrawlerSection) crawlerDisallow = true;
+        if (inWildcardSection) wildcardDisallow = true;
+      }
+    }
+
+    if (trimmed.startsWith('allow:')) {
+      const path = trimmed.replace('allow:', '').trim();
+      if (path === '/') {
+        if (inCrawlerSection) crawlerAllow = true;
+        if (inWildcardSection) wildcardAllow = true;
+      }
+    }
+  }
+
+  // Specific crawler rules take precedence
+  if (crawlerDisallow && !crawlerAllow) return 'blocked';
+  if (crawlerAllow) return 'allowed';
+
+  // Fall back to wildcard rules
+  if (wildcardDisallow && !wildcardAllow) return 'blocked';
+  if (wildcardAllow) return 'allowed';
+
+  return 'not_specified';
+}
+
+// Check if site has Product schema (e-commerce indicator)
+function hasProductSchema(schemas: SchemaMarkup[]): boolean {
+  const ecommerceTypes = ['Product', 'Offer', 'AggregateOffer', 'ItemList', 'ShoppingCart'];
+  return schemas.some(s =>
+    ecommerceTypes.includes(s.type) ||
+    (Array.isArray(s.type) && s.type.some(t => ecommerceTypes.includes(t)))
+  );
+}
+
+// Generate AI platform registration recommendations
+function generatePlatformRecommendations(
+  isEcommerce: boolean,
+  robotsTxt: RobotsTxtAnalysis
+): AIPlatformRecommendation[] {
+  const recommendations: AIPlatformRecommendation[] = [];
+
+  // ChatGPT Merchant Portal - for e-commerce sites
+  recommendations.push({
+    platform: 'ChatGPT Merchant Portal',
+    url: 'https://chatgpt.com/merchants',
+    description: 'Submit your products to appear in ChatGPT shopping results with Instant Checkout',
+    applicable: isEcommerce,
+    reason: isEcommerce
+      ? 'Product schema detected - submit your catalog for ChatGPT Shopping'
+      : 'Not applicable - no e-commerce schema detected',
+  });
+
+  // Bing Webmaster Tools - for all sites (helps with ChatGPT browsing & Copilot)
+  recommendations.push({
+    platform: 'Bing Webmaster Tools',
+    url: 'https://www.bing.com/webmasters',
+    description: 'Improves visibility in ChatGPT browsing mode and Microsoft Copilot',
+    applicable: true,
+    reason: 'Recommended for all sites - Bing powers ChatGPT web browsing',
+  });
+
+  // Google Search Console - for all sites (helps with Gemini)
+  recommendations.push({
+    platform: 'Google Search Console',
+    url: 'https://search.google.com/search-console',
+    description: 'Improves visibility in Google Gemini responses',
+    applicable: true,
+    reason: 'Recommended for all sites - Google powers Gemini search',
+  });
+
+  return recommendations;
+}
+
+// Generate AI readiness analysis
+function analyzeAIReadiness(
+  robotsTxt: RobotsTxtAnalysis,
+  schemas: SchemaMarkup[]
+): AIReadinessAnalysis {
+  const isEcommerce = hasProductSchema(schemas);
+  const platformRecommendations = generatePlatformRecommendations(isEcommerce, robotsTxt);
+
+  const issues: string[] = [];
+  let overallStatus: 'good' | 'warning' | 'critical' = 'good';
+
+  // Check for blocked search crawlers (critical)
+  if (robotsTxt.hasBlockedSearchCrawlers) {
+    issues.push('AI search crawlers are blocked in robots.txt - your site may be invisible to ChatGPT Search and Perplexity');
+    overallStatus = 'critical';
+  }
+
+  // Check if robots.txt doesn't exist (warning)
+  if (!robotsTxt.exists) {
+    issues.push('No robots.txt found - consider adding one to explicitly allow AI crawlers');
+    if (overallStatus !== 'critical') overallStatus = 'warning';
+  }
+
+  // Check if OAI-SearchBot specifically is blocked
+  const oaiSearchBot = robotsTxt.crawlers.find(c => c.crawler === 'OAI-SearchBot');
+  if (oaiSearchBot?.status === 'blocked') {
+    issues.push('OAI-SearchBot is blocked - your site will not appear in ChatGPT Search results');
+    overallStatus = 'critical';
+  }
+
+  // Check if PerplexityBot is blocked
+  const perplexityBot = robotsTxt.crawlers.find(c => c.crawler === 'PerplexityBot');
+  if (perplexityBot?.status === 'blocked') {
+    issues.push('PerplexityBot is blocked - your site will not be cited by Perplexity');
+    overallStatus = 'critical';
+  }
+
+  // E-commerce specific recommendation
+  if (isEcommerce) {
+    issues.push('E-commerce site detected - consider submitting to ChatGPT Merchant Portal');
+    if (overallStatus === 'good') overallStatus = 'warning';
+  }
+
+  return {
+    robotsTxt,
+    platformRecommendations,
+    isEcommerce,
+    overallStatus,
+    issues,
+  };
+}
+
 // Get issues for a page
 function getPageIssues(page: PageData): string[] {
   const issues: string[] = [];
@@ -665,6 +948,10 @@ serve(async (req) => {
     // Step 2: Extract page data from homepage
     const homepage = parsePageData(homepageDoc, homepageUrl, keywords, Date.now() - homepageStartTime);
 
+    // Step 2.5: Analyze robots.txt for AI crawlers (in parallel with other work)
+    console.log('Analyzing robots.txt for AI crawlers...');
+    const robotsTxtPromise = analyzeRobotsTxt(targetUrl);
+
     // Step 3: Extract and prioritize internal links
     const allLinks = extractInternalLinks(homepageDoc, targetUrl);
     console.log(`Found ${allLinks.length} internal links on homepage`);
@@ -751,6 +1038,11 @@ serve(async (req) => {
       issues: getPageIssues(p),
     }));
 
+    // Step 10: Analyze AI readiness (robots.txt + platform recommendations)
+    const robotsTxtAnalysis = await robotsTxtPromise;
+    const aiReadiness = analyzeAIReadiness(robotsTxtAnalysis, allSchemas);
+    console.log(`AI Readiness: ${aiReadiness.overallStatus}, issues: ${aiReadiness.issues.length}`);
+
     // Build final result (using homepage as base but with aggregated data)
     const result: CrawlResult = {
       success: true,
@@ -787,6 +1079,8 @@ serve(async (req) => {
         pagesAnalyzed: allPages.length,
         pages: pagesSummary,
         aggregatedStats,
+        // AI Readiness analysis
+        aiReadiness,
       },
     };
 

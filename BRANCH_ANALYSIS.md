@@ -5,6 +5,86 @@
 
 ---
 
+## 2026-01-21: AI Platform Readiness Feature
+
+**Changes:** Added robots.txt AI crawler analysis and platform registration recommendations
+
+### Problem
+
+Users had no way to know:
+1. Whether their website's robots.txt is blocking important AI crawlers
+2. Which AI platform registrations could improve their visibility
+3. The difference between search crawlers (important) and training crawlers (optional to block)
+
+### Solution
+
+Added a new "AI Platform Readiness" section to analysis results that shows:
+
+**1. robots.txt AI Crawler Status**
+- Fetches and parses the website's robots.txt
+- Checks rules for 17 different AI crawlers
+- Separates into Search Crawlers (important for visibility) and Training Crawlers (optional to block)
+- Status: "Allowed", "Blocked", or "Not specified" (defaults to allowed)
+
+**2. Platform Registrations**
+- ChatGPT Merchant Portal (for e-commerce sites with Product schema)
+- Bing Webmaster Tools (powers ChatGPT web browsing)
+- Google Search Console (powers Gemini search)
+
+**3. Overall Status**
+- "Good" - No search crawlers blocked
+- "Warning" - Some training crawlers blocked (optional)
+- "Critical" - Search crawlers blocked (bad for visibility)
+
+### AI Crawlers Checked
+
+| Category | Crawlers |
+|----------|----------|
+| Search | OAI-SearchBot, PerplexityBot, ChatGPT-User, Applebot-Extended |
+| Training | GPTBot, ClaudeBot, Claude-Web, anthropic-ai, Google-Extended, Googlebot-Extended, Meta-ExternalAgent, Meta-ExternalFetcher, FacebookBot, cohere-ai, Bytespider, CCBot, Diffbot |
+
+### E-commerce Detection
+
+Detects e-commerce sites by looking for Product schema markup. If found, recommends ChatGPT Merchant Portal registration.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `supabase/functions/crawl-website/index.ts` | Added `analyzeRobotsTxt()`, `analyzeAIReadiness()`, AI_CRAWLERS array |
+| `supabase/functions/_shared/cors.ts` | Added localhost:5174 to allowed origins |
+| `src/types/crawl.ts` | Added AIReadinessAnalysis, RobotsTxtAnalysis, AICrawlerRule types |
+| `src/types/index.ts` | Added aiReadiness to Analysis.crawlData |
+| `src/components/Analysis/AIReadinessSection.tsx` | New component for displaying results |
+| `src/components/Analysis/AnalysisResults.tsx` | Import and render AIReadinessSection |
+| `src/utils/analysisEngine.ts` | Pass through aiReadiness in crawlData mapping |
+| `src/utils/analysis/aeoAnalysis.ts` | Pass through aiReadiness in crawlData mapping |
+| `src/components/Analysis/NewAnalysis.tsx` | Fixed default providers to include all 4 |
+
+### Testing Performed
+
+```
+npm run build → Passes
+Test Files  20 passed (20)
+     Tests  608 passed (608)
+```
+
+### Manual Testing
+
+Tested on convologix.com:
+- robots.txt has no AI crawler rules → All show "Not specified" → Status: Good
+- No Product schema → ChatGPT Merchant Portal shows "Not applicable"
+- Bing/Google recommendations show as applicable
+
+### Deployment Required
+
+```bash
+npx supabase functions deploy crawl-website
+npx supabase functions deploy check-citations  # For CORS fix
+```
+
+---
+
 ## 2026-01-21: Homepage Conversion Improvements
 
 **Changes:** Added concrete example, emotional pain language, and free report outcome clarity
