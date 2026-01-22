@@ -5,6 +5,68 @@
 
 ---
 
+## 2026-01-21: Homepage AEO-Optimized Copy Rewrite
+
+**Changes:** Complete rewrite of landing page copy to be AEO-optimized and better differentiate from SEO tools
+
+### Problem
+
+The original homepage copy:
+1. Used generic "Dominate AI Search" messaging that didn't differentiate from SEO tools
+2. Positioned the product as similar to existing SEO tools
+3. Didn't clearly explain WHY traditional SEO doesn't work for AI search
+4. Had "Start Free Trial" as primary CTA instead of the free report
+
+### Solution
+
+Complete rewrite of `LandingPage.tsx` with AEO-focused messaging:
+
+**New Sections Added:**
+| Section | Purpose |
+|---------|---------|
+| "The Search Landscape Has Fundamentally Changed" | Explains shift from links to AI answers |
+| "Why Traditional SEO Is No Longer Enough" | Differentiates AEO from SEO |
+| "Introducing Answer Engine Optimization (AEO)" | Positions as new category |
+| "How AI Search Engines Decide What to Cite" | Educational content |
+| "AI Visibility Score" | Explains scoring methodology |
+| "Who Is This For?" | Target audience clarity |
+
+**Key Copy Changes:**
+| Element | Old | New |
+|---------|-----|-----|
+| Headline | "Dominate AI Search Before Your Competitors" | "Be Visible in AI-Generated Answers" |
+| Brand Name | "LLM Navigator" | "LLM Search Insight" |
+| Primary CTA | "Start Free Trial" | "Get Free Report" |
+| Value Prop | Generic AI optimization | "AI search doesn't rank pages — it generates answers" |
+| Positioning | AI-powered SEO tool | "Not an SEO tool. An AI visibility platform." |
+
+**Messaging Highlights:**
+- "They do not rank pages. They generate answers."
+- "A page can rank #1 on Google — and still never appear in AI answers."
+- "If your brand isn't cited by AI assistants, you effectively don't exist in AI search results."
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/Landing/LandingPage.tsx` | Complete rewrite with new copy structure |
+
+### Testing Performed
+
+```
+npm run build → Passes
+Test Files  20 passed (20)
+     Tests  608 passed (608)
+```
+
+### Notes
+
+- Brand name updated from "LLM Navigator" to "LLM Search Insight" in landing page
+- Free report is now the primary CTA (highlighted box in hero)
+- Added new icons: Eye, LineChart, Briefcase, Building2, UserCircle
+
+---
+
 ## 2026-01-21: Rate Limiting Test Coverage
 
 **Changes:** Added comprehensive test coverage for API rate limiting and free report whitelist bypass

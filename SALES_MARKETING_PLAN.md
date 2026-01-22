@@ -543,7 +543,7 @@ CTA: Sign Up
 
 [Subhead: What they'll get]
 Get your free AI Visibility Report in 60 seconds.
-See exactly what ChatGPT, Claude, and Perplexity say about your business.
+See exactly what ChatGPT, Claude, Perplexity, and Gemini say about your business.
 
 [Social Proof]
 Join 500+ businesses tracking their AI visibility

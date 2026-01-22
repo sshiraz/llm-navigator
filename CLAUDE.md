@@ -232,7 +232,7 @@ AnalysisEngine.analyzeWebsite(url, prompts, user)
 ```
 
 ### Citation Checking (AEO Core Feature)
-**Backend is COMPLETE** - queries ChatGPT, Claude, and Perplexity to check if websites get cited.
+**Backend is COMPLETE** - queries ChatGPT, Claude, Perplexity, and Gemini to check if websites get cited.
 
 ```typescript
 // Entry point: AnalysisEngine.analyzeAEO()

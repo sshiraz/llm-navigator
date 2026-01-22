@@ -1,6 +1,6 @@
 # LLM Navigator
 
-Answer Engine Optimization (AEO) platform that helps websites get cited by AI assistants like ChatGPT, Claude, and Perplexity.
+Answer Engine Optimization (AEO) platform that helps websites get cited by AI assistants like ChatGPT, Claude, Perplexity, and Gemini.
 
 ## Features
 
@@ -8,7 +8,7 @@ Answer Engine Optimization (AEO) platform that helps websites get cited by AI as
 - **Citation Checking** - Enter natural language prompts, see if your website gets cited by AI
 - **Competitor Analysis** - See which competitors are getting cited and why
 - **Content Analysis** - Website crawling with Schema.org detection, BLUF scoring, and SEO analysis
-- **AI Provider Selection** - Query Perplexity, OpenAI, and Anthropic
+- **AI Provider Selection** - Query Perplexity, OpenAI, Anthropic, and Gemini
 - **Actionable Recommendations** - Get specific suggestions to improve your AI visibility
 
 ### Subscription & Payments
