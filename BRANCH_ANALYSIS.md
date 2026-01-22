@@ -5,7 +5,60 @@
 
 ---
 
+## 2026-01-21: Remove Internal References from User-Facing UI
+
+**Commit:** `36093d2` - Remove test/live mode references from user-facing UI
+
+**Changes:** Removed test/live mode references and fixed product branding inconsistency
+
+### Problem
+
+1. **Internal terminology exposed to users:** FAQ and API docs mentioned "Test Mode" and "Live Mode" - internal Stripe concepts users don't need to know
+2. **Payment form showed scary warnings:** LiveModeIndicator banner displayed "LIVE MODE ACTIVE - Real credit cards will be charged" to paying customers
+3. **Inconsistent branding:** Landing page still used old name "LLM Search Insight" instead of "LLM Navigator"
+
+### Solution
+
+**1. Removed test/live mode from FAQ:**
+- `PricingTiers.tsx`: Removed FAQ item "How do Test Mode and Live Mode work?"
+- `ApiDocs.tsx`: Removed entire "Test vs Live Mode" section
+
+**2. Cleaned up payment form:**
+- `CreditCardForm.tsx`: Removed LiveModeIndicator banner (top warning)
+- `CreditCardForm.tsx`: Removed "Use a real credit card - LIVE MODE ACTIVE" text
+- Removed unused `LiveModeIndicator` import
+
+**3. Fixed branding:**
+- `LandingPage.tsx`: Replaced all 6 instances of "LLM Search Insight" with "LLM Navigator"
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/Subscription/PricingTiers.tsx` | Remove test/live FAQ item |
+| `src/components/Docs/ApiDocs.tsx` | Remove test/live mode section |
+| `src/components/Payment/CreditCardForm.tsx` | Remove LiveModeIndicator and text |
+| `src/components/Landing/LandingPage.tsx` | Rename to "LLM Navigator" (6 places) |
+
+### What Was Kept
+
+- Internal logging (console warnings for developers)
+- Admin debug tools (PaymentDebugger, WebhookDebugger)
+- Documentation MD files (developer reference)
+
+### Testing Performed
+
+```
+npm run test:run
+Test Files  23 passed (23)
+     Tests  708 passed (708)
+```
+
+---
+
 ## 2026-01-21: Fix Supabase Security Issues
+
+**Commit:** `6d3a605` - Fix Supabase security issues: RLS and search_path vulnerabilities
 
 **Changes:** Fixed 12 security warnings from Supabase dashboard (1 critical, 11 warnings)
 
@@ -73,6 +126,8 @@ npx supabase db push
 ---
 
 ## 2026-01-21: Lead & Signup Tracking System
+
+**Commit:** `9632c12` - Add Lead & Signup Tracking docs and update test counts
 
 **Changes:** Added admin dashboards for free report leads and account signups with email notifications
 
@@ -160,6 +215,8 @@ Admin users now see in sidebar:
 
 ## 2026-01-21: AI Platform Readiness Feature
 
+**Commit:** `ff07e58` - Add AI Platform Readiness feature
+
 **Changes:** Added robots.txt AI crawler analysis and platform registration recommendations
 
 ### Problem
@@ -240,6 +297,8 @@ npx supabase functions deploy check-citations  # For CORS fix
 
 ## 2026-01-21: Homepage Conversion Improvements
 
+**Commit:** `128b5cd` - Improve homepage conversion with concrete example and outcomes
+
 **Changes:** Added concrete example, emotional pain language, and free report outcome clarity
 
 ### Problem
@@ -293,6 +352,8 @@ Test Files  20 passed (20)
 ---
 
 ## 2026-01-21: Homepage AEO-Optimized Copy Rewrite
+
+**Commit:** `7f55ac3` - Rewrite homepage with AEO-optimized copy
 
 **Changes:** Complete rewrite of landing page copy to be AEO-optimized and better differentiate from SEO tools
 
@@ -355,6 +416,8 @@ Test Files  20 passed (20)
 ---
 
 ## 2026-01-21: Rate Limiting Test Coverage
+
+**Commit:** `d8976c7` - Add rate limiting test coverage (608 tests)
 
 **Changes:** Added comprehensive test coverage for API rate limiting and free report whitelist bypass
 

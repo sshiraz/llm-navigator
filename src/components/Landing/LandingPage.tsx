@@ -22,7 +22,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               <Search className="w-6 h-6 text-white" />
             </div>
             <div className="text-left">
-              <h1 className="text-xl font-bold text-white">LLM Search Insight</h1>
+              <h1 className="text-xl font-bold text-white">LLM Navigator</h1>
               <p className="text-xs text-slate-400">Answer Engine Optimization</p>
             </div>
           </div>
@@ -95,7 +95,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </p>
 
             <p className="text-lg text-slate-400 mb-8 max-w-3xl mx-auto">
-              LLM Search Insight helps ensure your brand is part of that answer.
+              LLM Navigator helps ensure your brand is part of that answer.
             </p>
 
             {/* Concrete Example Box */}
@@ -280,7 +280,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               Answer Engine Optimization focuses on how AI systems read, understand, and cite content — not how Google ranks links.
             </p>
             <p className="text-xl text-slate-300 mb-4">
-              LLM Search Insight is <span className="text-blue-400 font-semibold">purpose-built</span> for this new paradigm.
+              LLM Navigator is <span className="text-blue-400 font-semibold">purpose-built</span> for this new paradigm.
             </p>
             <p className="text-lg text-slate-400 mb-8">
               It is not an SEO tool. It is an <span className="font-semibold text-white">AI visibility platform</span> designed specifically for:
@@ -341,7 +341,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
           <div className="text-center">
             <p className="text-lg text-slate-300 bg-blue-500/10 border border-blue-500/20 rounded-xl p-6">
-              LLM Search Insight analyzes your site using these same principles — revealing exactly <span className="text-blue-400 font-semibold">why AI engines do or do not reference your content</span>.
+              LLM Navigator analyzes your site using these same principles — revealing exactly <span className="text-blue-400 font-semibold">why AI engines do or do not reference your content</span>.
             </p>
           </div>
         </div>
@@ -610,9 +610,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
                   <Search className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-slate-400 text-sm">© 2025 LLM Search Insight</span>
+                <span className="text-slate-400 text-sm">© 2025 LLM Navigator</span>
               </div>
-              <p className="text-slate-500 text-xs">LLM Search Insight is an AI visibility platform created by Convologix.</p>
+              <p className="text-slate-500 text-xs">LLM Navigator is an AI visibility platform created by Convologix.</p>
             </div>
 
             <div className="flex items-center space-x-6 text-slate-400 text-sm">

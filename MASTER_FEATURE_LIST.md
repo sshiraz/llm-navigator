@@ -451,3 +451,6 @@
 | 2026-01-21 | 100 new tests added (708 total across 23 files) |
 | 2026-01-21 | Security fix: Enable RLS on webhook_events (CRITICAL) |
 | 2026-01-21 | Security fix: Lock search_path on 6 functions (WARNING) |
+| 2026-01-21 | Remove test/live mode references from user-facing FAQ and API docs |
+| 2026-01-21 | Remove LiveModeIndicator from payment form (internal detail) |
+| 2026-01-21 | Fix branding: "LLM Search Insight" → "LLM Navigator" in landing page |
