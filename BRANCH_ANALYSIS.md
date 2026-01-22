@@ -5,6 +5,60 @@
 
 ---
 
+## 2026-01-21: Homepage Conversion Improvements
+
+**Changes:** Added concrete example, emotional pain language, and free report outcome clarity
+
+### Problem
+
+The homepage copy was conceptually correct but abstract. Three gaps identified:
+1. No concrete example to make the problem tangible
+2. Language was accurate but not emotionally compelling
+3. Users didn't know what they'd get from the free report
+
+### Solution
+
+**1. Added Concrete Example (after hero):**
+```
+When someone asks an AI assistant:
+"What's the best project management tool for startups?"
+
+AI returns 5 recommended tools with links.
+
+If your brand isn't mentioned, customers never see you — even if you rank #1 on Google.
+```
+
+**2. Updated Emotional Pain Language:**
+- Old: "If your brand isn't cited by AI assistants, you effectively don't exist in AI search results."
+- New: "If AI doesn't mention your brand, **customers never see you** — even if your SEO is perfect."
+
+**3. Added Free Report Outcomes (below CTA):**
+- ✓ Where your site is cited
+- ✓ Where competitors appear instead
+- ✓ What pages AI actually reads
+- ✓ Exactly what to fix first
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/Landing/LandingPage.tsx` | Added example box, emotional copy, report outcomes |
+
+### Testing Performed
+
+```
+npm run build → Passes
+Test Files  20 passed (20)
+     Tests  608 passed (608)
+```
+
+### Notes
+
+- Example uses "an AI assistant" (generic) not "ChatGPT" since free report queries Perplexity
+- Added "with links" to reflect Perplexity's citation behavior accurately
+
+---
+
 ## 2026-01-21: Homepage AEO-Optimized Copy Rewrite
 
 **Changes:** Complete rewrite of landing page copy to be AEO-optimized and better differentiate from SEO tools

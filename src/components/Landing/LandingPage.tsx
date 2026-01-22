@@ -98,6 +98,16 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               LLM Search Insight helps ensure your brand is part of that answer.
             </p>
 
+            {/* Concrete Example Box */}
+            <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6 max-w-2xl mx-auto mb-8">
+              <p className="text-slate-400 text-sm mb-3">When someone asks an AI assistant:</p>
+              <p className="text-white text-lg font-medium mb-4 italic">"What's the best project management tool for startups?"</p>
+              <p className="text-slate-300 mb-2">AI returns 5 recommended tools with links.</p>
+              <p className="text-red-400 font-medium">
+                If your brand isn't mentioned, customers never see you — <span className="text-slate-400">even if you rank #1 on Google.</span>
+              </p>
+            </div>
+
             {/* Free Report CTA Box */}
             <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 max-w-2xl mx-auto mb-8">
               <h3 className="text-xl font-semibold text-white mb-2">Free AI Visibility Report</h3>
@@ -106,7 +116,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
               </p>
 
               {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
                 <button
                   onClick={() => { window.location.href = '/free-report'; }}
                   className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-lg font-semibold rounded-xl transition-all shadow-2xl flex items-center space-x-2"
@@ -121,6 +131,26 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 >
                   <span>Start Free Trial</span>
                 </button>
+              </div>
+
+              {/* What You Get */}
+              <div className="grid grid-cols-2 gap-2 text-sm text-slate-400">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <span>Where your site is cited</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <span>Where competitors appear instead</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <span>What pages AI actually reads</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <span>Exactly what to fix first</span>
+                </div>
               </div>
             </div>
 
@@ -179,7 +209,7 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
           <div className="text-center">
             <p className="text-xl text-red-400 font-medium bg-red-500/10 border border-red-500/20 rounded-xl p-6">
-              If your brand isn't cited by AI assistants, you effectively don't exist in AI search results.
+              If AI doesn't mention your brand, <span className="text-white">customers never see you</span> — even if your SEO is perfect.
             </p>
           </div>
         </div>
