@@ -449,3 +449,5 @@
 | 2026-01-21 | Admin email notifications via notify-admin-lead edge function |
 | 2026-01-21 | CSV export for leads and signups dashboards |
 | 2026-01-21 | 100 new tests added (708 total across 23 files) |
+| 2026-01-21 | Security fix: Enable RLS on webhook_events (CRITICAL) |
+| 2026-01-21 | Security fix: Lock search_path on 6 functions (WARNING) |

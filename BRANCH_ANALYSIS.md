@@ -5,6 +5,73 @@
 
 ---
 
+## 2026-01-21: Fix Supabase Security Issues
+
+**Changes:** Fixed 12 security warnings from Supabase dashboard (1 critical, 11 warnings)
+
+### Problem
+
+Supabase security advisor flagged:
+1. **CRITICAL:** `webhook_events` table has RLS disabled - anyone with anon key could read/write
+2. **WARNING:** 6 functions have mutable `search_path` - potential for search path injection attacks
+
+### Solution
+
+Created migration `20260121_fix_security_issues.sql` that:
+
+**1. Enables RLS on `webhook_events`:**
+```sql
+ALTER TABLE public.webhook_events ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role only access webhook_events" ...
+```
+
+**2. Locks down function search paths:**
+```sql
+CREATE OR REPLACE FUNCTION ... SET search_path = ''
+```
+
+Forces all table references to use fully-qualified names (`public.users` not `users`), preventing attackers from injecting malicious schemas.
+
+### Functions Fixed
+
+| Function | Purpose |
+|----------|---------|
+| `update_updated_at_column` | Trigger for auto-updating timestamps |
+| `cleanup_sensitive_data` | GDPR data retention cleanup |
+| `log_audit_event` | Security audit logging |
+| `cleanup_old_audit_logs` | Audit log retention |
+| `handle_new_user` | Auth trigger for new signups |
+| `handle_admin_enterprise` | Admin user setup |
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `supabase/migrations/20260121_fix_security_issues.sql` | NEW - Security fixes migration |
+
+### Testing Performed
+
+```
+npm run test:run
+Test Files  23 passed (23)
+     Tests  708 passed (708)
+```
+
+### Deployment Required
+
+```bash
+npx supabase db push
+```
+
+### Security Impact
+
+- **Before:** `webhook_events` exposed to any client with anon key
+- **After:** Only service_role can access webhook data
+- **Before:** Functions vulnerable to search path injection
+- **After:** All functions use locked search_path, must use `public.` prefix
+
+---
+
 ## 2026-01-21: Lead & Signup Tracking System
 
 **Changes:** Added admin dashboards for free report leads and account signups with email notifications
