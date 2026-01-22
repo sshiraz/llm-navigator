@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Home, Plus, Search, DollarSign, Users, LogOut, Mail, UserCog, History } from 'lucide-react';
+import { Home, Plus, Search, DollarSign, Users, LogOut, Mail, UserCog, History, FileText, UserPlus } from 'lucide-react';
 
 interface SidebarProps {
   activeSection: string;
@@ -34,7 +34,9 @@ export default function Sidebar({ activeSection, onSectionChange, onLogout }: Si
 
   // Add admin menu items if user is admin
   const adminMenuItems = [
-    { id: 'admin-users', label: 'User Management', icon: UserCog }
+    { id: 'admin-users', label: 'User Management', icon: UserCog },
+    { id: 'admin-leads', label: 'Free Report Leads', icon: FileText },
+    { id: 'admin-signups', label: 'Account Signups', icon: UserPlus }
   ];
 
   // Navigate by updating hash (keeps URL and state in sync)

@@ -5,8 +5,9 @@
 Edge Functions are serverless functions that run on Supabase's edge network. For LLM Navigator, they handle:
 
 - **Payment Intent Creation** - Creates Stripe payment intents
-- **Subscription Management** - Handles recurring subscriptions  
+- **Subscription Management** - Handles recurring subscriptions
 - **Webhook Processing** - Processes Stripe payment events
+- **Admin Notifications** - Sends email alerts for new leads/signups
 
 ## 🚨 Why Can't We Deploy from Browser?
 
@@ -86,10 +87,13 @@ supabase secrets set SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXV
 ### Step 5: Deploy Edge Functions
 
 ```bash
-# Deploy all three Edge Functions
+# Deploy payment Edge Functions
 supabase functions deploy create-payment-intent
-supabase functions deploy create-subscription  
+supabase functions deploy create-subscription
 supabase functions deploy stripe-webhook
+
+# Deploy notification Edge Function
+supabase functions deploy notify-admin-lead
 ```
 
 ### Step 6: Set Up Stripe Webhook

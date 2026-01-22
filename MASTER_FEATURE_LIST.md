@@ -1,6 +1,6 @@
 # Master Feature List
 
-> Last updated: 2026-01-18
+> Last updated: 2026-01-21
 > Single source of truth for all features, organized by category.
 >
 > Legend: ✅ Complete | ⚠️ Partial | ❌ Not Started | 🔄 In Progress
@@ -19,8 +19,8 @@
 | DevOps | 5 | 0 | 4 | 9 |
 | Payments | 9 | 0 | 2 | 11 |
 | User Experience | 9 | 0 | 3 | 12 |
-| Admin | 5 | 1 | 1 | 7 |
-| **Total** | **89** | **6** | **26** | **121** |
+| Admin | 10 | 1 | 1 | 12 |
+| **Total** | **94** | **6** | **26** | **126** |
 
 **Overall Progress: 79% complete**
 
@@ -189,7 +189,7 @@
 | ✅ | Navigation tests | Hash routing, localStorage persistence |
 | ✅ | Analysis engine tests | analysisEngine.test.ts (16 tests) - real vs simulated |
 | ✅ | Security tests | sanitize.test.ts (115 tests), auditLogService.test.ts (28 tests) |
-| ✅ | Test coverage | 577 tests across 18 files (2026-01-18) |
+| ✅ | Test coverage | 708 tests across 23 files (2026-01-21) |
 
 ### Integration Testing
 | Status | Feature | Notes |
@@ -344,11 +344,16 @@
 | ✅ | Admin-only routes | Protected by isAdmin |
 | ✅ | User deletion | Cascade delete via Edge Function |
 | ⚠️ | Usage analytics | Basic, in CostTracker |
+| ✅ | Free report leads dashboard | LeadsDashboard component (2026-01-21) |
+| ✅ | Account signups dashboard | SignupsDashboard component (2026-01-21) |
+| ✅ | Signup analytics chart | SignupAnalytics component (2026-01-21) |
 
 ### Admin Actions
 | Status | Feature | Notes |
 |--------|---------|-------|
 | ✅ | Auto-enterprise for admins | Admins get enterprise plan, no billing |
+| ✅ | Email notifications | Instant alerts for new leads/signups (2026-01-21) |
+| ✅ | CSV export | Export leads/signups for CRM import (2026-01-21) |
 | ❌ | User impersonation | Not implemented |
 
 ---
@@ -440,3 +445,7 @@
 | 2026-01-18 | Add sitemap.xml and robots.txt for SEO |
 | 2026-01-18 | Fix free report email CTA to use llmsearchinsight.com domain |
 | 2026-01-18 | Change "Work Email" to "Email" on free report page |
+| 2026-01-21 | Lead & Signup Tracking: LeadsDashboard, SignupsDashboard, SignupAnalytics |
+| 2026-01-21 | Admin email notifications via notify-admin-lead edge function |
+| 2026-01-21 | CSV export for leads and signups dashboards |
+| 2026-01-21 | 100 new tests added (708 total across 23 files) |

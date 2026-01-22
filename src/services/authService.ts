@@ -95,6 +95,15 @@ export class AuthService {
       // Log successful signup
       AuditLogService.logSignup(userData.email).catch(() => {});
 
+      // Notify admin of new signup (fire and forget)
+      supabase.functions.invoke('notify-admin-lead', {
+        body: {
+          type: 'signup',
+          email: userData.email,
+          name: userData.name
+        }
+      }).catch(() => {});
+
       return handleSupabaseSuccess({
         user: authData.user,
         profile: {

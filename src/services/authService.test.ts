@@ -8,7 +8,8 @@ const {
   mockGetSession,
   mockOnAuthStateChange,
   mockResend,
-  mockFrom
+  mockFrom,
+  mockFunctionsInvoke
 } = vi.hoisted(() => ({
   mockSignUp: vi.fn(),
   mockSignInWithPassword: vi.fn(),
@@ -19,6 +20,7 @@ const {
   })),
   mockResend: vi.fn(),
   mockFrom: vi.fn(),
+  mockFunctionsInvoke: vi.fn(),
 }));
 
 // Mock the supabase module
@@ -33,6 +35,9 @@ vi.mock('../lib/supabase', () => ({
       resend: mockResend,
     },
     from: mockFrom,
+    functions: {
+      invoke: mockFunctionsInvoke,
+    },
   },
   handleSupabaseError: (error: any) => ({
     success: false,
@@ -77,6 +82,9 @@ const resetMocks = () => {
   mockGetSession.mockReset();
   mockResend.mockReset();
   mockFrom.mockReset();
+  mockFunctionsInvoke.mockReset();
+  // Set default behavior for functions.invoke (fire-and-forget, always resolves)
+  mockFunctionsInvoke.mockResolvedValue({ data: null, error: null });
   createdTestUsers.length = 0;
 };
 
@@ -568,6 +576,124 @@ describe('AuthService', () => {
       AuthService.onAuthStateChange(callback);
 
       expect(mockOnAuthStateChange).toHaveBeenCalledWith(callback);
+    });
+  });
+
+  describe('Admin Notifications', () => {
+    beforeEach(() => {
+      resetMocks();
+    });
+
+    it('should send admin notification on successful signup', async () => {
+      const newUserData = {
+        email: 'notify@test.com',
+        password: 'securePassword123',
+        name: 'Notify User',
+      };
+
+      setupSuccessfulSignUp({
+        email: newUserData.email,
+        id: 'notify-user-id-123',
+      });
+
+      await AuthService.signUp(newUserData);
+
+      // Wait for the fire-and-forget notification to be called
+      await vi.waitFor(() => {
+        expect(mockFunctionsInvoke).toHaveBeenCalledWith('notify-admin-lead', {
+          body: {
+            type: 'signup',
+            email: newUserData.email,
+            name: newUserData.name,
+          },
+        });
+      });
+    });
+
+    it('should not block signup if notification fails', async () => {
+      const newUserData = {
+        email: 'notifyerror@test.com',
+        password: 'securePassword123',
+        name: 'Notify Error User',
+      };
+
+      setupSuccessfulSignUp({
+        email: newUserData.email,
+        id: 'notify-error-user-id',
+      });
+
+      // Mock notification to fail
+      mockFunctionsInvoke.mockRejectedValue(new Error('Notification service unavailable'));
+
+      const result = await AuthService.signUp(newUserData);
+
+      // Signup should still succeed even if notification fails
+      expect(result.success).toBe(true);
+    });
+
+    it('should not send notification on failed signup', async () => {
+      const newUserData = {
+        email: 'failednotify@test.com',
+        password: 'short',
+        name: 'Failed Notify User',
+      };
+
+      // Mock pre-check: no existing user
+      mockFrom.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: null,
+              error: null,
+            }),
+          }),
+        }),
+        insert: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      });
+
+      // Mock signUp to fail
+      mockSignUp.mockResolvedValue({
+        data: { user: null, session: null },
+        error: { message: 'Password should be at least 6 characters' },
+      });
+
+      await AuthService.signUp(newUserData);
+
+      // Notification should NOT be called for failed signups
+      expect(mockFunctionsInvoke).not.toHaveBeenCalledWith('notify-admin-lead', expect.anything());
+    });
+
+    it('should include correct data in signup notification', async () => {
+      const newUserData = {
+        email: 'fulldata@test.com',
+        password: 'securePassword123',
+        name: 'Full Data User',
+      };
+
+      setupSuccessfulSignUp({
+        email: newUserData.email,
+        id: 'full-data-user-id',
+      });
+
+      await AuthService.signUp(newUserData);
+
+      await vi.waitFor(() => {
+        expect(mockFunctionsInvoke).toHaveBeenCalledWith('notify-admin-lead', {
+          body: {
+            type: 'signup',
+            email: newUserData.email,
+            name: newUserData.name,
+          },
+        });
+      });
+
+      // Verify the notification type is 'signup' (not 'free_report')
+      const callArgs = mockFunctionsInvoke.mock.calls.find(
+        call => call[0] === 'notify-admin-lead'
+      );
+      expect(callArgs[1].body.type).toBe('signup');
     });
   });
 });

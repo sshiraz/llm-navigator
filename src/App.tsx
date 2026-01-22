@@ -6,6 +6,8 @@ import NewAnalysis from './components/Analysis/NewAnalysis';
 import AnalysisResults from './components/Analysis/AnalysisResults';
 import PricingTiers from './components/Subscription/PricingTiers';
 import UserDashboard from './components/Admin/UserDashboard';
+import LeadsDashboard from './components/Admin/LeadsDashboard';
+import SignupsDashboard from './components/Admin/SignupsDashboard';
 import AccountPage from './components/Account/AccountPage';
 import ContactPage from './components/Contact/ContactPage';
 import PrivacyPolicy from './components/Legal/PrivacyPolicy';
@@ -312,9 +314,9 @@ function App() {
 
   const renderContent = () => {
     // Public pages that don't require login
-    if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'dpa' || activeSection === 'admin-users' || activeSection === 'account' || activeSection === 'api-docs' || activeSection === 'free-report') {
-      // Special handling for admin-users - only allow access if user is admin
-      if (activeSection === 'admin-users') {
+    if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'dpa' || activeSection === 'admin-users' || activeSection === 'admin-leads' || activeSection === 'admin-signups' || activeSection === 'account' || activeSection === 'api-docs' || activeSection === 'free-report') {
+      // Special handling for admin pages - only allow access if user is admin
+      if (activeSection === 'admin-users' || activeSection === 'admin-leads' || activeSection === 'admin-signups') {
         // Check if user is admin
         if (!user || !user.isAdmin) {
           // Redirect to dashboard if not admin
@@ -373,6 +375,10 @@ function App() {
           return <DataProcessingAgreement />;
         case 'admin-users':
           return <UserDashboard />;
+        case 'admin-leads':
+          return <LeadsDashboard />;
+        case 'admin-signups':
+          return <SignupsDashboard />;
         case 'pricing':
           return <PricingPage currentPlan={user?.subscription || 'free'} onUpgrade={handleUpgrade} />;
         case 'api-docs':
@@ -450,7 +456,7 @@ function App() {
   };
 
   // Show landing page or auth page without sidebar/header
-  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'dpa' || activeSection === 'admin-users' || activeSection === 'account' || activeSection === 'pricing' || activeSection === 'api-docs' || activeSection === 'free-report') {
+  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'dpa' || activeSection === 'admin-users' || activeSection === 'admin-leads' || activeSection === 'admin-signups' || activeSection === 'account' || activeSection === 'pricing' || activeSection === 'api-docs' || activeSection === 'free-report') {
     return (
       <>
         {renderContent()}

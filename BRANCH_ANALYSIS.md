@@ -5,6 +5,92 @@
 
 ---
 
+## 2026-01-21: Lead & Signup Tracking System
+
+**Changes:** Added admin dashboards for free report leads and account signups with email notifications
+
+### Problem
+
+Admins had no visibility into:
+1. Who was using the free report feature (potential leads)
+2. New user signups and their subscription status
+3. Real-time alerts when new leads/signups occurred
+
+### Solution
+
+Built a comprehensive tracking system with three components:
+
+**1. LeadsDashboard (`src/components/Admin/LeadsDashboard.tsx`)**
+- Table showing all free report leads: email, website, AI score, citation rate, industry, competitors, date
+- Search by email or website
+- Filter by citation status and industry
+- Sort by any column
+- Summary stats: Total Leads, Cited count, Avg AI Score, Top Industry, This Week
+- CSV export for CRM import
+
+**2. SignupsDashboard (`src/components/Admin/SignupsDashboard.tsx`)**
+- Table showing all user signups: name, email, plan, trial status, payment method, date
+- Search by name or email
+- Filter by plan type and payment status
+- Sort by any column
+- Summary stats: Total Users, Paid count, Active Trials, Payment Added, This Week
+- CSV export
+
+**3. SignupAnalytics (`src/components/Admin/SignupAnalytics.tsx`)**
+- Pure CSS bar chart (no external library)
+- Timeframe selector: 7d / 30d / 90d
+- Shows leads and signups trend over time
+- Aggregates by day (7d) or week (30d/90d)
+
+**4. Email Notifications (`supabase/functions/notify-admin-lead/`)**
+- Instant email to info@convologix.com on new lead or signup
+- Beautiful HTML email template with key details
+- Fire-and-forget pattern (doesn't block main flow)
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/Admin/LeadsDashboard.tsx` | NEW - Admin leads dashboard |
+| `src/components/Admin/SignupsDashboard.tsx` | NEW - Admin signups dashboard |
+| `src/components/Admin/SignupAnalytics.tsx` | NEW - CSS-based trend chart |
+| `supabase/functions/notify-admin-lead/index.ts` | NEW - Email notification edge function |
+| `src/App.tsx` | Add routes for #admin-leads and #admin-signups |
+| `src/components/Layout/Sidebar.tsx` | Add admin menu items |
+| `src/components/FreeReport/FreeReportPage.tsx` | Call notify-admin-lead after saving lead |
+| `src/services/authService.ts` | Call notify-admin-lead after signup |
+| `src/types/index.ts` | Add FreeReportLead interface |
+
+### Testing Performed
+
+```
+npm run test:run
+Test Files  23 passed (23)
+     Tests  708 passed (708)
+```
+
+**New Test Files:**
+- `src/components/Admin/LeadsDashboard.test.tsx` (35 tests)
+- `src/components/Admin/SignupsDashboard.test.tsx` (35 tests)
+- `src/components/Admin/SignupAnalytics.test.tsx` (28 tests)
+- Added 4 notification tests to `src/services/authService.test.ts`
+
+### Deployment
+
+```bash
+# Edge function deployed
+npx supabase functions deploy notify-admin-lead
+```
+
+### Admin Navigation
+
+Admin users now see in sidebar:
+- User Management (existing)
+- Free Report Leads (new)
+- Account Signups (new)
+
+---
+
 ## 2026-01-21: AI Platform Readiness Feature
 
 **Changes:** Added robots.txt AI crawler analysis and platform registration recommendations

@@ -500,6 +500,18 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
         competitor_count: competitorSummary.length
       }).then(() => console.log('Lead saved')).catch(() => {});
 
+      // Notify admin of new lead (fire and forget)
+      supabase.functions.invoke('notify-admin-lead', {
+        body: {
+          type: 'free_report',
+          email: email.toLowerCase(),
+          website: normalizedUrl,
+          aiScore: aiVisibilityScore,
+          citationRate: citationRate,
+          industry: industry
+        }
+      }).catch(() => {});
+
       // Send email with report (fire and forget)
       supabase.functions.invoke('send-free-report-email', {
         body: {

@@ -262,3 +262,19 @@ export interface ApiKey {
   createdAt: string;
   revokedAt?: string;     // NULL = active, set = revoked
 }
+
+// ============================================
+// Free Report Leads (Admin Tracking)
+// ============================================
+
+export interface FreeReportLead {
+  id: string;
+  email: string;
+  website: string;
+  is_cited: boolean;
+  ai_score: number | null;
+  citation_rate: number | null;
+  industry: string | null;
+  competitor_count: number;
+  created_at: string;
+}

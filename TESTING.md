@@ -13,7 +13,7 @@ This document provides an overview of all automated tests in the LLM Navigator p
 npm run test:run && npm run build
 ```
 
-Current test count: **608 tests** (20 test files)
+Current test count: **708 tests** (23 test files)
 
 ## Quick Reference
 
@@ -95,6 +95,61 @@ Tests the AuthService class for user authentication flows.
 - Verifies JWT session token is used instead of anon key for admin operations
 - Tests error handling when no active session exists
 - Validates proper request body format for edge functions
+
+#### LeadsDashboard (Admin)
+**File:** `src/components/Admin/LeadsDashboard.test.tsx`
+
+Tests the free report leads dashboard for admin users (35 tests).
+
+| Test Suite | Coverage |
+|------------|----------|
+| Admin Access | Admin-only access, non-admin rejection, logged-out rejection |
+| Lead List Display | Lead emails, websites, AI scores, cited badges, count display |
+| Search Functionality | Filter by email, filter by website, no results |
+| Filter Functionality | Citation status filter, industry filter, dropdown options |
+| Summary Stats | Total Leads, Cited, Avg AI Score, Top Industry, This Week |
+| Action Buttons | Refresh, Export CSV, Back to Dashboard |
+| Table Sorting | Sortable columns (Email, Website, AI Score, Date) |
+| Clear Filters | Show/hide clear button, reset filters |
+| CSV Export | Export triggers download |
+| Refresh Functionality | Reload leads on click |
+
+#### SignupsDashboard (Admin)
+**File:** `src/components/Admin/SignupsDashboard.test.tsx`
+
+Tests the account signups dashboard for admin users (35 tests).
+
+| Test Suite | Coverage |
+|------------|----------|
+| Admin Access | Admin-only access, non-admin rejection, logged-out rejection |
+| User List Display | User names, emails, subscription badges, payment status, count |
+| Search Functionality | Filter by name, filter by email, no results |
+| Filter Functionality | Plan filter, payment status filter, dropdown options |
+| Summary Stats | Total Users, Paid, Active Trials, Payment Added, This Week |
+| Action Buttons | Refresh, Export CSV, Back to Dashboard |
+| Table Sorting | Sortable columns (Name, Email, Plan, Signed Up) |
+| Clear Filters | Show/hide clear button, reset filters |
+| CSV Export | Export triggers download |
+| Refresh Functionality | Reload users on click |
+| Trial Status Display | Trial status column, days remaining |
+
+#### SignupAnalytics
+**File:** `src/components/Admin/SignupAnalytics.test.tsx`
+
+Tests the signup/lead trend chart component (28 tests).
+
+| Test Suite | Coverage |
+|------------|----------|
+| Rendering | Default title, custom title, chart icon |
+| Timeframe Selector | Dropdown present, default 30d, 7d/30d/90d options, change selection |
+| Legend Display | Leads legend, signups legend, both legends, correct totals |
+| Empty State | No data message, hidden when data exists |
+| Chart Bars | Date labels, daily view for 7d |
+| Data Aggregation | Weekly for 30d, weekly for 90d |
+| Leads Only Mode | Shows only leads legend, correct count |
+| Signups Only Mode | Shows only signups legend, correct count |
+| Combined Mode | Both legends, both counts |
+| Time Period Filtering | Updates on timeframe change |
 
 ### Navigation
 **File:** `src/test/navigation.test.tsx`
@@ -419,8 +474,12 @@ set -a && . ./.env && set +a && npm run test:functions
 | Edge Functions | - | test-edge-functions.ts |
 | CORS Security | - | test-edge-functions.ts |
 | Admin Authentication | UserDashboard.test.tsx (delete/reset password) | - |
+| **Admin Leads Dashboard** | LeadsDashboard.test.tsx (35 tests) | - |
+| **Admin Signups Dashboard** | SignupsDashboard.test.tsx (35 tests) | - |
+| **Signup Analytics** | SignupAnalytics.test.tsx (28 tests) | - |
+| **Admin Notifications** | authService.test.ts (4 notification tests) | - |
 
-**Total: 608 tests across 20 test files**
+**Total: 708 tests across 23 test files**
 
 ---
 
