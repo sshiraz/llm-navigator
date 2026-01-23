@@ -5,6 +5,58 @@
 
 ---
 
+## 2026-01-23: Fix Free Report Copy - Provider Accuracy
+
+**Changes:** Fixed misleading copy that claimed free report queries ChatGPT when it actually queries Perplexity
+
+### Problem
+
+The free report "How it works" section stated:
+> "We query ChatGPT with 5 real prompts about your industry to check if you get cited"
+
+But the actual code only queries Perplexity (`providers: ['perplexity']`). This was inaccurate and could mislead users.
+
+### Solution
+
+Updated the copy to:
+1. Accurately state that Perplexity is queried
+2. Mention that other providers (ChatGPT, Claude, Gemini) are available with an account
+
+**Before:**
+```
+We query ChatGPT with 5 real prompts about your industry to check if you get cited
+```
+
+**After:**
+```
+We query Perplexity with 5 real prompts about your industry (ChatGPT, Claude, and Gemini available with an account)
+```
+
+### Why Perplexity for Free Report?
+
+| Provider | Returns URLs? | Competitor Detection | Cost |
+|----------|---------------|---------------------|------|
+| Perplexity | ✅ Yes (citations) | ✅ Works | $0.003/1K tokens |
+| OpenAI/ChatGPT | ❌ No (names only) | ❌ Broken | $0.015/1K tokens |
+
+Perplexity returns actual source URLs via `return_citations: true`, enabling competitor extraction. ChatGPT only mentions company names without links.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/FreeReport/FreeReportPage.tsx` | Fix provider copy + add upsell |
+
+### Testing Performed
+
+```
+npm run test:run
+Test Files  23 passed (23)
+     Tests  708 passed (708)
+```
+
+---
+
 ## 2026-01-21: Remove Internal References from User-Facing UI
 
 **Commit:** `36093d2` - Remove test/live mode references from user-facing UI

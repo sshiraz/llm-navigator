@@ -687,7 +687,7 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
                   </li>
                   <li className="flex items-start space-x-2">
                     <span className="text-blue-400 font-medium">2.</span>
-                    <span>We query ChatGPT with 5 real prompts about your industry to check if you get cited</span>
+                    <span>We query Perplexity with 5 real prompts about your industry (ChatGPT, Claude, and Gemini available with an account)</span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <span className="text-blue-400 font-medium">3.</span>

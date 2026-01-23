@@ -454,3 +454,5 @@
 | 2026-01-21 | Remove test/live mode references from user-facing FAQ and API docs |
 | 2026-01-21 | Remove LiveModeIndicator from payment form (internal detail) |
 | 2026-01-21 | Fix branding: "LLM Search Insight" → "LLM Navigator" in landing page |
+| 2026-01-23 | Fix free report copy: "ChatGPT" → "Perplexity" (accurate to actual behavior) |
+| 2026-01-23 | Add upsell: mention ChatGPT, Claude, Gemini available with account |
