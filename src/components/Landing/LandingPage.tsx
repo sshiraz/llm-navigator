@@ -29,6 +29,13 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
           {/* Navigation Buttons */}
           <div className="flex items-center space-x-3">
+            <a
+              href="/blog"
+              className="hidden sm:flex items-center space-x-2 px-4 py-2 text-slate-300 hover:text-white transition-colors"
+            >
+              <span>Blog</span>
+            </a>
+
             <button
               onClick={() => {
                 window.location.href = '/free-report';
@@ -616,6 +623,9 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
             </div>
 
             <div className="flex items-center space-x-6 text-slate-400 text-sm">
+              <a href="/blog" className="hover:text-white transition-colors">
+                Blog
+              </a>
               <a href="#pricing" onClick={(e) => { e.preventDefault(); window.location.hash = '#pricing'; }} className="hover:text-white transition-colors">
                 Pricing
               </a>

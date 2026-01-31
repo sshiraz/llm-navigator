@@ -20,6 +20,8 @@ import AuthPage from './components/Auth/AuthPage';
 import PricingPage from './components/Pricing/PricingPage';
 import ApiDocs from './components/Docs/ApiDocs';
 import FreeReportPage from './components/FreeReport/FreeReportPage';
+import BlogPage from './components/Blog/BlogPage';
+import BlogPostPage from './components/Blog/BlogPostPage';
 import CookieConsent from './components/Legal/CookieConsent';
 import { Analysis, User } from './types';
 import EnvironmentStatus from './components/UI/EnvironmentStatus';
@@ -35,6 +37,12 @@ function App() {
     const pathname = window.location.pathname;
     if (pathname === '/free-report' || pathname === '/free-report/') {
       return 'free-report';
+    }
+    if (pathname === '/blog' || pathname === '/blog/') {
+      return 'blog';
+    }
+    if (pathname.startsWith('/blog/')) {
+      return 'blog-post';
     }
     if (pathname === '/pricing' || pathname === '/pricing/') {
       return 'pricing';
@@ -61,6 +69,13 @@ function App() {
 
   // Check if user is admin
   const isAdmin = user && isUserAdmin(user);
+
+  // Helper to extract blog post slug from URL
+  const getBlogSlugFromPath = () => {
+    const p = window.location.pathname.replace(/\/$/, '');
+    if (!p.startsWith('/blog/')) return null;
+    return p.slice('/blog/'.length);
+  };
 
   // Load current analysis from storage if available
   useEffect(() => {
@@ -135,6 +150,10 @@ function App() {
           setActiveSection('auth');
         } else if (pathname === '/signup' || pathname === '/signup/') {
           setActiveSection('auth');
+        } else if (pathname === '/blog' || pathname === '/blog/') {
+          setActiveSection('blog');
+        } else if (pathname.startsWith('/blog/')) {
+          setActiveSection('blog-post');
         } else {
           setActiveSection('landing');
         }
@@ -314,7 +333,7 @@ function App() {
 
   const renderContent = () => {
     // Public pages that don't require login
-    if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'dpa' || activeSection === 'admin-users' || activeSection === 'admin-leads' || activeSection === 'admin-signups' || activeSection === 'account' || activeSection === 'api-docs' || activeSection === 'free-report') {
+    if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'dpa' || activeSection === 'admin-users' || activeSection === 'admin-leads' || activeSection === 'admin-signups' || activeSection === 'account' || activeSection === 'api-docs' || activeSection === 'free-report' || activeSection === 'blog' || activeSection === 'blog-post') {
       // Special handling for admin pages - only allow access if user is admin
       if (activeSection === 'admin-users' || activeSection === 'admin-leads' || activeSection === 'admin-signups') {
         // Check if user is admin
@@ -385,6 +404,10 @@ function App() {
           return <ApiDocs />;
         case 'free-report':
           return <FreeReportPage onGetStarted={handleGetStarted} />;
+        case 'blog':
+          return <BlogPage />;
+        case 'blog-post':
+          return <BlogPostPage slug={getBlogSlugFromPath()} />;
         default:
           return <LandingPage onGetStarted={handleGetStarted} />;
       }
@@ -456,7 +479,7 @@ function App() {
   };
 
   // Show landing page or auth page without sidebar/header
-  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'dpa' || activeSection === 'admin-users' || activeSection === 'admin-leads' || activeSection === 'admin-signups' || activeSection === 'account' || activeSection === 'pricing' || activeSection === 'api-docs' || activeSection === 'free-report') {
+  if (activeSection === 'landing' || activeSection === 'auth' || activeSection === 'contact' || activeSection === 'privacy' || activeSection === 'terms' || activeSection === 'dpa' || activeSection === 'admin-users' || activeSection === 'admin-leads' || activeSection === 'admin-signups' || activeSection === 'account' || activeSection === 'pricing' || activeSection === 'api-docs' || activeSection === 'free-report' || activeSection === 'blog' || activeSection === 'blog-post') {
     return (
       <>
         {renderContent()}

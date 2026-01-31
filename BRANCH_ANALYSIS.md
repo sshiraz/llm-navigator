@@ -5,6 +5,76 @@
 
 ---
 
+## 2026-01-31: Blog System Implementation
+
+**Changes:** Added markdown-based blog with SEO-friendly URLs at `/blog` and `/blog/:slug`
+
+### Features
+
+1. **Blog Index Page** (`/blog`)
+   - Lists all posts sorted by date (newest first)
+   - Post cards with title, date, description
+   - CTA section for free report
+   - Matches site's dark slate theme
+
+2. **Individual Post Pages** (`/blog/:slug`)
+   - Full markdown rendering with tables, lists, code blocks
+   - SEO meta tags (title, description, canonical URL)
+   - Back to blog link + CTA at bottom
+
+3. **Markdown Content Management**
+   - Posts stored in `src/content/blog/*.md`
+   - YAML frontmatter for metadata (title, date, description)
+   - Loaded at build time via Vite's `import.meta.glob`
+   - Git-tracked, no database needed
+
+### Technical Implementation
+
+- **Markdown parsing:** Custom frontmatter parser (no external dependency)
+- **Rendering:** `react-markdown` + `remark-gfm` for GitHub Flavored Markdown
+- **Styling:** `@tailwindcss/typography` plugin with `prose-invert` for dark theme
+- **Routing:** Path-based routes added to existing custom router in App.tsx
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `src/components/Blog/blogIndex.ts` | Load and parse markdown posts |
+| `src/components/Blog/BlogPage.tsx` | Blog listing page |
+| `src/components/Blog/BlogPostPage.tsx` | Individual post page |
+| `src/content/blog/what-is-aeo.md` | Post: What is AEO? |
+| `src/content/blog/ai-citation-rate-explained.md` | Post: Citation Rate Explained |
+| `src/content/blog/why-seo-needs-aeo.md` | Post: Why SEO Needs AEO |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `src/App.tsx` | Add `/blog` and `/blog/:slug` routes |
+| `src/components/Landing/LandingPage.tsx` | Add Blog link to nav and footer |
+| `tailwind.config.js` | Add typography plugin |
+| `package.json` | Add react-markdown, remark-gfm, @tailwindcss/typography |
+
+### Adding New Posts
+
+Create a new `.md` file in `src/content/blog/`:
+
+```markdown
+---
+title: "Your Post Title"
+date: "2026-01-31"
+description: "Brief description for SEO and listing page."
+---
+
+# Your Content Here
+
+Markdown content with **bold**, lists, tables, etc.
+```
+
+The post will automatically appear in the blog listing.
+
+---
+
 ## 2026-01-23: Fix Free Report Copy - Provider Accuracy
 
 **Changes:** Fixed misleading copy that claimed free report queries ChatGPT when it actually queries Perplexity

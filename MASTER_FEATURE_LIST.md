@@ -456,3 +456,8 @@
 | 2026-01-21 | Fix branding: "LLM Search Insight" → "LLM Navigator" in landing page |
 | 2026-01-23 | Fix free report copy: "ChatGPT" → "Perplexity" (accurate to actual behavior) |
 | 2026-01-23 | Add upsell: mention ChatGPT, Claude, Gemini available with account |
+| 2026-01-31 | Blog system: /blog listing + /blog/:slug individual posts |
+| 2026-01-31 | Markdown-based content with YAML frontmatter (git-tracked) |
+| 2026-01-31 | Blog posts: "What is AEO?", "Citation Rate Explained", "Why SEO Needs AEO" |
+| 2026-01-31 | Added react-markdown, remark-gfm, @tailwindcss/typography |
+| 2026-01-31 | Blog link added to landing page nav and footer |
