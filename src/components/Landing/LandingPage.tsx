@@ -79,39 +79,39 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       <div className="relative overflow-hidden">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-24">
           <div className="text-center">
-            {/* Badge */}
-            <div className="inline-flex items-center space-x-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-2 mb-8">
-              <Zap className="w-4 h-4 text-blue-400" />
-              <span className="text-blue-300 text-sm font-medium">Answer Engine Optimization</span>
+            {/* Urgency Badge */}
+            <div className="inline-flex items-center space-x-2 bg-red-500/10 border border-red-500/20 rounded-full px-4 py-2 mb-8">
+              <Zap className="w-4 h-4 text-red-400" />
+              <span className="text-red-300 text-sm font-medium">Your competitors are getting cited. Are you?</span>
             </div>
 
-            {/* Main Headline */}
+            {/* Pain-Focused Headline */}
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
-              Be Visible in
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">
-                AI-Generated Answers
+              Your Website Is Invisible
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-400">
+                to AI Search
               </span>
             </h1>
 
-            <p className="text-xl text-slate-400 mb-4 max-w-3xl mx-auto leading-relaxed">
-              Optimize your website for AI search engines like ChatGPT, Claude, Perplexity, and Gemini.
+            <p className="text-xl text-slate-300 mb-4 max-w-3xl mx-auto leading-relaxed">
+              Right now, potential customers are asking ChatGPT and Perplexity for recommendations in your industry.
             </p>
 
-            <p className="text-lg text-slate-300 mb-4 max-w-3xl mx-auto">
-              AI assistants are replacing traditional search. When users ask questions, they don't see ten blue links — they see <span className="text-blue-400 font-semibold">one generated answer</span>.
+            <p className="text-2xl text-white font-semibold mb-4 max-w-3xl mx-auto">
+              AI is answering — but it's not mentioning you.
             </p>
 
             <p className="text-lg text-slate-400 mb-8 max-w-3xl mx-auto">
-              LLM Navigator helps ensure your brand is part of that answer.
+              Every day you wait, your competitors capture customers who never even knew you existed.
             </p>
 
-            {/* Concrete Example Box */}
-            <div className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-6 max-w-2xl mx-auto mb-8">
-              <p className="text-slate-400 text-sm mb-3">When someone asks an AI assistant:</p>
-              <p className="text-white text-lg font-medium mb-4 italic">"What's the best project management tool for startups?"</p>
-              <p className="text-slate-300 mb-2">AI returns 5 recommended tools with links.</p>
-              <p className="text-red-400 font-medium">
-                If your brand isn't mentioned, customers never see you — <span className="text-slate-400">even if you rank #1 on Google.</span>
+            {/* Pain Example Box */}
+            <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-6 max-w-2xl mx-auto mb-8">
+              <p className="text-slate-400 text-sm mb-3">A potential customer just asked ChatGPT:</p>
+              <p className="text-white text-lg font-medium mb-4 italic">"What's the best {'{your product category}'} for {'{their use case}'}?"</p>
+              <p className="text-slate-300 mb-3">ChatGPT listed 5 companies. <span className="text-red-400 font-bold">You weren't one of them.</span></p>
+              <p className="text-slate-400 text-sm">
+                That customer just bought from your competitor — and they'll never know you existed.
               </p>
             </div>
 
@@ -172,6 +172,11 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
                 <span>Works with ChatGPT, Claude, Perplexity, and Gemini</span>
               </div>
             </div>
+
+            {/* Product Definition */}
+            <p className="mt-8 text-sm text-slate-500">
+              LLM Navigator is an AI visibility analysis tool that shows how websites appear in AI-generated answers.
+            </p>
           </div>
         </div>
       </div>
@@ -281,16 +286,16 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Introducing Answer Engine Optimization (AEO)
+              Your SEO Tools Can't Fix This
             </h2>
-            <p className="text-lg text-slate-400 mb-8">
-              Answer Engine Optimization focuses on how AI systems read, understand, and cite content — not how Google ranks links.
+            <p className="text-lg text-slate-400 mb-4">
+              Traditional SEO tools measure Google rankings. They have no idea how AI sees your site.
             </p>
-            <p className="text-xl text-slate-300 mb-4">
-              LLM Navigator is <span className="text-blue-400 font-semibold">purpose-built</span> for this new paradigm.
+            <p className="text-xl text-red-400 font-medium mb-8">
+              That's why you need Answer Engine Optimization (AEO).
             </p>
-            <p className="text-lg text-slate-400 mb-8">
-              It is not an SEO tool. It is an <span className="font-semibold text-white">AI visibility platform</span> designed specifically for:
+            <p className="text-lg text-slate-300 mb-4">
+              LLM Navigator measures your AI visibility across:
             </p>
           </div>
 
@@ -412,10 +417,10 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              AI Visibility Score
+              Your AI Visibility Score: How Bad Is It?
             </h2>
             <p className="text-lg text-slate-400 mb-8">
-              Your website receives a clear, explainable score based on:
+              Most websites score below 40. Find out where you stand:
             </p>
           </div>
 
@@ -444,9 +449,22 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
 
           <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-8 max-w-md mx-auto">
             <div className="text-center">
-              <p className="text-slate-400 mb-2">AI Visibility Score</p>
-              <div className="text-6xl font-bold text-blue-400 mb-2">0-100</div>
-              <p className="text-slate-300">Know exactly where you stand — and what to fix.</p>
+              <p className="text-slate-400 mb-4">What's your score?</p>
+              <div className="flex items-center justify-center space-x-4 mb-4">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-red-400">0-40</div>
+                  <p className="text-xs text-slate-500">Invisible</p>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-yellow-400">41-70</div>
+                  <p className="text-xs text-slate-500">At Risk</p>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-emerald-400">71-100</div>
+                  <p className="text-xs text-slate-500">Visible</p>
+                </div>
+              </div>
+              <p className="text-slate-300">Most sites don't know they're invisible until it's too late.</p>
             </div>
           </div>
         </div>
@@ -457,8 +475,11 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Everything You Need to Win AI Search
+              Stop Losing Customers to AI Blindspots
             </h2>
+            <p className="text-lg text-slate-400">
+              See exactly where you're invisible — and how to fix it.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -540,38 +561,38 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Who Is This For?
+              Is This Happening to You?
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center p-6 bg-slate-800/50 rounded-xl border border-slate-700">
-              <div className="w-16 h-16 bg-blue-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <UserCircle className="w-8 h-8 text-blue-400" />
+              <div className="w-16 h-16 bg-red-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <UserCircle className="w-8 h-8 text-red-400" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-3">Founders & Startups</h3>
               <p className="text-slate-400">
-                Understand how your brand appears in AI-generated answers.
+                "Why do AI assistants recommend our competitors but never mention us?"
               </p>
             </div>
 
             <div className="text-center p-6 bg-slate-800/50 rounded-xl border border-slate-700">
-              <div className="w-16 h-16 bg-indigo-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <Building2 className="w-8 h-8 text-indigo-400" />
+              <div className="w-16 h-16 bg-red-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Building2 className="w-8 h-8 text-red-400" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-3">Marketing Teams</h3>
               <p className="text-slate-400">
-                Prepare your content strategy for the AI-first web.
+                "Our SEO is great but traffic is dropping. Where are our customers going?"
               </p>
             </div>
 
             <div className="text-center p-6 bg-slate-800/50 rounded-xl border border-slate-700">
-              <div className="w-16 h-16 bg-emerald-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <Briefcase className="w-8 h-8 text-emerald-400" />
+              <div className="w-16 h-16 bg-red-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Briefcase className="w-8 h-8 text-red-400" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-3">Agencies & Consultants</h3>
               <p className="text-slate-400">
-                Offer AI visibility audits as a new high-value service.
+                "My clients ask about AI search and I have no idea how to help them."
               </p>
             </div>
           </div>
@@ -582,28 +603,31 @@ export default function LandingPage({ onGetStarted }: LandingPageProps) {
       <div className="py-20 border-t border-slate-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Ready to Be Found in AI Answers?
+            How Many Customers Did You Lose Today?
           </h2>
           <p className="text-xl text-slate-400 mb-4">
-            AI search is not coming — it's already here.
+            Every question asked to AI is a customer who skipped Google entirely.
           </p>
-          <p className="text-lg text-slate-300 mb-8">
-            The brands being cited today will dominate tomorrow. <span className="text-blue-400 font-semibold">Find out where you stand.</span>
+          <p className="text-lg text-slate-300 mb-4">
+            If AI didn't mention you, that customer is already gone.
+          </p>
+          <p className="text-lg text-red-400 font-semibold mb-8">
+            This is happening right now. Not next year. Today.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             <button
               onClick={() => { window.location.href = '/free-report'; }}
-              className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-lg font-semibold rounded-xl transition-all shadow-lg flex items-center space-x-2"
+              className="px-8 py-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white text-lg font-semibold rounded-xl transition-all shadow-lg flex items-center space-x-2"
             >
-              <span>Get Your Free AI Visibility Report</span>
+              <span>Find Out If You're Being Cited</span>
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>
 
           <div className="flex flex-col items-center gap-2 text-slate-400 text-sm">
-            <span>No credit card required.</span>
-            <span>Results delivered instantly.</span>
+            <span>Takes 30 seconds. No credit card.</span>
+            <span>Stop guessing. Start knowing.</span>
           </div>
         </div>
       </div>

@@ -5,6 +5,66 @@
 
 ---
 
+## 2026-02-01: Homepage "Painkiller" Copy Rewrite
+
+**Changes:** Rewrote landing page copy to focus on pain/urgency rather than aspirational benefits
+
+### Problem
+
+The homepage copy was "vitamin" style - nice-to-have benefits that don't create urgency:
+- "Be Visible in AI-Generated Answers" (aspirational)
+- "Everything You Need to Win AI Search" (feature-focused)
+- "Who Is This For?" (generic personas)
+
+This approach doesn't communicate the immediate cost of inaction.
+
+### Solution
+
+Rewrote key sections to be "painkiller" style - emphasizing the pain of the problem:
+
+**Hero Section:**
+- Badge: "Answer Engine Optimization" → "Your competitors are getting cited. Are you?" (red warning)
+- Headline: "Be Visible in AI-Generated Answers" → "Your Website Is Invisible to AI Search"
+- Added pain example box showing lost customer scenario
+
+**"Who Is This For?" Section:**
+- Changed to "Is This Happening to You?"
+- Each persona now shows their pain as a quote (e.g., "Why do AI assistants recommend our competitors but never mention us?")
+- Icons changed from blue/green to red (warning tone)
+
+**Features Section:**
+- "Everything You Need to Win AI Search" → "Stop Losing Customers to AI Blindspots"
+
+**AI Visibility Score Section:**
+- "AI Visibility Score" → "Your AI Visibility Score: How Bad Is It?"
+- Added color-coded score tiers (Invisible/At Risk/Visible)
+- "Most sites don't know they're invisible until it's too late"
+
+**"Introducing AEO" Section:**
+- "Introducing Answer Engine Optimization" → "Your SEO Tools Can't Fix This"
+- Leads with problem: "Traditional SEO tools have no idea how AI sees your site"
+
+**Final CTA Section:**
+- "Ready to Be Found in AI Answers?" → "How Many Customers Did You Lose Today?"
+- Button changed from blue → red/orange gradient
+- Added urgency: "This is happening right now. Not next year. Today."
+
+**Product Definition (bottom of hero):**
+- Added clear descriptor: "LLM Navigator is an AI visibility analysis tool that shows how websites appear in AI-generated answers."
+- Styled subtly (`text-sm text-slate-500`) to inform without competing with main messaging
+
+### Avoided Claims
+
+Removed "only platform" language - not defensible since other AEO tools exist.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/Landing/LandingPage.tsx` | Painkiller copy rewrite across 6 sections + product definition |
+
+---
+
 ## 2026-01-31: Blog System Implementation
 
 **Changes:** Added markdown-based blog with SEO-friendly URLs at `/blog` and `/blog/:slug`

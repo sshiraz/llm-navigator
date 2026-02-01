@@ -1,6 +1,6 @@
 # Master Feature List
 
-> Last updated: 2026-01-21
+> Last updated: 2026-02-01
 > Single source of truth for all features, organized by category.
 >
 > Legend: ✅ Complete | ⚠️ Partial | ❌ Not Started | 🔄 In Progress
@@ -18,11 +18,11 @@
 | Documentation | 7 | 1 | 2 | 10 |
 | DevOps | 5 | 0 | 4 | 9 |
 | Payments | 9 | 0 | 2 | 11 |
-| User Experience | 9 | 0 | 3 | 12 |
+| User Experience | 11 | 0 | 3 | 14 |
 | Admin | 10 | 1 | 1 | 12 |
-| **Total** | **94** | **6** | **26** | **126** |
+| **Total** | **96** | **6** | **26** | **128** |
 
-**Overall Progress: 79% complete**
+**Overall Progress: 80% complete**
 
 ---
 
@@ -323,6 +323,12 @@
 | Status | Feature | Notes |
 |--------|---------|-------|
 | ✅ | Free Report page | Real AI analysis, email capture, upsell CTA |
+
+### Marketing & Copy
+| Status | Feature | Notes |
+|--------|---------|-------|
+| ✅ | Painkiller homepage copy | Urgency-focused landing page (2026-02-01) |
+| ✅ | Blog system | Markdown-based /blog with SEO URLs (2026-01-31) |
 
 ### Reporting
 | Status | Feature | Notes |
