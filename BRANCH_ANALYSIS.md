@@ -5,6 +5,65 @@
 
 ---
 
+## 2026-02-03: Fix Free Report Leads Not Saving to Database
+
+**Changes:** Fixed silent database insert failures and added error logging
+
+### Problem
+
+Free report leads were not being saved to the database, but admin email notifications were still being sent. This caused a disconnect where admins received "New Free Report Lead" emails but the leads didn't appear in the admin dashboard.
+
+**Root cause:** The production `free_report_leads` table was missing columns that the code tried to insert:
+- `citation_rate`
+- `industry`
+- `competitor_count`
+
+The table was created with a minimal schema, and the full migration was never applied to production.
+
+**Why it went undetected:** The insert code used `.catch(() => {})` which silently swallowed all errors.
+
+### Solution
+
+**1. Fixed production database schema:**
+```sql
+ALTER TABLE free_report_leads
+ADD COLUMN IF NOT EXISTS citation_rate numeric,
+ADD COLUMN IF NOT EXISTS industry text,
+ADD COLUMN IF NOT EXISTS competitor_count integer DEFAULT 0;
+```
+
+**2. Added error logging to prevent silent failures:**
+```typescript
+// Before (silent failure)
+supabase.from('free_report_leads').insert({...})
+  .then(() => console.log('Lead saved'))
+  .catch(() => {});
+
+// After (logs actual errors)
+supabase.from('free_report_leads').insert({...})
+  .then(({ error }) => {
+    if (error) {
+      console.error('Failed to save lead:', error.message, error.code);
+    } else {
+      console.log('Lead saved successfully');
+    }
+  }).catch((err) => console.error('Lead save exception:', err));
+```
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/FreeReport/FreeReportPage.tsx` | Add error logging for lead insert |
+
+### Lessons Learned
+
+- Never use empty `.catch(() => {})` - always log errors
+- Email notifications should ideally only fire after database insert succeeds
+- Verify migrations are applied to production after creating them
+
+---
+
 ## 2026-02-01: Homepage "Painkiller" Copy Rewrite
 
 **Changes:** Rewrote landing page copy to focus on pain/urgency rather than aspirational benefits

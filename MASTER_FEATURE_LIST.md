@@ -1,6 +1,6 @@
 # Master Feature List
 
-> Last updated: 2026-02-01
+> Last updated: 2026-02-03
 > Single source of truth for all features, organized by category.
 >
 > Legend: ✅ Complete | ⚠️ Partial | ❌ Not Started | 🔄 In Progress
@@ -467,3 +467,7 @@
 | 2026-01-31 | Blog posts: "What is AEO?", "Citation Rate Explained", "Why SEO Needs AEO" |
 | 2026-01-31 | Added react-markdown, remark-gfm, @tailwindcss/typography |
 | 2026-01-31 | Blog link added to landing page nav and footer |
+| 2026-02-01 | Homepage "painkiller" copy rewrite (pain-focused, urgency messaging) |
+| 2026-02-01 | Product definition text added to hero section |
+| 2026-02-03 | Fix: Free report leads not saving (missing DB columns in production) |
+| 2026-02-03 | Add error logging for lead insert (prevent silent failures) |

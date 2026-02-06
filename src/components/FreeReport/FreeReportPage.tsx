@@ -498,7 +498,13 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
         citation_rate: citationRate,
         industry: industry,
         competitor_count: competitorSummary.length
-      }).then(() => console.log('Lead saved')).catch(() => {});
+      }).then(({ error }) => {
+        if (error) {
+          console.error('Failed to save lead:', error.message, error.code);
+        } else {
+          console.log('Lead saved successfully');
+        }
+      }).catch((err) => console.error('Lead save exception:', err));
 
       // Notify admin of new lead (fire and forget)
       supabase.functions.invoke('notify-admin-lead', {
