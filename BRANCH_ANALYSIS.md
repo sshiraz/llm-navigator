@@ -5,6 +5,57 @@
 
 ---
 
+## 2026-02-03: Product Roadmap - Agent Readiness Feature
+
+**Changes:** Added "Agent Readiness Check" as top priority feature in product roadmap
+
+### Context
+
+Based on analysis of emerging AI search trends (r/AISearchOptimizers), the industry is shifting:
+
+- AI moving from **Answering → Recommending → Executing**
+- Agentic commerce requires machine-readable transactional data
+- Citation tracking alone is no longer sufficient differentiation
+
+### Current Gap
+
+LLM Navigator currently answers: **"Can AI mention you?"** (citation tracking)
+
+But doesn't answer: **"Can AI transact with you?"** (agent readiness)
+
+### Roadmap Addition
+
+Added to ROADMAP.md as **#1 Upcoming Feature** and PRODUCT_ENGINEERING_ROADMAP.md as **Phase 6**:
+
+**Agent Readiness Check scope:**
+- Product feed / API availability detection
+- Real-time pricing & inventory data exposure
+- Commerce structured data validation (offers, availability, shipping)
+- Machine-readable policies (returns, warranties)
+- API endpoint discoverability
+- Data freshness signals
+- New: Agent Readiness Score (0-100)
+
+### Strategic Rationale
+
+| Current | Future |
+|---------|--------|
+| Citation tracking | + Agent readiness |
+| "Are you mentioned?" | + "Can AI buy from you?" |
+| Content optimization | + Data architecture |
+| AEO/GEO competitor | Agentic commerce leader |
+
+This differentiates from pure SEO/AEO tools and positions for the agentic commerce wave.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `ROADMAP.md` | Add Agent Readiness as #1 priority, renumber existing items |
+| `PRODUCT_ENGINEERING_ROADMAP.md` | Add Phase 6 for Agent Readiness |
+
+---
+
 ## 2026-02-03: Fix Free Report Leads Not Saving to Database
 
 **Changes:** Fixed silent database insert failures and added error logging

@@ -471,3 +471,4 @@
 | 2026-02-01 | Product definition text added to hero section |
 | 2026-02-03 | Fix: Free report leads not saving (missing DB columns in production) |
 | 2026-02-03 | Add error logging for lead insert (prevent silent failures) |
+| 2026-02-03 | Roadmap: Add "Agent Readiness Check" as #1 priority (agentic commerce) |

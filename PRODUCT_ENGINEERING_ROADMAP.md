@@ -1,5 +1,5 @@
 # LLM Navigator Engineering Blueprint
-> Last updated: 2026-01-18
+> Last updated: 2026-02-03
 >
 > This defines **how the system is structured, what constraints exist, and how development must evolve.**
 
@@ -159,6 +159,19 @@ Instead:
 ### Phase 5 — Automation / Alerts
 - scheduled re-analysis
 - email signals
+
+### Phase 6 — Agent Readiness / Agentic Commerce (NEW)
+> *Added 2026-02-03 — AI shifting from Answering → Recommending → Executing*
+
+- product feed / API detection
+- real-time pricing & inventory checks
+- commerce structured data validation (offers, availability, shipping)
+- machine-readable policy detection
+- API endpoint discoverability
+- data freshness signals
+- Agent Readiness Score (0-100)
+
+**Rationale:** Citation tracking answers "can AI mention you?" — Agent Readiness answers "can AI transact with you?" This differentiates from pure AEO/GEO tools.
 
 Every phase runs under TDD and incremental deployment.
 

@@ -1,6 +1,6 @@
 # LLM Navigator Roadmap
 
-> Last updated: 2026-01-18
+> Last updated: 2026-02-03
 
 ## Completed Features
 
@@ -45,29 +45,55 @@
 
 ## Upcoming Features (Priority Order)
 
-### 1. Scheduled Monitoring & Alerts
+### 1. Agent Readiness Check (Agentic Commerce)
+> *Added 2026-02-03 — Based on emerging AI search trends*
+
+AI is evolving from **Answering → Recommending → Executing**. Sites need to be machine-readable for transactional agents, not just citation-worthy.
+
+**What to check:**
+- [ ] Product feed / API availability (JSON-LD, product feeds)
+- [ ] Real-time pricing & inventory data exposure
+- [ ] Structured data for commerce (offers, availability, shipping)
+- [ ] Machine-readable policies (returns, warranties)
+- [ ] API endpoints for agent integration
+- [ ] Data freshness signals (lastModified, update frequency)
+
+**Why this matters:**
+- Citation tracking = "can AI mention you?"
+- Agent readiness = "can AI transact with you?"
+- Differentiates from pure SEO/AEO tools into commerce readiness
+
+**Scoring additions:**
+- Agent Readiness Score (0-100)
+- Commerce data completeness
+- API discoverability
+- Real-time data capability
+
+---
+
+### 2. Scheduled Monitoring & Alerts
 - Auto-run analyses weekly/monthly
 - Email alerts when citation rate changes significantly
 - Alert when you START getting cited (celebration!)
 - Alert when you STOP getting cited (problem!)
 
-### 2. Visual Trend Charts
+### 3. Visual Trend Charts
 - Line graph showing citation rate over time
 - Compare multiple websites on same chart
 - Export charts for reports
 
-### 3. More AI Providers
+### 4. More AI Providers
 - [x] ~~Google Gemini~~ (Added 2026-01-17)
 - [ ] Microsoft Bing Chat / Copilot
 - [ ] Meta AI
 - [ ] Other emerging AI assistants
 
-### 4. Enhanced Competitor Intelligence
+### 5. Enhanced Competitor Intelligence
 - Track specific competitors over time
 - See what content gets THEM cited
 - Gap analysis (what they have that you don't)
 
-### 5. Content Recommendations Engine
+### 6. Content Recommendations Engine
 - AI-generated content suggestions
 - Specific phrases/answers to add
 - Schema markup generator
