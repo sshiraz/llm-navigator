@@ -5,6 +5,43 @@
 
 ---
 
+## 2026-02-08: Fix Competitor Leaderboard External Links
+
+**Changes:** Made the external link icons in the Competitor Citation Leaderboard clickable
+
+### Problem
+
+The `ExternalLink` icons next to competitor domains in the Competitor Citation Leaderboard were purely decorative - clicking them did nothing. Users expected to be able to click through to view the competitor websites.
+
+### Solution
+
+Wrapped the `ExternalLink` icon in an anchor tag that opens the competitor's website:
+
+```tsx
+<a
+  href={`https://${comp.domain}`}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="text-slate-500 hover:text-blue-400 transition-colors"
+  title={`Visit ${comp.domain}`}
+>
+  <ExternalLink className="w-4 h-4" />
+</a>
+```
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/FreeReport/FreeReportPage.tsx` | Wrap ExternalLink icon in anchor tag |
+
+### Testing Performed
+
+- **Test Suite:** 754 passed, 0 failed (754 total)
+- **Build:** Passed
+
+---
+
 ## 2026-02-08: Consolidate Industry Detection into Shared Utility
 
 **Commit:** `ee4d0c8` - Consolidate industry detection into shared utility

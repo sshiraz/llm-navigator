@@ -1320,7 +1320,15 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
                           <span className="text-sm text-slate-400">
                             {comp.citationCount} citation{comp.citationCount !== 1 ? 's' : ''}
                           </span>
-                          <ExternalLink className="w-4 h-4 text-slate-500" />
+                          <a
+                            href={`https://${comp.domain}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-slate-500 hover:text-blue-400 transition-colors"
+                            title={`Visit ${comp.domain}`}
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
                         </div>
                       </div>
                     ))}
