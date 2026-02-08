@@ -52,40 +52,52 @@ function extractDomain(url: string): string {
   }
 }
 
-// Check if response mentions the target site or brand
+// Check if the AI recommends/cites the target site as a solution
+// IMPORTANT: We're checking if the site is recommended TO users, not if AI read it FOR research
+// When we ask "alternatives to X", Perplexity reads X's site but that's not a recommendation
 function checkCitation(
   response: string,
   website: string,
-  brandName?: string
+  brandName?: string,
+  sources?: { url: string; title?: string }[],
+  promptId?: string // To determine if this is a brand-specific or generic query
 ): { isCited: boolean; context?: string } {
-  const lowerResponse = response.toLowerCase();
   const domain = extractDomain(website).toLowerCase();
 
-  // Check for domain mention
-  if (lowerResponse.includes(domain)) {
-    const index = lowerResponse.indexOf(domain);
-    const start = Math.max(0, index - 100);
-    const end = Math.min(response.length, index + domain.length + 100);
-    return {
-      isCited: true,
-      context: response.substring(start, end).trim()
-    };
+  console.log('[checkCitation] Checking domain:', domain);
+  console.log('[checkCitation] Sources received:', sources?.length || 0);
+  console.log('[checkCitation] promptId:', promptId);
+
+  // Queries that mention the brand name will naturally have Perplexity read the site
+  // for research - this is NOT the same as recommending the site
+  const brandSpecificQueries = ['alternatives', 'competitors', 'whatdoes', 'comparison'];
+  const isGenericQuery = !brandSpecificQueries.includes(promptId || '');
+
+  console.log('[checkCitation] Is generic query:', isGenericQuery);
+
+  // Only check citations for generic queries (topCompanies, bestProviders, recommendation)
+  // For brand-specific queries, finding the domain in sources is just research, not recommendation
+  if (!isGenericQuery) {
+    console.log('[checkCitation] Brand-specific query - self-citation filtered, returning false');
+    return { isCited: false };
   }
 
-  // Check for brand name mention
-  if (brandName) {
-    const lowerBrand = brandName.toLowerCase();
-    if (lowerResponse.includes(lowerBrand)) {
-      const index = lowerResponse.indexOf(lowerBrand);
-      const start = Math.max(0, index - 100);
-      const end = Math.min(response.length, index + lowerBrand.length + 100);
-      return {
-        isCited: true,
-        context: response.substring(start, end).trim()
-      };
+  // For generic queries, check if domain appears in sources - this is a TRUE citation
+  if (sources && sources.length > 0) {
+    console.log('[checkCitation] Source domains:', sources.map(s => extractDomain(s.url).toLowerCase()));
+    for (const source of sources) {
+      const sourceDomain = extractDomain(source.url).toLowerCase();
+      if (sourceDomain === domain) {
+        console.log('[checkCitation] TRUE CITATION FOUND in generic query:', sourceDomain);
+        return {
+          isCited: true,
+          context: `Recommended as source: ${source.title || source.url}`
+        };
+      }
     }
   }
 
+  console.log('[checkCitation] No citation found, returning false');
   return { isCited: false };
 }
 
@@ -273,6 +285,9 @@ async function queryPerplexity(
     title: `Source ${index + 1}`
   })) || [];
 
+  console.log('[queryPerplexity] Raw citations from Perplexity:', data.citations);
+  console.log('[queryPerplexity] Parsed sources:', sources.map((s: {url: string}) => s.url));
+
   return {
     response: data.choices[0]?.message?.content || '',
     tokensUsed: data.usage?.total_tokens || 0,
@@ -376,9 +391,11 @@ async function processPrompt(
         break;
     }
 
-    const citation = checkCitation(result.response, website, brandName);
+    const citation = checkCitation(result.response, website, brandName, result.sources, promptId);
     const competitors = extractCompetitors(result.response, userDomain, result.sources);
     const cost = calculateCost(provider, result.tokensUsed);
+
+    console.log(`[processPrompt] Prompt: ${promptId}, isCited: ${citation.isCited}`);
 
     return {
       promptId,

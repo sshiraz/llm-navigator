@@ -65,6 +65,66 @@ const QUERY_TYPES = {
   recommendation: { id: 'recommendation', label: 'Recommendations', icon: '💡' }
 };
 
+// Extract keywords from text for industry matching
+const extractKeywords = (text: string): Set<string> => {
+  if (!text) return new Set();
+  // Common words to ignore
+  const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'shall', 'can', 'your', 'our', 'their', 'its', 'this', 'that', 'these', 'those', 'we', 'you', 'they', 'it', 'all', 'each', 'every', 'both', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'just', 'also', 'now', 'here', 'there', 'when', 'where', 'why', 'how', 'what', 'which', 'who', 'whom', 'whose', 'about', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'between', 'under', 'again', 'further', 'then', 'once', 'up', 'down', 'out', 'off', 'over', 'any', 'home', 'page', 'welcome', 'website', 'company', 'leading', 'best', 'top', 'premier', 'professional', 'trusted', 'reliable', 'quality', 'excellence']);
+
+  const words = text.toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !stopWords.has(w));
+
+  // Also extract common industry stems (geo, enviro, tech, etc.)
+  const stems = new Set<string>();
+  words.forEach(w => {
+    if (w.startsWith('geo')) stems.add('geo');
+    if (w.startsWith('enviro')) stems.add('enviro');
+    if (w.includes('environment')) stems.add('environment');
+    if (w.includes('consult')) stems.add('consulting');
+    if (w.includes('engineer')) stems.add('engineering');
+    if (w.includes('science')) stems.add('science');
+    if (w.includes('tech')) stems.add('tech');
+    if (w.includes('software')) stems.add('software');
+    if (w.includes('health')) stems.add('health');
+    if (w.includes('medic')) stems.add('medical');
+    if (w.includes('financ')) stems.add('finance');
+    if (w.includes('legal')) stems.add('legal');
+    if (w.includes('construct')) stems.add('construction');
+    if (w.includes('manufact')) stems.add('manufacturing');
+    if (w.includes('retail')) stems.add('retail');
+    if (w.includes('ecommerce') || w.includes('commerce')) stems.add('ecommerce');
+  });
+
+  return new Set([...words, ...stems]);
+};
+
+// Check if two sets of keywords have meaningful overlap
+const hasIndustryOverlap = (keywords1: Set<string>, keywords2: Set<string>, minOverlap: number = 2): boolean => {
+  let overlap = 0;
+  for (const word of keywords1) {
+    if (keywords2.has(word)) {
+      overlap++;
+      if (overlap >= minOverlap) return true;
+    }
+  }
+  return false;
+};
+
+// Domains that are clearly not real competitors (data aggregators, social media, etc.)
+const NON_COMPETITOR_DOMAINS = new Set([
+  'linkedin.com', 'facebook.com', 'twitter.com', 'x.com', 'instagram.com',
+  'youtube.com', 'wikipedia.org', 'reddit.com', 'medium.com',
+  'g2.com', 'capterra.com', 'trustpilot.com', 'glassdoor.com',
+  'crunchbase.com', 'zoominfo.com', 'cbinsights.com', 'pitchbook.com',
+  'bloomberg.com', 'reuters.com', 'forbes.com', 'techcrunch.com',
+  'worldbank.org', 'documents1.worldbank.org', 'rocketreach.co',
+  'indonetwork.co.id', 'en.indonetwork.co.id', 'alibaba.com', 'aliexpress.com',
+  'amazon.com', 'ebay.com', 'yelp.com', 'yellowpages.com',
+  'gov', 'edu' // Government and education TLDs
+]);
+
 export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
   const [email, setEmail] = useState('');
   const [website, setWebsite] = useState('');
@@ -140,31 +200,79 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
   };
 
   // Generate prompts for multi-query analysis
-  const generatePrompts = (brandName: string, industry: string): { id: string; text: string; queryType: string }[] => {
+  // Uses AI-detected industry and location for more accurate queries
+  const generatePrompts = (
+    brandName: string,
+    websiteUrl: string,
+    description?: string,
+    detectedIndustry?: string,
+    detectedLocation?: string
+  ): { id: string; text: string; queryType: string }[] => {
+    // Use detected industry if available, otherwise fall back to description
+    const industry = detectedIndustry || '';
+    const location = detectedLocation && detectedLocation.toLowerCase() !== 'global' ? detectedLocation : '';
+
+    // Build location clause for geo-specific queries
+    const locationClause = location ? ` in ${location}` : '';
+
+    // If we have a detected industry, use industry-focused queries
+    if (industry) {
+      return [
+        {
+          id: 'alternatives',
+          text: `What are the best alternatives to ${brandName} for ${industry.toLowerCase()}${locationClause}? Include specific company websites.`,
+          queryType: 'alternatives'
+        },
+        {
+          id: 'topCompanies',
+          text: `What are the most well-known ${industry.toLowerCase()} companies${locationClause}? List the top companies with their websites.`,
+          queryType: 'topCompanies'
+        },
+        {
+          id: 'competitors',
+          text: `Who are the main competitors to ${brandName} in the ${industry.toLowerCase()} industry${locationClause}? List specific companies.`,
+          queryType: 'competitors'
+        },
+        {
+          id: 'bestProviders',
+          text: `Who are the best ${industry.toLowerCase()} providers${locationClause}? What companies are recommended?`,
+          queryType: 'bestProviders'
+        },
+        {
+          id: 'recommendation',
+          text: `I need ${industry.toLowerCase()} services${locationClause}. What companies do you recommend and why?`,
+          queryType: 'recommendation'
+        }
+      ];
+    }
+
+    // Fallback: Use description-based context if no industry detected
+    const contextClause = description ? `, which ${description.toLowerCase()}` : '';
+
     return [
       {
         id: 'alternatives',
-        text: `What are the best ${brandName} alternatives and competitors? Include specific websites.`,
+        text: `What are the best alternatives to ${brandName}${contextClause}? Include specific company websites.`,
         queryType: 'alternatives'
       },
       {
-        id: 'best',
-        text: `What are the best ${industry.toLowerCase()} tools and platforms in 2026? Recommend specific companies.`,
-        queryType: 'best'
+        id: 'competitors',
+        text: `Who are the main competitors to ${brandName}${contextClause}? List specific companies with their websites.`,
+        queryType: 'competitors'
       },
       {
-        id: 'howto',
-        text: `How do I choose the right ${industry.toLowerCase()} solution for my business?`,
-        queryType: 'howTo'
+        id: 'whatdoes',
+        text: `What does ${brandName} do and who are similar companies in their market?`,
+        queryType: 'whatDoes'
       },
       {
         id: 'comparison',
-        text: `Compare the top ${industry.toLowerCase()} companies. Which one should I use?`,
+        text: `Compare ${brandName}${contextClause} with their top competitors in the same industry. What are the differences?`,
         queryType: 'comparison'
       },
       {
         id: 'recommendation',
-        text: `I need a ${industry.toLowerCase()} service. What do you recommend?`,
+        text: `I'm looking for a company like ${brandName}${contextClause}. What do you recommend?`,
         queryType: 'recommendation'
       }
     ];
@@ -175,7 +283,7 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
     citationRate: number,
     competitorSummary: CompetitorSummary[],
     queryResults: QueryResult[],
-    industry: string
+    brandName: string
   ): { priority: 'high' | 'medium' | 'low'; title: string; description: string }[] => {
     const recommendations: { priority: 'high' | 'medium' | 'low'; title: string; description: string }[] = [];
 
@@ -184,7 +292,7 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
       recommendations.push({
         priority: 'high',
         title: 'Add FAQ Schema Markup',
-        description: `AI assistants heavily favor structured data. Add FAQ schema to your key pages with direct answers to questions like "What is ${industry.toLowerCase()}?" and "How does your service work?"`
+        description: `AI assistants heavily favor structured data. Add FAQ schema to your key pages with direct answers to questions like "What does ${brandName} do?" and "How does your service work?"`
       });
 
       recommendations.push({
@@ -209,7 +317,7 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
       recommendations.push({
         priority: 'medium',
         title: 'Expand Topic Coverage',
-        description: `You're being cited in some query types but not others. Create content that addresses "best ${industry.toLowerCase()}" and "how to choose" style questions.`
+        description: `You're being cited in some query types but not others. Create content that addresses "alternatives to ${brandName}" and comparison-style questions.`
       });
     }
 
@@ -223,13 +331,13 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
       });
     }
 
-    // Not cited in how-to queries
-    const howToResult = queryResults.find(r => r.queryType === 'howTo');
-    if (howToResult && !howToResult.isCited) {
+    // Not cited in "what does" queries
+    const whatDoesResult = queryResults.find(r => r.queryType === 'whatDoes');
+    if (whatDoesResult && !whatDoesResult.isCited) {
       recommendations.push({
         priority: 'medium',
         title: 'Add Educational Content',
-        description: `Create guides and tutorials about ${industry.toLowerCase()} best practices. Use numbered steps and clear headings AI can parse.`
+        description: 'Create guides and tutorials about your services and best practices. Use numbered steps and clear headings AI can parse.'
       });
     }
 
@@ -332,11 +440,12 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
     try {
       // Extract domain for prompt generation
       const domain = normalizedUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
-      const brandName = domain.split('.')[0];
+      let brandName = domain.split('.')[0]; // Fallback - will be updated from crawl
 
       // Step 1: Crawl the website to get content
       let crawlSummary: CrawlSummary | undefined;
       let industry = detectIndustry(brandName, domain); // Fallback
+      let metaDescription = ''; // For prompt context
 
       try {
         const { data: crawlData, error: crawlError } = await supabase.functions.invoke('crawl-website', {
@@ -346,13 +455,25 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
         if (!crawlError && crawlData?.success && crawlData?.data) {
           const crawl = crawlData.data;
 
+          // Use page title as brand name if available (much better than domain extraction)
+          if (crawl.title) {
+            // Clean up common title patterns like "Company Name | Tagline" or "Company Name - Description"
+            const cleanTitle = crawl.title.split(/[|\-–—]/)[0].trim();
+            if (cleanTitle.length > 0 && cleanTitle.length < 100) {
+              brandName = cleanTitle;
+            }
+          }
+
+          // Store meta description for potential prompt context
+          metaDescription = crawl.metaDescription || '';
+
           // Extract headings text for industry detection
           const headingsText = crawl.headings?.map((h: { text: string }) => h.text) || [];
 
           // Detect industry from actual page content
           industry = detectIndustryFromContent(
             crawl.title || '',
-            crawl.metaDescription || '',
+            metaDescription,
             headingsText
           );
 
@@ -371,22 +492,67 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
             totalHeadings: crawl.aggregatedStats?.totalHeadings || crawl.headings?.length || 0,
             totalSchemas: crawl.aggregatedStats?.totalSchemas || crawl.schemaMarkup?.length || 0,
             avgReadability: crawl.aggregatedStats?.avgReadability || crawl.contentStats?.readabilityScore || 0,
-            metaDescription: crawl.metaDescription || '',
+            metaDescription: metaDescription,
             mainTitle: crawl.title || domain
           };
 
+          console.log('Using brand name from page title:', brandName);
           console.log('Detected industry from content:', industry);
         }
       } catch (crawlErr) {
         console.warn('Crawl failed, using domain-based detection:', crawlErr);
       }
 
-      setLoadingStatus('Generating industry-specific prompts...');
+      // PHASE 1: Hidden industry discovery query
+      // Ask AI to identify the industry/sector before running visible queries
+      setLoadingStatus('Analyzing business category...');
 
-      // Generate 5 diverse prompts based on detected industry
-      const prompts = generatePrompts(brandName, industry);
+      let detectedIndustry = '';
+      let detectedLocation = '';
 
-      setLoadingStatus('Querying AI providers (5 queries)...');
+      try {
+        const discoveryPrompt = `What industry or business sector does ${brandName} (${normalizedUrl}) operate in? Also identify their geographic location if apparent. Answer in this exact format:
+Industry: [specific industry in 3-5 words]
+Location: [country or region, or "Global" if unclear]`;
+
+        const { data: discoveryData, error: discoveryError } = await supabase.functions.invoke('check-citations', {
+          body: {
+            prompts: [{ id: 'discovery', text: discoveryPrompt }],
+            website: normalizedUrl,
+            brandName: brandName,
+            providers: ['perplexity']
+          }
+        });
+
+        if (!discoveryError && discoveryData?.success && discoveryData?.data?.results?.[0]) {
+          const response = discoveryData.data.results[0].response || '';
+          console.log('Industry discovery response:', response);
+
+          // Parse the response for industry and location
+          const industryMatch = response.match(/Industry:\s*([^\n]+)/i);
+          const locationMatch = response.match(/Location:\s*([^\n]+)/i);
+
+          if (industryMatch) {
+            detectedIndustry = industryMatch[1].trim();
+          }
+          if (locationMatch) {
+            detectedLocation = locationMatch[1].trim();
+          }
+
+          console.log('Detected industry:', detectedIndustry);
+          console.log('Detected location:', detectedLocation);
+        }
+      } catch (discoveryErr) {
+        console.warn('Industry discovery failed, using fallback:', discoveryErr);
+      }
+
+      // PHASE 2: Generate prompts using discovered industry
+      setLoadingStatus('Generating competitor analysis prompts...');
+
+      // Generate 5 diverse prompts using discovered industry for better accuracy
+      const prompts = generatePrompts(brandName, normalizedUrl, metaDescription, detectedIndustry, detectedLocation);
+
+      setLoadingStatus(`Querying AI providers (5 queries)...`);
 
       // Call the check-citations edge function with 5 prompts
       const { data, error: fnError } = await supabase.functions.invoke('check-citations', {
@@ -431,6 +597,16 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
       const competitorMap = new Map<string, { count: number; queryTypes: Set<string> }>();
       queryResults.forEach(result => {
         result.competitors.forEach(comp => {
+          // Skip obvious non-competitors (data aggregators, social media, etc.)
+          const domainLower = comp.domain.toLowerCase();
+          const isBlocked = Array.from(NON_COMPETITOR_DOMAINS).some(blocked =>
+            domainLower === blocked || domainLower.endsWith('.' + blocked)
+          );
+          if (isBlocked) return;
+
+          // Skip government and education domains
+          if (domainLower.endsWith('.gov') || domainLower.endsWith('.edu')) return;
+
           const existing = competitorMap.get(comp.domain);
           if (existing) {
             existing.count++;
@@ -441,14 +617,78 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
         });
       });
 
-      const competitorSummary: CompetitorSummary[] = Array.from(competitorMap.entries())
+      // Get top candidates for validation (more than we need, to account for filtering)
+      const topCandidates = Array.from(competitorMap.entries())
         .map(([domain, data]) => ({
           domain,
           citationCount: data.count,
           queryTypes: Array.from(data.queryTypes)
         }))
         .sort((a, b) => b.citationCount - a.citationCount)
-        .slice(0, 5);
+        .slice(0, 10);
+
+      // Extract keywords from original site for comparison
+      const originalKeywords = extractKeywords(`${brandName} ${metaDescription} ${crawlSummary?.mainTitle || ''}`);
+      console.log('Original site keywords:', Array.from(originalKeywords));
+
+      // Validate competitors by crawling their homepages (in parallel, with timeout)
+      setLoadingStatus('Validating competitors...');
+      const validatedCompetitors: CompetitorSummary[] = [];
+
+      // Crawl competitors in parallel with a timeout
+      // Logic: Include by default, only exclude if we VERIFY they're in a different industry
+      const validationPromises = topCandidates.map(async (candidate) => {
+        try {
+          const competitorUrl = `https://${candidate.domain}`;
+          const { data: crawlData, error: crawlError } = await supabase.functions.invoke('crawl-website', {
+            body: { url: competitorUrl }
+          });
+
+          if (crawlError || !crawlData?.success || !crawlData?.data) {
+            // Can't crawl = can't verify they're irrelevant, so INCLUDE them
+            console.log(`Could not crawl ${candidate.domain}, including by default`);
+            return { ...candidate, validated: true, reason: 'crawl_failed_include' };
+          }
+
+          const compCrawl = crawlData.data;
+          const compKeywords = extractKeywords(`${compCrawl.title || ''} ${compCrawl.metaDescription || ''}`);
+          console.log(`Competitor ${candidate.domain} keywords:`, Array.from(compKeywords));
+
+          // Check for industry overlap (require only 1 matching keyword)
+          const hasOverlap = hasIndustryOverlap(originalKeywords, compKeywords, 1);
+
+          if (hasOverlap) {
+            return { ...candidate, validated: true, reason: 'matched' };
+          } else {
+            // Only exclude if we successfully crawled AND found ZERO overlap
+            console.log(`Competitor ${candidate.domain} filtered out - verified different industry`);
+            return { ...candidate, validated: false, reason: 'no_overlap' };
+          }
+        } catch (err) {
+          // Error = can't verify, so INCLUDE them
+          console.warn(`Error validating competitor ${candidate.domain}, including by default:`, err);
+          return { ...candidate, validated: true, reason: 'error_include' };
+        }
+      });
+
+      // Wait for all validations with a timeout (max 15 seconds total)
+      const validationResults = await Promise.race([
+        Promise.all(validationPromises),
+        new Promise<typeof topCandidates>((resolve) =>
+          setTimeout(() => {
+            console.log('Competitor validation timeout, using unvalidated list');
+            resolve(topCandidates.map(c => ({ ...c, validated: true, reason: 'timeout' })));
+          }, 15000)
+        )
+      ]);
+
+      // Build final competitor list from validated results
+      const competitorSummary: CompetitorSummary[] = validationResults
+        .filter((c: any) => c.validated)
+        .slice(0, 5)
+        .map(({ domain, citationCount, queryTypes }) => ({ domain, citationCount, queryTypes }));
+
+      console.log(`Validated ${competitorSummary.length} competitors from ${topCandidates.length} candidates`);
 
       // Calculate AI visibility score
       let aiVisibilityScore = 20; // Base score
@@ -468,7 +708,7 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
       aiVisibilityScore = Math.min(100, Math.round(aiVisibilityScore));
 
       // Generate personalized recommendations
-      const recommendations = generateRecommendations(citationRate, competitorSummary, queryResults, industry);
+      const recommendations = generateRecommendations(citationRate, competitorSummary, queryResults, brandName);
 
       // Estimate missed traffic
       const estimatedMissedTraffic = estimateMissedTraffic(citationRate, competitorSummary.length);
@@ -693,7 +933,7 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
                   </li>
                   <li className="flex items-start space-x-2">
                     <span className="text-blue-400 font-medium">2.</span>
-                    <span>We query Perplexity with 5 real prompts about your industry (ChatGPT, Claude, and Gemini available with an account)</span>
+                    <span>We query Perplexity with 5 real prompts about your brand and competitors (ChatGPT, Claude, and Gemini available with an account)</span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <span className="text-blue-400 font-medium">3.</span>

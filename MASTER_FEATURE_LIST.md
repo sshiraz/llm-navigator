@@ -1,6 +1,6 @@
 # Master Feature List
 
-> Last updated: 2026-02-03
+> Last updated: 2026-02-07
 > Single source of truth for all features, organized by category.
 >
 > Legend: ✅ Complete | ⚠️ Partial | ❌ Not Started | 🔄 In Progress
@@ -18,9 +18,9 @@
 | Documentation | 7 | 1 | 2 | 10 |
 | DevOps | 5 | 0 | 4 | 9 |
 | Payments | 9 | 0 | 2 | 11 |
-| User Experience | 11 | 0 | 3 | 14 |
+| User Experience | 15 | 0 | 3 | 18 |
 | Admin | 10 | 1 | 1 | 12 |
-| **Total** | **96** | **6** | **26** | **128** |
+| **Total** | **100** | **6** | **26** | **132** |
 
 **Overall Progress: 80% complete**
 
@@ -323,6 +323,10 @@
 | Status | Feature | Notes |
 |--------|---------|-------|
 | ✅ | Free Report page | Real AI analysis, email capture, upsell CTA |
+| ✅ | AI industry detection | Hidden query detects industry + location (2026-02-07) |
+| ✅ | Industry-specific prompts | Queries tailored to detected industry/location |
+| ✅ | Accurate citation detection | Filters self-citations from brand-specific queries |
+| ✅ | Competitor validation | Crawls competitors to verify same industry |
 
 ### Marketing & Copy
 | Status | Feature | Notes |
@@ -472,3 +476,8 @@
 | 2026-02-03 | Fix: Free report leads not saving (missing DB columns in production) |
 | 2026-02-03 | Add error logging for lead insert (prevent silent failures) |
 | 2026-02-03 | Roadmap: Add "Agent Readiness Check" as #1 priority (agentic commerce) |
+| 2026-02-07 | Free Report: AI-powered industry detection (hidden discovery query) |
+| 2026-02-07 | Free Report: Industry + location-specific prompts for accurate competitors |
+| 2026-02-07 | Free Report: Fix citation false positives (brand-specific vs generic queries) |
+| 2026-02-07 | Free Report: Competitor validation by crawling homepages |
+| 2026-02-07 | Free Report: Filter non-competitor domains (g2, cbinsights, linkedin, etc.) |

@@ -5,6 +5,80 @@
 
 ---
 
+## 2026-02-07: Free Report - Industry Detection & Citation Accuracy
+
+**Changes:** Major improvements to free report accuracy - AI-powered industry detection, location-aware queries, and fixed citation false positives
+
+### Problem
+
+The free report was producing poor results:
+1. **Wrong industry detection** - geo.co.id (environmental consulting) was detected as "AI & Automation"
+2. **Wrong competitors** - Showing Zapier, n8n, YouTube instead of actual environmental services companies
+3. **100% citation rate** - False positives from Perplexity echoing the brand name
+
+### Solution: Two-Phase Analysis
+
+#### Phase 1: Hidden Industry Discovery Query
+Before running visible queries, we now ask Perplexity:
+```
+What industry or business sector does [brand] ([url]) operate in?
+Also identify their geographic location if apparent.
+```
+
+This returns the actual industry (e.g., "geomatics and environmental technology") and location (e.g., "Indonesia").
+
+#### Phase 2: Industry-Specific Prompts
+Using the detected industry + location, we generate targeted queries:
+- "What are the best alternatives to [brand] for [industry] in [location]?"
+- "What are the most well-known [industry] companies in [location]?"
+- "Who are the best [industry] providers in [location]?"
+
+### Citation Detection Fix
+
+**Problem:** When asking "alternatives to Geo Enviro Omega", Perplexity reads geo.co.id to understand the company and includes it in sources. This is NOT a recommendation - it's research.
+
+**Solution:** Differentiate query types:
+
+| Query Type | Example | Citation Check |
+|------------|---------|----------------|
+| Brand-specific | "alternatives to X", "competitors of X" | Always `false` (self-citation filtered) |
+| Generic industry | "best X companies in Y" | Check if domain in sources (true citation) |
+
+### Competitor Validation
+
+Added validation step that:
+1. Filters out non-competitor domains (g2.com, cbinsights.com, linkedin.com, etc.)
+2. Crawls potential competitors' homepages
+3. Extracts keywords and checks for industry overlap
+4. Only includes competitors in same industry
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/FreeReport/FreeReportPage.tsx` | Industry discovery query, industry-specific prompts, competitor validation |
+| `supabase/functions/check-citations/index.ts` | Citation detection by query type (brand-specific vs generic) |
+
+### Results
+
+**Before:**
+- Industry: "AI & Automation" ❌
+- Competitors: Zapier, n8n, YouTube ❌
+- Citation rate: 100% (false positive) ❌
+
+**After:**
+- Industry: "geomatics and environmental technology" ✓
+- Competitors: karvak.co.id, elioplus.com, geosyndo.co.id ✓
+- Citation rate: 60% (3/5 - accurate) ✓
+
+### Edge Function Deployment
+
+```bash
+npx supabase functions deploy check-citations
+```
+
+---
+
 ## 2026-02-03: Product Roadmap - Agent Readiness Feature
 
 **Changes:** Added "Agent Readiness Check" as top priority feature in product roadmap
