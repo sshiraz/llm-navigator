@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Mail, Globe, CheckCircle, ArrowRight, BarChart3, Eye, Target, Zap, Shield, TrendingUp, ExternalLink, AlertTriangle, Award, Users, Info, Clock } from 'lucide-react';
+import { Search, Mail, Globe, CheckCircle, ArrowRight, BarChart3, Eye, Target, Zap, Shield, TrendingUp, ExternalLink, AlertTriangle, Award, Users, Info, Clock, Briefcase, Sparkles } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { detectIndustry } from '../../utils/industryDetector';
+import { detectIndustry, detectIndustryFromAI } from '../../utils/industryDetector';
 
 interface FreeReportPageProps {
   onGetStarted: () => void;
@@ -134,6 +134,12 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
   const [reportGenerated, setReportGenerated] = useState(false);
   const [reportData, setReportData] = useState<ReportData | null>(null);
 
+  // Two-step form flow
+  const [formStep, setFormStep] = useState<1 | 2>(1);
+  const [industry, setIndustry] = useState('');
+  const [isDetectingIndustry, setIsDetectingIndustry] = useState(false);
+  const [industryDetected, setIndustryDetected] = useState(false);
+
   // Set SEO metadata on mount
   useEffect(() => {
     // Set page title
@@ -162,6 +168,62 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
       document.title = 'LLM Navigator';
     };
   }, []);
+
+  // Detect industry from website URL (for Step 1)
+  const detectIndustryFromUrl = async (websiteUrl: string) => {
+    if (!websiteUrl || isDetectingIndustry) return;
+
+    setIsDetectingIndustry(true);
+    setError('');
+
+    try {
+      const result = await detectIndustryFromAI(websiteUrl, supabase);
+
+      if (result.detected && result.industry) {
+        setIndustry(result.industry);
+        setIndustryDetected(true);
+      }
+    } catch (err) {
+      console.error('Industry detection failed:', err);
+      // Continue anyway - industry is optional
+    } finally {
+      setIsDetectingIndustry(false);
+    }
+  };
+
+  // Handle Step 1 -> Step 2 transition
+  const handleContinueToStep2 = async () => {
+    if (!website || !website.includes('.')) {
+      setError('Please enter a valid website URL');
+      return;
+    }
+
+    // If industry not detected yet, detect it now
+    if (!industry && !isDetectingIndustry) {
+      await detectIndustryFromUrl(website);
+    }
+
+    setError('');
+    setFormStep(2);
+  };
+
+  // Handle going back to Step 1
+  const handleBackToStep1 = () => {
+    setFormStep(1);
+  };
+
+  // Auto-detect industry when website changes (debounced)
+  useEffect(() => {
+    if (industryDetected || formStep !== 1) return;
+
+    const timer = setTimeout(() => {
+      if (website && website.includes('.')) {
+        detectIndustryFromUrl(website);
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [website, industryDetected, formStep]);
 
   // Industry keywords for content-based detection
   const INDUSTRY_CONTENT_KEYWORDS: Record<string, string[]> = {
@@ -444,7 +506,7 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
 
       // Step 1: Crawl the website to get content
       let crawlSummary: CrawlSummary | undefined;
-      let industry = detectIndustry(brandName, domain); // Fallback
+      let contentIndustry = detectIndustry(brandName, domain); // Fallback from content (not used if Step 1 detected)
       let metaDescription = ''; // For prompt context
 
       try {
@@ -470,8 +532,8 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
           // Extract headings text for industry detection
           const headingsText = crawl.headings?.map((h: { text: string }) => h.text) || [];
 
-          // Detect industry from actual page content
-          industry = detectIndustryFromContent(
+          // Detect industry from actual page content (only used as fallback if Step 1 didn't detect)
+          contentIndustry = detectIndustryFromContent(
             crawl.title || '',
             metaDescription,
             headingsText
@@ -497,57 +559,21 @@ export default function FreeReportPage({ onGetStarted }: FreeReportPageProps) {
           };
 
           console.log('Using brand name from page title:', brandName);
-          console.log('Detected industry from content:', industry);
+          console.log('Detected industry from content (fallback):', contentIndustry);
         }
       } catch (crawlErr) {
         console.warn('Crawl failed, using domain-based detection:', crawlErr);
       }
 
-      // PHASE 1: Hidden industry discovery query
-      // Ask AI to identify the industry/sector before running visible queries
-      setLoadingStatus('Analyzing business category...');
+      // Use industry from Step 1 (already detected before email capture)
+      // This saves an API call since we detected industry when user entered the URL
+      const detectedIndustry = industry; // From state (Step 1)
+      const detectedLocation = ''; // Location detection removed - Step 1 only detects industry
 
-      let detectedIndustry = '';
-      let detectedLocation = '';
+      console.log('Using pre-detected industry from Step 1:', detectedIndustry);
 
-      try {
-        const discoveryPrompt = `What industry or business sector does ${brandName} (${normalizedUrl}) operate in? Also identify their geographic location if apparent. Answer in this exact format:
-Industry: [specific industry in 3-5 words]
-Location: [country or region, or "Global" if unclear]`;
-
-        const { data: discoveryData, error: discoveryError } = await supabase.functions.invoke('check-citations', {
-          body: {
-            prompts: [{ id: 'discovery', text: discoveryPrompt }],
-            website: normalizedUrl,
-            brandName: brandName,
-            providers: ['perplexity']
-          }
-        });
-
-        if (!discoveryError && discoveryData?.success && discoveryData?.data?.results?.[0]) {
-          const response = discoveryData.data.results[0].response || '';
-          console.log('Industry discovery response:', response);
-
-          // Parse the response for industry and location
-          const industryMatch = response.match(/Industry:\s*([^\n]+)/i);
-          const locationMatch = response.match(/Location:\s*([^\n]+)/i);
-
-          if (industryMatch) {
-            detectedIndustry = industryMatch[1].trim();
-          }
-          if (locationMatch) {
-            detectedLocation = locationMatch[1].trim();
-          }
-
-          console.log('Detected industry:', detectedIndustry);
-          console.log('Detected location:', detectedLocation);
-        }
-      } catch (discoveryErr) {
-        console.warn('Industry discovery failed, using fallback:', discoveryErr);
-      }
-
-      // PHASE 2: Generate prompts using discovered industry
-      setLoadingStatus('Generating competitor analysis prompts...');
+      // Generate prompts using the pre-detected industry
+      setLoadingStatus('Preparing analysis...');
 
       // Generate 5 diverse prompts using discovered industry for better accuracy
       const prompts = generatePrompts(brandName, normalizedUrl, metaDescription, detectedIndustry, detectedLocation);
@@ -854,66 +880,196 @@ Location: [country or region, or "Global" if unclear]`;
               </p>
             </div>
 
+            {/* Step Indicator */}
+            <div className="flex items-center justify-center gap-4 mb-8">
+              <div className={`flex items-center gap-2 ${formStep === 1 ? 'text-blue-400' : 'text-slate-500'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                  formStep === 1 ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'
+                }`}>1</div>
+                <span className="text-sm font-medium hidden sm:inline">Your Website</span>
+              </div>
+              <div className="w-8 h-px bg-slate-600" />
+              <div className={`flex items-center gap-2 ${formStep === 2 ? 'text-blue-400' : 'text-slate-500'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                  formStep === 2 ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'
+                }`}>2</div>
+                <span className="text-sm font-medium hidden sm:inline">Get Your Report</span>
+              </div>
+            </div>
+
             {/* Form Card */}
             <div className="max-w-xl mx-auto">
               <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-2xl p-8 shadow-2xl">
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Email
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@company.com"
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-900/50 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      />
-                    </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Website URL
-                    </label>
-                    <div className="relative">
-                      <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-                      <input
-                        type="text"
-                        value={website}
-                        onChange={(e) => setWebsite(e.target.value)}
-                        placeholder="yourcompany.com"
-                        className="w-full pl-12 pr-4 py-3.5 bg-slate-900/50 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      />
+                {/* STEP 1: Website, Industry & Email */}
+                {formStep === 1 && (
+                  <div className="space-y-5">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Website URL
+                      </label>
+                      <div className="relative">
+                        <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                        <input
+                          type="text"
+                          value={website}
+                          onChange={(e) => {
+                            setWebsite(e.target.value);
+                            // Reset industry when URL changes
+                            if (industryDetected) {
+                              setIndustry('');
+                              setIndustryDetected(false);
+                            }
+                          }}
+                          placeholder="yourcompany.com"
+                          className="w-full pl-12 pr-4 py-3.5 bg-slate-900/50 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  {error && (
-                    <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
-                      {error}
+                    {/* Industry Field */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Industry
+                        <span className="text-slate-500 font-normal ml-1">
+                          {isDetectingIndustry ? '(detecting...)' : industryDetected ? '(auto-detected)' : ''}
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                        <input
+                          type="text"
+                          value={industry}
+                          onChange={(e) => {
+                            setIndustry(e.target.value);
+                            setIndustryDetected(false);
+                          }}
+                          placeholder="e.g., Environmental Consulting, SaaS Marketing"
+                          className="w-full pl-12 pr-4 py-3.5 bg-slate-900/50 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          disabled={isDetectingIndustry}
+                        />
+                        {isDetectingIndustry && (
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                            <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        )}
+                      </div>
+                      {industryDetected && (
+                        <p className="mt-1.5 text-xs text-amber-400/70 flex items-center">
+                          <Sparkles className="w-3 h-3 mr-1" />
+                          AI-suggested — feel free to edit
+                        </p>
+                      )}
+                      {website && website.includes('.') && !isDetectingIndustry && !industry && (
+                        <button
+                          type="button"
+                          onClick={() => detectIndustryFromUrl(website)}
+                          className="mt-1.5 text-xs text-amber-400 hover:text-amber-300 flex items-center"
+                        >
+                          <Sparkles className="w-3 h-3 mr-1" />
+                          Detect industry from website
+                        </button>
+                      )}
                     </div>
-                  )}
 
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>{loadingStatus || 'Analyzing your website...'}</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Get My Free Report</span>
-                        <ArrowRight className="w-5 h-5" />
-                      </>
+                    {/* Email Field */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Email
+                      </label>
+                      <div className="relative">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="you@company.com"
+                          className="w-full pl-12 pr-4 py-3.5 bg-slate-900/50 border border-slate-600 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {error && (
+                      <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
+                        {error}
+                      </div>
                     )}
-                  </button>
-                </form>
+
+                    <button
+                      type="button"
+                      onClick={handleContinueToStep2}
+                      disabled={!website || !website.includes('.') || !email || !email.includes('@') || isDetectingIndustry}
+                      className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    >
+                      <span>{isDetectingIndustry ? 'Detecting Industry...' : 'Continue'}</span>
+                      {!isDetectingIndustry && <ArrowRight className="w-5 h-5" />}
+                    </button>
+                  </div>
+                )}
+
+                {/* STEP 2: Confirmation & Generate */}
+                {formStep === 2 && (
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Summary of inputs */}
+                    <div className="bg-slate-900/50 border border-slate-600 rounded-xl p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <button
+                          type="button"
+                          onClick={handleBackToStep1}
+                          className="text-slate-400 hover:text-white text-sm flex items-center gap-1 transition-colors"
+                        >
+                          <ArrowRight className="w-4 h-4 rotate-180" />
+                          Edit
+                        </button>
+                        <span className="text-xs text-slate-500">Review your details</span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Globe className="w-4 h-4 text-slate-500" />
+                          <span className="text-white text-sm">{website}</span>
+                        </div>
+                        {industry && (
+                          <div className="flex items-center gap-2">
+                            <Briefcase className="w-4 h-4 text-amber-400/70" />
+                            <span className="text-amber-400 text-sm">{industry}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-slate-500" />
+                          <span className="text-slate-300 text-sm">{email}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-center text-sm text-slate-400">
+                      We'll analyze your website and check if AI assistants are citing your content.
+                    </div>
+
+                    {error && (
+                      <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
+                        {error}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>{loadingStatus || 'Analyzing your website...'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Generate My Free Report</span>
+                          <ArrowRight className="w-5 h-5" />
+                        </>
+                      )}
+                    </button>
+                  </form>
+                )}
 
                 <p className="text-center text-slate-500 text-sm mt-4">
                   No credit card required. Report delivered instantly.

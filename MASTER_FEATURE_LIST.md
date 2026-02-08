@@ -326,7 +326,8 @@
 | Status | Feature | Notes |
 |--------|---------|-------|
 | ✅ | Free Report page | Real AI analysis, email capture, upsell CTA |
-| ✅ | AI industry detection | Hidden query detects industry + location (2026-02-07) |
+| ✅ | Two-step form flow | Step 1: Website + Industry, Step 2: Email (2026-02-07) |
+| ✅ | AI industry detection | Auto-detects industry, user-editable before analysis |
 | ✅ | Industry-specific prompts | Queries tailored to detected industry/location |
 | ✅ | Accurate citation detection | Filters self-citations from brand-specific queries |
 | ✅ | Competitor validation | Crawls competitors to verify same industry |
@@ -489,3 +490,6 @@
 | 2026-02-07 | Paid Analysis: User-editable industry field (AI-suggested, not locked) |
 | 2026-02-07 | Paid Analysis: Dynamic industry-specific prompt suggestions |
 | 2026-02-07 | Fix: Industry detection response parsing (wrong path in API response) |
+| 2026-02-07 | Free Report: Two-step form flow (Step 1: Website + Industry, Step 2: Email) |
+| 2026-02-07 | Free Report: Early industry detection before email capture |
+| 2026-02-07 | Free Report: Saves API call by reusing Step 1 industry in analysis |

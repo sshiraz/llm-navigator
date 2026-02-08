@@ -5,6 +5,132 @@
 
 ---
 
+## 2026-02-08: Consolidate Industry Detection into Shared Utility
+
+**Changes:** Refactored duplicated industry detection code from FreeReportPage and NewAnalysis into a shared utility in `industryDetector.ts`
+
+### Problem
+
+The AI-powered industry detection logic was duplicated in two components:
+- `FreeReportPage.tsx` (lines 173-238) - `detectIndustryFromUrl()`
+- `NewAnalysis.tsx` (lines 107-159) - `detectIndustry()`
+
+Both had identical:
+1. Same prompt: `"What industry or business sector does ${brandName} (${url}) operate in?..."`
+2. Same response parsing logic (removes `**`, `*`, `[1][2]` citations, common prefixes)
+3. Same validation (length > 2 and < 100)
+
+This duplication made maintenance error-prone and violated DRY principles.
+
+### Solution
+
+Added two shared functions to `src/utils/industryDetector.ts`:
+
+```typescript
+// Pure function to parse and clean AI responses
+export function parseIndustryResponse(responseText: string): string | null
+
+// Async function for full AI-powered detection
+export async function detectIndustryFromAI(
+  websiteUrl: string,
+  supabaseClient: {...}
+): Promise<IndustryDetectionResult>
+```
+
+**Parsing logic handles:**
+- Markdown bold (`**text**`) and italic (`*text*`)
+- Citation references (`[1]`, `[2][3]`, `[42]`)
+- Common prefixes ("Industry:", "The industry is", "Based on", etc.)
+- Trailing punctuation and quotes
+- Length validation (3-99 characters)
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/utils/industryDetector.ts` | Added `parseIndustryResponse()` and `detectIndustryFromAI()` |
+| `src/components/FreeReport/FreeReportPage.tsx` | Simplified to use `detectIndustryFromAI()` (67 → 19 lines) |
+| `src/components/Analysis/NewAnalysis.tsx` | Simplified to use `detectIndustryFromAI()` (54 → 17 lines) |
+| `src/utils/industryResponseParser.test.ts` | Updated to import from shared utility |
+
+### Code Reduction
+
+| Component | Before | After |
+|-----------|--------|-------|
+| FreeReportPage.tsx | 67 lines | 19 lines |
+| NewAnalysis.tsx | 54 lines | 17 lines |
+| **Total** | 121 lines | 36 lines |
+
+### Testing Performed
+
+- **Test Suite:** 754 passed, 0 failed (754 total)
+- **Build:** Passed
+- Industry parser unit tests (41 tests) now test the shared utility directly
+
+---
+
+## 2026-02-07: Free Report - Two-Phase Form Flow
+
+**Changes:** Added two-step form flow to free report page for better UX and industry confirmation
+
+### Problem
+
+The free report page collected website URL and email simultaneously, then detected industry during the analysis phase. This meant:
+1. Users couldn't review/edit the detected industry before analysis
+2. Industry detection happened after email capture (too late for user input)
+3. Extra API call during analysis phase
+
+### Solution: Two-Step Form
+
+**Step 1: Website & Industry**
+```
+┌─────────────────────────────────────────┐
+│  [●] Your Website  ─────  [○] Get Report│
+├─────────────────────────────────────────┤
+│  Website URL                            │
+│  [yourcompany.com                    ]  │
+│                                         │
+│  Industry (auto-detected)               │
+│  [Environmental Consulting          ]  │
+│  ✨ AI-suggested — feel free to edit    │
+│                                         │
+│         [Continue →]                    │
+└─────────────────────────────────────────┘
+```
+
+- User enters website URL
+- Industry auto-detects after 1.5s debounce
+- User can edit before proceeding
+
+**Step 2: Email & Generate**
+```
+┌─────────────────────────────────────────┐
+│  ← Back         yourcompany.com         │
+│                 Environmental Consulting │
+├─────────────────────────────────────────┤
+│  Email                                  │
+│  [you@company.com                    ]  │
+│  We'll send a copy to this email        │
+│                                         │
+│      [Get My Free Report →]             │
+└─────────────────────────────────────────┘
+```
+
+### Benefits
+
+1. **Better UX** - Users confirm industry before committing email
+2. **Saves API call** - Industry detection happens once in Step 1, not during analysis
+3. **User control** - Editable industry field catches AI mistakes
+4. **Consistent** - Matches the paid analysis flow
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/FreeReport/FreeReportPage.tsx` | Two-step form, early industry detection |
+
+---
+
 ## 2026-02-07: Paid Analysis - Two-Phase Industry Detection Flow
 
 **Changes:** Added AI-powered industry detection to paid analysis tiers with a two-step form flow

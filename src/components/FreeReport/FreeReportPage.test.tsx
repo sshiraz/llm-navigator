@@ -58,6 +58,22 @@ const createMockResults = (overrides: Partial<{
 describe('FreeReportPage Component', () => {
   const mockOnGetStarted = vi.fn();
 
+  // Helper to navigate to Step 2 of the form
+  const navigateToStep2 = async (email: string, website: string) => {
+    const websiteInput = screen.getByPlaceholderText(/yourcompany.com/i);
+    const emailInput = screen.getByPlaceholderText(/you@company.com/i);
+
+    await userEvent.type(websiteInput, website);
+    await userEvent.type(emailInput, email);
+
+    const continueButton = screen.getByRole('button', { name: /Continue/i });
+    fireEvent.click(continueButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Generate My Free Report/i })).toBeInTheDocument();
+    });
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset to default (no abuse detected)
@@ -72,7 +88,8 @@ describe('FreeReportPage Component', () => {
       expect(screen.getByText(/Is Your Website Visible to/i)).toBeInTheDocument();
       expect(screen.getByPlaceholderText(/you@company.com/i)).toBeInTheDocument();
       expect(screen.getByPlaceholderText(/yourcompany.com/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Get My Free Report/i })).toBeInTheDocument();
+      // In two-step flow, Continue button is shown in Step 1
+      expect(screen.getByRole('button', { name: /Continue/i })).toBeInTheDocument();
     });
 
     it('renders value proposition cards', () => {
@@ -91,32 +108,24 @@ describe('FreeReportPage Component', () => {
   });
 
   describe('Form Validation', () => {
-    it('shows error when email is empty', async () => {
+    it('disables continue button when email is empty', async () => {
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
       const websiteInput = screen.getByPlaceholderText(/yourcompany.com/i);
       await userEvent.type(websiteInput, 'example.com');
 
-      const submitButton = screen.getByRole('button', { name: /Get My Free Report/i });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/Please fill in all fields/i)).toBeInTheDocument();
-      });
+      const continueButton = screen.getByRole('button', { name: /Continue/i });
+      expect(continueButton).toBeDisabled();
     });
 
-    it('shows error when website is empty', async () => {
+    it('disables continue button when website is empty', async () => {
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
       const emailInput = screen.getByPlaceholderText(/you@company.com/i);
       await userEvent.type(emailInput, 'test@example.com');
 
-      const submitButton = screen.getByRole('button', { name: /Get My Free Report/i });
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/Please fill in all fields/i)).toBeInTheDocument();
-      });
+      const continueButton = screen.getByRole('button', { name: /Continue/i });
+      expect(continueButton).toBeDisabled();
     });
 
     it('requires @ symbol in email', () => {
@@ -126,6 +135,19 @@ describe('FreeReportPage Component', () => {
       expect(isValidEmail('invalidemail')).toBe(false);
       expect(isValidEmail('valid@email.com')).toBe(true);
       expect(isValidEmail('test@')).toBe(true); // Has @ but incomplete
+    });
+
+    it('enables continue button when both website and email are valid', async () => {
+      render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
+
+      const websiteInput = screen.getByPlaceholderText(/yourcompany.com/i);
+      const emailInput = screen.getByPlaceholderText(/you@company.com/i);
+
+      await userEvent.type(websiteInput, 'example.com');
+      await userEvent.type(emailInput, 'test@example.com');
+
+      const continueButton = screen.getByRole('button', { name: /Continue/i });
+      expect(continueButton).not.toBeDisabled();
     });
   });
 
@@ -138,13 +160,10 @@ describe('FreeReportPage Component', () => {
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
-      const emailInput = screen.getByPlaceholderText(/you@company.com/i);
-      const websiteInput = screen.getByPlaceholderText(/yourcompany.com/i);
+      // Navigate to Step 2
+      await navigateToStep2('test@example.com', 'example.com');
 
-      await userEvent.type(emailInput, 'test@example.com');
-      await userEvent.type(websiteInput, 'example.com');
-
-      const submitButton = screen.getByRole('button', { name: /Get My Free Report/i });
+      const submitButton = screen.getByRole('button', { name: /Generate My Free Report/i });
       fireEvent.click(submitButton);
 
       await waitFor(() => {
@@ -175,13 +194,9 @@ describe('FreeReportPage Component', () => {
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
-      const emailInput = screen.getByPlaceholderText(/you@company.com/i);
-      const websiteInput = screen.getByPlaceholderText(/yourcompany.com/i);
+      await navigateToStep2('test@example.com', 'example.com');
 
-      await userEvent.type(emailInput, 'test@example.com');
-      await userEvent.type(websiteInput, 'example.com');
-
-      const submitButton = screen.getByRole('button', { name: /Get My Free Report/i });
+      const submitButton = screen.getByRole('button', { name: /Generate My Free Report/i });
       fireEvent.click(submitButton);
 
       await waitFor(() => {
@@ -213,13 +228,9 @@ describe('FreeReportPage Component', () => {
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
-      const emailInput = screen.getByPlaceholderText(/you@company.com/i);
-      const websiteInput = screen.getByPlaceholderText(/yourcompany.com/i);
+      await navigateToStep2('test@example.com', 'example.com');
 
-      await userEvent.type(emailInput, 'test@example.com');
-      await userEvent.type(websiteInput, 'example.com');
-
-      const submitButton = screen.getByRole('button', { name: /Get My Free Report/i });
+      const submitButton = screen.getByRole('button', { name: /Generate My Free Report/i });
       fireEvent.click(submitButton);
 
       await waitFor(() => {
@@ -229,33 +240,39 @@ describe('FreeReportPage Component', () => {
     });
 
     it('shows competitors when found', async () => {
-      vi.mocked(supabase.functions.invoke).mockResolvedValue({
-        data: {
-          success: true,
-          data: {
-            results: createMockResults([
-              {
-                isCited: false,
-                competitorsCited: [
-                  { domain: 'zendesk.com', context: 'recommended' },
-                  { domain: 'freshworks.com', context: 'alternative' },
-                ],
+      // Mock both check-citations and crawl-website calls
+      vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName: string) => {
+        if (fnName === 'check-citations') {
+          return {
+            data: {
+              success: true,
+              data: {
+                results: createMockResults([
+                  {
+                    isCited: false,
+                    competitorsCited: [
+                      { domain: 'zendesk.com', context: 'recommended' },
+                      { domain: 'freshworks.com', context: 'alternative' },
+                    ],
+                  },
+                ]),
               },
-            ]),
-          },
-        },
-        error: null,
+            },
+            error: null,
+          };
+        }
+        if (fnName === 'crawl-website') {
+          // Return error to skip validation (competitors included by default)
+          return { data: null, error: { message: 'Mocked crawl failure' } };
+        }
+        return { data: null, error: null };
       });
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
-      const emailInput = screen.getByPlaceholderText(/you@company.com/i);
-      const websiteInput = screen.getByPlaceholderText(/yourcompany.com/i);
+      await navigateToStep2('test@example.com', 'example.com');
 
-      await userEvent.type(emailInput, 'test@example.com');
-      await userEvent.type(websiteInput, 'example.com');
-
-      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate My Free Report/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/Competitor Citation Leaderboard/i)).toBeInTheDocument();
@@ -277,14 +294,14 @@ describe('FreeReportPage Component', () => {
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
-      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'test@example.com');
-      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'acme.com');
+      await navigateToStep2('test@example.com', 'acme.com');
 
-      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate My Free Report/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/Query-by-Query Results/i)).toBeInTheDocument();
-        expect(screen.getByText(/What are the best acme alternatives/i)).toBeInTheDocument();
+        // Prompt format is "What are the best alternatives to {brandName}"
+        expect(screen.getByText(/What are the best alternatives to acme/i)).toBeInTheDocument();
       });
     });
   });
@@ -298,10 +315,9 @@ describe('FreeReportPage Component', () => {
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
-      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'test@example.com');
-      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'example.com');
+      await navigateToStep2('test@example.com', 'example.com');
 
-      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate My Free Report/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/API rate limit exceeded/i)).toBeInTheDocument();
@@ -316,10 +332,9 @@ describe('FreeReportPage Component', () => {
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
-      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'test@example.com');
-      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'example.com');
+      await navigateToStep2('test@example.com', 'example.com');
 
-      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate My Free Report/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/Missing API key/i)).toBeInTheDocument();
@@ -341,10 +356,9 @@ describe('FreeReportPage Component', () => {
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
-      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'test@example.com');
-      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'example.com');
+      await navigateToStep2('test@example.com', 'example.com');
 
-      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate My Free Report/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/Want the Full Analysis/i)).toBeInTheDocument();
@@ -365,10 +379,9 @@ describe('FreeReportPage Component', () => {
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
-      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'test@example.com');
-      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'example.com');
+      await navigateToStep2('test@example.com', 'example.com');
 
-      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate My Free Report/i }));
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Start Free Trial/i })).toBeInTheDocument();
@@ -392,10 +405,9 @@ describe('FreeReportPage Component', () => {
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
-      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'test@example.com');
-      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'example.com');
+      await navigateToStep2('test@example.com', 'example.com');
 
-      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate My Free Report/i }));
 
       await waitFor(() => {
         expect(supabase.functions.invoke).toHaveBeenCalledWith('check-citations', {
@@ -415,17 +427,21 @@ describe('FreeReportPage Component', () => {
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
-      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'repeat@example.com');
-      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'example.com');
+      await navigateToStep2('repeat@example.com', 'example.com');
 
-      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate My Free Report/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/already received a free report/i)).toBeInTheDocument();
       });
 
-      // Should not call the analysis function
-      expect(supabase.functions.invoke).not.toHaveBeenCalledWith('check-citations', expect.anything());
+      // Industry detection makes a single-prompt call, but analysis should NOT be called
+      // Analysis uses 5 prompts (alternatives, best, howTo, comparison, recommendation)
+      const calls = vi.mocked(supabase.functions.invoke).mock.calls;
+      const analysisCalls = calls.filter(
+        ([name, opts]) => name === 'check-citations' && opts?.body?.prompts?.length === 5
+      );
+      expect(analysisCalls).toHaveLength(0);
     });
 
     it('blocks domain after 3 reports within 24 hours', async () => {
@@ -458,10 +474,9 @@ describe('FreeReportPage Component', () => {
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
-      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'new@example.com');
-      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'spammed-domain.com');
+      await navigateToStep2('new@example.com', 'spammed-domain.com');
 
-      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate My Free Report/i }));
 
       await waitFor(() => {
         expect(screen.getByText(/already been analyzed multiple times/i)).toBeInTheDocument();
@@ -480,10 +495,9 @@ describe('FreeReportPage Component', () => {
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
-      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'new@example.com');
-      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'new-domain.com');
+      await navigateToStep2('new@example.com', 'new-domain.com');
 
-      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate My Free Report/i }));
 
       await waitFor(() => {
         // Should proceed to analysis
@@ -512,10 +526,9 @@ describe('FreeReportPage Component', () => {
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
-      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'test@example.com');
-      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'example.com');
+      await navigateToStep2('test@example.com', 'example.com');
 
-      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate My Free Report/i }));
 
       await waitFor(() => {
         // Should still proceed to analysis despite abuse check failure
@@ -530,11 +543,9 @@ describe('FreeReportPage Component', () => {
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
-      // Type email with uppercase
-      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'REPEAT@EXAMPLE.COM');
-      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'example.com');
+      await navigateToStep2('REPEAT@EXAMPLE.COM', 'example.com');
 
-      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate My Free Report/i }));
 
       await waitFor(() => {
         // Should check with lowercase email
@@ -561,11 +572,9 @@ describe('FreeReportPage Component', () => {
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
-      // Use the whitelisted email
-      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'info@convologix.com');
-      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'test-domain.com');
+      await navigateToStep2('info@convologix.com', 'test-domain.com');
 
-      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate My Free Report/i }));
 
       await waitFor(() => {
         // Should proceed to analysis despite previous reports (whitelist bypasses rate limit)
@@ -591,16 +600,47 @@ describe('FreeReportPage Component', () => {
 
       render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
 
-      // Use whitelisted email with different casing
-      await userEvent.type(screen.getByPlaceholderText(/you@company.com/i), 'INFO@CONVOLOGIX.COM');
-      await userEvent.type(screen.getByPlaceholderText(/yourcompany.com/i), 'test-domain.com');
+      await navigateToStep2('INFO@CONVOLOGIX.COM', 'test-domain.com');
 
-      fireEvent.click(screen.getByRole('button', { name: /Get My Free Report/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Generate My Free Report/i }));
 
       await waitFor(() => {
         // Should proceed despite uppercase - whitelist check is case insensitive
         expect(supabase.functions.invoke).toHaveBeenCalled();
       });
+    });
+  });
+
+  describe('Two-Step Form Flow', () => {
+    it('renders step 1 with website and industry inputs initially', () => {
+      render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
+
+      // Step 1 should show website input
+      expect(screen.getByPlaceholderText(/yourcompany.com/i)).toBeInTheDocument();
+      // Industry input should be present in step 1
+      expect(screen.getByPlaceholderText(/Environmental Consulting, SaaS/i)).toBeInTheDocument();
+    });
+
+    it('shows continue button in step 1', () => {
+      render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
+
+      expect(screen.getByRole('button', { name: /Continue/i })).toBeInTheDocument();
+    });
+
+    it('disables continue button when website is empty', () => {
+      render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
+
+      const continueButton = screen.getByRole('button', { name: /Continue/i });
+      expect(continueButton).toBeDisabled();
+    });
+
+    it('allows user to type in industry input manually', async () => {
+      render(<FreeReportPage onGetStarted={mockOnGetStarted} />);
+
+      const industryInput = screen.getByPlaceholderText(/Environmental Consulting, SaaS/i);
+      await userEvent.type(industryInput, 'Custom Industry');
+
+      expect(industryInput).toHaveValue('Custom Industry');
     });
   });
 });

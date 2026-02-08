@@ -384,7 +384,10 @@ A free AI visibility report that serves as the primary lead generation tool.
 
 **Key files:**
 - `src/components/FreeReport/FreeReportPage.tsx` - Main component with crawl + multi-query analysis
-- `src/utils/industryDetector.ts` - Industry detection from domain/content keywords
+- `src/utils/industryDetector.ts` - Industry detection (keyword-based + AI-powered via Perplexity)
+  - `detectIndustry()` - Fast keyword matching from brand/domain
+  - `detectIndustryFromAI()` - AI-powered detection via Perplexity
+  - `parseIndustryResponse()` - Cleans AI responses (removes markdown `**`, citations `[1][2]`, etc.)
 - `supabase/functions/send-free-report-email/index.ts` - Email via Resend API
 - Table: `free_report_leads` - Stores leads + abuse prevention checks
 
@@ -432,7 +435,7 @@ A free AI visibility report that serves as the primary lead generation tool.
 | Account deletion | `supabase/functions/delete-account/index.ts` |
 | Data cleanup | `supabase/functions/cleanup-data/index.ts` |
 | Free report | `src/components/FreeReport/FreeReportPage.tsx` |
-| Industry detector | `src/utils/industryDetector.ts` |
+| Industry detector | `src/utils/industryDetector.ts` (keyword + AI-powered detection) |
 | Report email | `supabase/functions/send-free-report-email/index.ts` |
 
 ## Related Docs

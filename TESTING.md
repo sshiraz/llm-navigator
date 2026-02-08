@@ -1,6 +1,6 @@
 # Testing Guide
 
-> Last updated: 2026-01-21
+> Last updated: 2026-02-08
 
 This document provides an overview of all automated tests in the LLM Navigator project.
 
@@ -13,7 +13,7 @@ This document provides an overview of all automated tests in the LLM Navigator p
 npm run test:run && npm run build
 ```
 
-Current test count: **708 tests** (23 test files)
+Current test count: **754 tests** (24 test files)
 
 ## Quick Reference
 

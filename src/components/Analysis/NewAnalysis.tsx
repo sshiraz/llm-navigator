@@ -8,6 +8,7 @@ import { AnalysisEngine } from '../../utils/analysisEngine';
 import { useUsageMonitoring } from '../../utils/costTracker';
 import { sanitizeUrl, sanitizeText, sanitizeSearchQuery } from '../../utils/sanitize';
 import { canRunAnalysis, isTrialExpired } from '../../utils/userUtils';
+import { detectIndustryFromAI } from '../../utils/industryDetector';
 
 // Generate a unique ID for prompts
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -109,40 +110,11 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
 
     setIsDetectingIndustry(true);
     try {
-      // Extract brand name from URL
-      const urlObj = new URL(websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`);
-      const domain = urlObj.hostname.replace('www.', '');
-      const tempBrandName = domain.split('.')[0];
+      const result = await detectIndustryFromAI(websiteUrl, supabase);
 
-      const discoveryPrompt = `What industry or business sector does ${tempBrandName} (${websiteUrl}) operate in? Answer with just the industry name in 3-5 words.`;
-
-      const { data } = await supabase.functions.invoke('check-citations', {
-        body: {
-          prompts: [{ id: 'discovery', text: discoveryPrompt }],
-          website: websiteUrl,
-          brandName: tempBrandName,
-          providers: ['perplexity']
-        }
-      });
-
-      // Response structure: { success, data: { results: [{ response, ... }] } }
-      const responseText = data?.data?.results?.[0]?.response;
-      console.log('[detectIndustry] Response:', responseText);
-
-      if (responseText) {
-        // Extract industry from response (first line, clean up)
-        const detectedIndustry = responseText.split('\n')[0]
-          .replace(/^(industry:|the industry is|this is a|they operate in|based on|the company operates in)/i, '')
-          .trim()
-          .replace(/\.$/, '')
-          .replace(/^["']|["']$/g, ''); // Remove quotes
-
-        console.log('[detectIndustry] Detected:', detectedIndustry);
-
-        if (detectedIndustry && detectedIndustry.length > 2) {
-          setIndustry(detectedIndustry);
-          setIndustryDetected(true);
-        }
+      if (result.detected && result.industry) {
+        setIndustry(result.industry);
+        setIndustryDetected(true);
       }
     } catch (error) {
       console.error('Industry detection failed:', error);
