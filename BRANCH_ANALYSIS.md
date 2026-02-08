@@ -7,6 +7,8 @@
 
 ## 2026-02-08: Consolidate Industry Detection into Shared Utility
 
+**Commit:** `ee4d0c8` - Consolidate industry detection into shared utility
+
 **Changes:** Refactored duplicated industry detection code from FreeReportPage and NewAnalysis into a shared utility in `industryDetector.ts`
 
 ### Problem
@@ -71,6 +73,8 @@ export async function detectIndustryFromAI(
 
 ## 2026-02-07: Free Report - Two-Phase Form Flow
 
+**Commit:** `9fdabde` - Improve free report accuracy: AI industry detection + citation fix
+
 **Changes:** Added two-step form flow to free report page for better UX and industry confirmation
 
 ### Problem
@@ -132,6 +136,8 @@ The free report page collected website URL and email simultaneously, then detect
 ---
 
 ## 2026-02-07: Paid Analysis - Two-Phase Industry Detection Flow
+
+**Commit:** `1d2ff89` - Add two-phase industry detection flow for paid analysis tiers
 
 **Changes:** Added AI-powered industry detection to paid analysis tiers with a two-step form flow
 
@@ -227,6 +233,8 @@ const discoveryPrompt = `What industry or business sector does ${brandName} (${w
 
 ## 2026-02-07: Free Report - Industry Detection & Citation Accuracy
 
+**Commit:** `9fdabde` - Improve free report accuracy: AI industry detection + citation fix
+
 **Changes:** Major improvements to free report accuracy - AI-powered industry detection, location-aware queries, and fixed citation false positives
 
 ### Problem
@@ -301,6 +309,8 @@ npx supabase functions deploy check-citations
 
 ## 2026-02-03: Product Roadmap - Agent Readiness Feature
 
+**Commit:** `f6da37d` - Add Agent Readiness Check to product roadmap
+
 **Changes:** Added "Agent Readiness Check" as top priority feature in product roadmap
 
 ### Context
@@ -351,6 +361,8 @@ This differentiates from pure SEO/AEO tools and positions for the agentic commer
 ---
 
 ## 2026-02-03: Fix Free Report Leads Not Saving to Database
+
+**Commit:** `fed4e45` - Fix free report leads not saving to database
 
 **Changes:** Fixed silent database insert failures and added error logging
 
@@ -411,6 +423,8 @@ supabase.from('free_report_leads').insert({...})
 
 ## 2026-02-01: Homepage "Painkiller" Copy Rewrite
 
+**Commit:** `5f573bd` - Rewrite homepage copy to be pain-focused ("painkiller" style)
+
 **Changes:** Rewrote landing page copy to focus on pain/urgency rather than aspirational benefits
 
 ### Problem
@@ -470,6 +484,8 @@ Removed "only platform" language - not defensible since other AEO tools exist.
 ---
 
 ## 2026-01-31: Blog System Implementation
+
+**Commit:** `45dc967` - Add markdown-based blog system with SEO-friendly URLs
 
 **Changes:** Added markdown-based blog with SEO-friendly URLs at `/blog` and `/blog/:slug`
 
@@ -540,6 +556,8 @@ The post will automatically appear in the blog listing.
 ---
 
 ## 2026-01-23: Fix Free Report Copy - Provider Accuracy
+
+**Commit:** `3b17310` - Fix free report copy: ChatGPT -> Perplexity with upsell
 
 **Changes:** Fixed misleading copy that claimed free report queries ChatGPT when it actually queries Perplexity
 
