@@ -5,6 +5,100 @@
 
 ---
 
+## 2026-02-07: Paid Analysis - Two-Phase Industry Detection Flow
+
+**Changes:** Added AI-powered industry detection to paid analysis tiers with a two-step form flow
+
+### Problem
+
+Paid users had to manually write prompts without guidance on what industry-specific queries to use. The free report had industry detection, but paid analysis didn't benefit from it.
+
+### Solution: Two-Phase Form Flow
+
+For paid users (starter, professional, enterprise), the analysis form is now split into two steps:
+
+#### Step 1: Website & Industry
+```
+┌─────────────────────────────────────────┐
+│  Step 1         Step 2                  │
+│  [●]──────────────[○]                   │
+│  Website & Industry   Prompts & Analysis│
+├─────────────────────────────────────────┤
+│  Your Website                           │
+│  [www.example.com                    ]  │
+│                                         │
+│  Industry                               │
+│  [Environmental Consulting          ]  │
+│  ✨ AI-suggested based on your website  │
+│                                         │
+│         [Continue →]                    │
+└─────────────────────────────────────────┘
+```
+
+- User enters website URL
+- After 1.5 second debounce, industry auto-detects via Perplexity
+- User can edit or override the detected industry
+- "Continue" button proceeds to Step 2
+
+#### Step 2: Prompts & Analysis
+```
+┌─────────────────────────────────────────┐
+│  ← Back    www.example.com              │
+│            Environmental Consulting     │
+├─────────────────────────────────────────┤
+│  Brand Name (optional)                  │
+│  [                                   ]  │
+│                                         │
+│  Search Prompts                         │
+│  Example prompts (industry-specific):   │
+│  • "What are the best environmental..." │
+│  • "Top providers in environmental..."  │
+│                                         │
+│  AI Providers to Check                  │
+│  [✓] Perplexity  [✓] ChatGPT           │
+│                                         │
+│      [Run AI Visibility Analysis →]     │
+└─────────────────────────────────────────┘
+```
+
+- Summary bar shows website + industry with "Back" button
+- Prompt suggestions dynamically update based on detected industry
+- User completes analysis as normal
+
+### Technical Implementation
+
+**State additions:**
+```typescript
+const [formStep, setFormStep] = useState<1 | 2>(1);
+const [industry, setIndustry] = useState('');
+const [isDetectingIndustry, setIsDetectingIndustry] = useState(false);
+const [industryDetected, setIndustryDetected] = useState(false);
+```
+
+**Industry detection:** Reuses `check-citations` edge function with a discovery prompt:
+```typescript
+const discoveryPrompt = `What industry or business sector does ${brandName} (${websiteUrl}) operate in? Answer with just the industry name in 3-5 words.`;
+```
+
+**Response parsing fix:** The initial implementation had wrong response path:
+- Wrong: `data?.results?.[0]?.responses?.perplexity?.response`
+- Correct: `data?.data?.results?.[0]?.response`
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/Analysis/NewAnalysis.tsx` | Two-phase form, industry detection, dynamic prompts |
+
+### UX Notes
+
+- Trial/demo users see the original single-step flow (unchanged)
+- Step indicator shows progress (1 → 2) for paid users
+- Auto-detection only triggers for paid users (via `isRealAnalysis` check)
+- Industry field is always editable - AI suggestion is just a starting point
+
+---
+
 ## 2026-02-07: Free Report - Industry Detection & Citation Accuracy
 
 **Changes:** Major improvements to free report accuracy - AI-powered industry detection, location-aware queries, and fixed citation false positives

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Globe, MessageSquare, Sparkles, ArrowRight, Lightbulb, Zap, AlertCircle, Plus, X, Building2, CheckCircle, History, Lock } from 'lucide-react';
+import { Globe, MessageSquare, Sparkles, ArrowRight, Lightbulb, Zap, AlertCircle, Plus, X, Building2, CheckCircle, History, Lock, Briefcase } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 import AnalysisProgress from './AnalysisProgress';
 import UsageLimitsBanner from './UsageLimitsBanner';
 import { User, Analysis, AnalysisProvider } from '../../types';
@@ -35,6 +36,10 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
   const [currentAnalysis, setCurrentAnalysis] = useState<AnalysisState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasLastAnalysis, setHasLastAnalysis] = useState(false);
+  const [industry, setIndustry] = useState('');
+  const [isDetectingIndustry, setIsDetectingIndustry] = useState(false);
+  const [industryDetected, setIndustryDetected] = useState(false);
+  const [formStep, setFormStep] = useState<1 | 2>(1); // Step 1: Website + Industry, Step 2: Prompts + Providers
 
   const { usageLimits, isLoading: limitsLoading } = useUsageMonitoring(
     user?.id || '',
@@ -80,6 +85,69 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
       }
     } else {
       setSelectedProviders([...selectedProviders, provider]);
+    }
+  };
+
+  // Handle continuing to step 2
+  const handleContinueToStep2 = () => {
+    if (!website || !website.includes('.')) {
+      setError('Please enter a valid website URL');
+      return;
+    }
+    setError(null);
+    setFormStep(2);
+  };
+
+  // Handle going back to step 1
+  const handleBackToStep1 = () => {
+    setFormStep(1);
+  };
+
+  // Detect industry from website using AI
+  const detectIndustry = async (websiteUrl: string) => {
+    if (!websiteUrl || isDetectingIndustry) return;
+
+    setIsDetectingIndustry(true);
+    try {
+      // Extract brand name from URL
+      const urlObj = new URL(websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`);
+      const domain = urlObj.hostname.replace('www.', '');
+      const tempBrandName = domain.split('.')[0];
+
+      const discoveryPrompt = `What industry or business sector does ${tempBrandName} (${websiteUrl}) operate in? Answer with just the industry name in 3-5 words.`;
+
+      const { data } = await supabase.functions.invoke('check-citations', {
+        body: {
+          prompts: [{ id: 'discovery', text: discoveryPrompt }],
+          website: websiteUrl,
+          brandName: tempBrandName,
+          providers: ['perplexity']
+        }
+      });
+
+      // Response structure: { success, data: { results: [{ response, ... }] } }
+      const responseText = data?.data?.results?.[0]?.response;
+      console.log('[detectIndustry] Response:', responseText);
+
+      if (responseText) {
+        // Extract industry from response (first line, clean up)
+        const detectedIndustry = responseText.split('\n')[0]
+          .replace(/^(industry:|the industry is|this is a|they operate in|based on|the company operates in)/i, '')
+          .trim()
+          .replace(/\.$/, '')
+          .replace(/^["']|["']$/g, ''); // Remove quotes
+
+        console.log('[detectIndustry] Detected:', detectedIndustry);
+
+        if (detectedIndustry && detectedIndustry.length > 2) {
+          setIndustry(detectedIndustry);
+          setIndustryDetected(true);
+        }
+      }
+    } catch (error) {
+      console.error('Industry detection failed:', error);
+    } finally {
+      setIsDetectingIndustry(false);
     }
   };
 
@@ -208,6 +276,20 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     };
   }, []);
 
+  // Detect industry when website URL changes (debounced)
+  useEffect(() => {
+    // Only auto-detect if we haven't already detected and user is on a paid plan
+    if (industryDetected || !isRealAnalysis) return;
+
+    const timer = setTimeout(() => {
+      if (website && website.includes('.')) {
+        detectIndustry(website);
+      }
+    }, 1500); // 1.5 second debounce
+
+    return () => clearTimeout(timer);
+  }, [website, industryDetected, isRealAnalysis]);
+
   const handleAnalysisComplete = (analysis: Analysis) => {
     setIsAnalyzing(false);
     setCurrentAnalysis(null);
@@ -221,13 +303,29 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
     setError(error);
   };
 
-  const suggestedPrompts = [
-    'What are the best marketing automation tools?',
-    'How do I improve my website SEO?',
-    'What is the best CRM for small businesses?',
-    'Where can I learn web development?',
-    'What are the top project management tools?'
-  ];
+  // Generate industry-specific prompt suggestions
+  const getIndustryPrompts = (): string[] => {
+    if (!industry) {
+      return [
+        'What are the best marketing automation tools?',
+        'How do I improve my website SEO?',
+        'What is the best CRM for small businesses?',
+        'Where can I learn web development?',
+        'What are the top project management tools?'
+      ];
+    }
+
+    const industryLower = industry.toLowerCase();
+    return [
+      `What are the best ${industryLower} companies?`,
+      `Who are the top providers in ${industryLower}?`,
+      `What should I look for in a ${industryLower} service?`,
+      `Best ${industryLower} tools for small businesses`,
+      `How do I choose a ${industryLower} vendor?`
+    ];
+  };
+
+  const suggestedPrompts = getIndustryPrompts();
 
   const validPromptCount = prompts.filter(p => p.text.trim().length > 0).length;
   const isFormValid = website.length > 0 && validPromptCount > 0 && selectedProviders.length > 0;
@@ -325,9 +423,31 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
           Analyze Your AI Visibility
         </h1>
         <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-          Enter prompts that your potential customers might ask AI assistants.
-          We'll check if you're getting cited by ChatGPT, Claude, Gemini, and Perplexity.
+          {formStep === 1
+            ? "First, let's identify your website and industry."
+            : "Now, enter the prompts your customers might ask AI assistants."
+          }
         </p>
+
+        {/* Step indicator for paid users */}
+        {isRealAnalysis && (
+          <div className="flex items-center justify-center gap-4 mt-6">
+            <div className={`flex items-center gap-2 ${formStep === 1 ? 'text-blue-400' : 'text-slate-500'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                formStep === 1 ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'
+              }`}>1</div>
+              <span className="text-sm font-medium">Website & Industry</span>
+            </div>
+            <div className="w-8 h-px bg-slate-600" />
+            <div className={`flex items-center gap-2 ${formStep === 2 ? 'text-blue-400' : 'text-slate-500'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                formStep === 2 ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'
+              }`}>2</div>
+              <span className="text-sm font-medium">Prompts & Analysis</span>
+            </div>
+          </div>
+        )}
+
         {(hasLastAnalysis || localStorage.getItem('currentAnalysis')) && (
           <button
             onClick={() => window.location.hash = 'analysis-results'}
@@ -438,48 +558,163 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Website Input */}
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-blue-900/50 rounded-xl flex items-center justify-center">
-              <Globe className="w-6 h-6 text-blue-400" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-white">Your Website</h3>
-              <p className="text-sm text-slate-400">The website you want to track citations for</p>
-            </div>
-          </div>
+        {/* STEP 1: Website & Industry (for paid users) or all fields for trial */}
+        {(formStep === 1 || !isRealAnalysis) && (
+          <>
+            {/* Website Input */}
+            <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-blue-900/50 rounded-xl flex items-center justify-center">
+                  <Globe className="w-6 h-6 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Your Website</h3>
+                  <p className="text-sm text-slate-400">The website you want to track citations for</p>
+                </div>
+              </div>
 
-          <input
-            type="text"
-            value={website}
-            onChange={(e) => setWebsite(e.target.value)}
-            placeholder="https://example.com"
-            className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-          />
-        </div>
-
-        {/* Brand Name Input (Optional) */}
-        <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-purple-900/50 rounded-xl flex items-center justify-center">
-              <Building2 className="w-6 h-6 text-purple-400" />
+              <input
+                type="text"
+                value={website}
+                onChange={(e) => {
+                  setWebsite(e.target.value);
+                  // Reset industry detection when URL changes
+                  if (industryDetected) {
+                    setIndustry('');
+                    setIndustryDetected(false);
+                  }
+                }}
+                placeholder="https://example.com"
+                className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              />
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-white">Brand Name <span className="text-slate-500 font-normal">(optional)</span></h3>
-              <p className="text-sm text-slate-400">We'll also check for mentions of your brand name</p>
+
+            {/* Industry Input (Auto-detected, editable) - Only for paid users in Step 1 */}
+            {isRealAnalysis && (
+              <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-12 h-12 bg-amber-900/50 rounded-xl flex items-center justify-center">
+                    <Briefcase className="w-6 h-6 text-amber-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">
+                      Industry
+                    </h3>
+                    <p className="text-sm text-slate-400">
+                      {isDetectingIndustry
+                        ? 'Detecting industry from your website...'
+                        : industryDetected
+                          ? 'Auto-detected from your website - feel free to edit'
+                          : 'Enter your website above to auto-detect, or type manually'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={industry}
+                    onChange={(e) => {
+                      setIndustry(e.target.value);
+                      setIndustryDetected(false); // Mark as user-edited
+                    }}
+                    placeholder="e.g., Environmental Consulting, SaaS Marketing Tools"
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    disabled={isDetectingIndustry}
+                  />
+                  {isDetectingIndustry && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                </div>
+
+                {industryDetected && (
+                  <p className="mt-2 text-xs text-amber-400/70 flex items-center">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    AI-suggested based on your website content
+                  </p>
+                )}
+
+                {website && website.includes('.') && !isDetectingIndustry && !industry && (
+                  <button
+                    type="button"
+                    onClick={() => detectIndustry(website)}
+                    className="mt-2 text-sm text-amber-400 hover:text-amber-300 flex items-center"
+                  >
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Detect industry from website
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Continue Button for Step 1 (paid users only) */}
+            {isRealAnalysis && (
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleContinueToStep2}
+                  disabled={!website || !website.includes('.') || isDetectingIndustry}
+                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-lg font-semibold rounded-xl disabled:from-gray-500 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center space-x-3 transition-all shadow-lg"
+                >
+                  <span>{isDetectingIndustry ? 'Detecting Industry...' : 'Continue'}</span>
+                  {!isDetectingIndustry && <ArrowRight className="w-5 h-5" />}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* STEP 2: Brand, Prompts, Providers (for paid users) OR shown alongside Step 1 for trial */}
+        {(formStep === 2 || !isRealAnalysis) && (
+          <>
+            {/* Back button and summary for Step 2 */}
+            {isRealAnalysis && formStep === 2 && (
+              <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-4">
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={handleBackToStep1}
+                    className="text-slate-400 hover:text-white flex items-center gap-2 transition-colors"
+                  >
+                    <ArrowRight className="w-4 h-4 rotate-180" />
+                    <span>Back</span>
+                  </button>
+                  <div className="text-right">
+                    <p className="text-white font-medium">{website}</p>
+                    {industry && <p className="text-sm text-amber-400">{industry}</p>}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Brand Name Input (Optional) */}
+            <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-purple-900/50 rounded-xl flex items-center justify-center">
+                  <Building2 className="w-6 h-6 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Brand Name <span className="text-slate-500 font-normal">(optional)</span></h3>
+                  <p className="text-sm text-slate-400">We'll also check for mentions of your brand name</p>
+                </div>
+              </div>
+
+              <input
+                type="text"
+                value={brandName}
+                onChange={(e) => setBrandName(e.target.value)}
+                placeholder="Your Company Name"
+                className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              />
             </div>
-          </div>
+          </>
+        )}
 
-          <input
-            type="text"
-            value={brandName}
-            onChange={(e) => setBrandName(e.target.value)}
-            placeholder="Your Company Name"
-            className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-          />
-        </div>
-
+        {/* Prompts Input - Show in Step 2 for paid, or always for trial */}
+        {(formStep === 2 || !isRealAnalysis) && (
+          <>
         {/* Prompts Input */}
         <div className="bg-slate-800/50 rounded-xl border border-slate-700 p-6">
           <div className="flex items-center space-x-3 mb-4">
@@ -670,6 +905,8 @@ export default function NewAnalysis({ onAnalyze, user }: NewAnalysisProps) {
               Upgrade your plan to continue
             </button>
           </div>
+        )}
+          </>
         )}
       </form>
     </div>
