@@ -436,6 +436,7 @@ A free AI visibility report that serves as the primary lead generation tool.
 | Data cleanup | `supabase/functions/cleanup-data/index.ts` |
 | Free report | `src/components/FreeReport/FreeReportPage.tsx` |
 | Industry detector | `src/utils/industryDetector.ts` (keyword + AI-powered detection) |
+| FAQ schema | `src/utils/faqSchema.ts` (JSON-LD structured data for FAQs) |
 | Report email | `supabase/functions/send-free-report-email/index.ts` |
 
 ## Related Docs

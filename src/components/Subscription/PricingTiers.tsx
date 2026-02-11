@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Check, Gift, ArrowLeft } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { stripePromise, STRIPE_CONFIG } from '../../utils/stripeUtils';
@@ -6,6 +6,27 @@ import TrialSignup from '../Auth/TrialSignup';
 import CreditCardForm from '../Payment/CreditCardForm';
 import { PLAN_CONFIGS, getPlanAmount } from '../../utils/planConfig';
 import { PaymentService } from '../../services/paymentService';
+import { injectFAQSchema, removeFAQSchema, FAQItem } from '../../utils/faqSchema';
+
+// FAQ data for schema markup
+const PRICING_FAQS: FAQItem[] = [
+  {
+    question: "What is Answer Engine Optimization (AEO)?",
+    answer: "AEO is the practice of optimizing your content to appear in AI-powered search results from ChatGPT, Claude, Gemini, and other AI assistants."
+  },
+  {
+    question: "How does the free trial work?",
+    answer: "Our 14-day free trial lets you explore all features with no credit card required. Trial analyses use simulated data to demonstrate the platform. Upgrade to a paid plan for real AI citation tracking with live queries to ChatGPT, Claude, Perplexity, and Gemini."
+  },
+  {
+    question: "Can I change plans later?",
+    answer: "Absolutely! You can upgrade or downgrade your plan at any time."
+  },
+  {
+    question: "Do you offer refunds?",
+    answer: "Yes, we offer a 30-day money-back guarantee if you're not satisfied with our service."
+  }
+];
 
 interface PricingTiersProps {
   currentPlan: string;
@@ -18,6 +39,12 @@ export default function PricingTiers({ currentPlan, onUpgrade }: PricingTiersPro
   const [skipTrial, setSkipTrial] = React.useState(false);
   const [showCheckout, setShowCheckout] = React.useState(false);
   const [planAmount, setPlanAmount] = React.useState(0);
+
+  // Inject FAQ schema for SEO/AI visibility
+  useEffect(() => {
+    injectFAQSchema(PRICING_FAQS, 'pricing-faq-schema');
+    return () => removeFAQSchema('pricing-faq-schema');
+  }, []);
 
   const handlePlanSelect = (planId: string, skipTrialOption = false) => {
     if (planId === currentPlan) return;

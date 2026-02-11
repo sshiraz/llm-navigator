@@ -5,6 +5,86 @@
 
 ---
 
+## 2026-02-08: Add FAQ Schema Markup for AI Visibility
+
+**Changes:** Added JSON-LD FAQ schema markup to Pricing and Contact pages for better AI/SEO visibility
+
+### Problem
+
+The site's FAQ sections weren't using structured data markup. This meant:
+1. Search engines couldn't easily parse FAQ content
+2. AI assistants had less structured information to reference
+3. Missing opportunity for rich snippets in search results
+
+### Solution
+
+Created a reusable FAQ schema utility and added schema markup to pages with FAQ content:
+
+**New utility:** `src/utils/faqSchema.ts`
+```typescript
+// Generate JSON-LD FAQ schema
+generateFAQSchema(faqs: FAQItem[]): string
+
+// Inject schema into document head (call in useEffect)
+injectFAQSchema(faqs: FAQItem[], scriptId: string): void
+
+// Remove schema on unmount (call in useEffect cleanup)
+removeFAQSchema(scriptId: string): void
+```
+
+**Schema structure (FAQPage):**
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is AEO?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "AEO is the practice of..."
+      }
+    }
+  ]
+}
+```
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/utils/faqSchema.ts` | NEW - FAQ schema utility functions |
+| `src/components/Subscription/PricingTiers.tsx` | Add FAQ schema (4 FAQs) |
+| `src/components/Contact/ContactPage.tsx` | Add FAQ schema (4 FAQs) |
+
+### FAQs Added
+
+**Pricing Page:**
+- What is Answer Engine Optimization (AEO)?
+- How does the free trial work?
+- Can I change plans later?
+- Do you offer refunds?
+
+**Contact Page:**
+- What is LLM Navigator?
+- How does the free trial work?
+- Do you offer refunds?
+- Can I change plans later?
+
+### Testing Performed
+
+- **Test Suite:** 754 passed, 0 failed (754 total)
+- **Build:** Passed
+
+### Verification
+
+After deploying, verify schema with:
+- Google Rich Results Test: https://search.google.com/test/rich-results
+- Schema.org Validator: https://validator.schema.org/
+
+---
+
 ## 2026-02-08: Fix Competitor Leaderboard External Links
 
 **Changes:** Made the external link icons in the Competitor Citation Leaderboard clickable

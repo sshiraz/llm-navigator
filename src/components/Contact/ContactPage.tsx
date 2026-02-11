@@ -1,5 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Send, ArrowLeft, CheckCircle, AlertTriangle } from 'lucide-react';
+import { injectFAQSchema, removeFAQSchema, FAQItem } from '../../utils/faqSchema';
+
+// FAQ data for schema markup
+const CONTACT_FAQS: FAQItem[] = [
+  {
+    question: "What is LLM Navigator?",
+    answer: "LLM Navigator is a platform that helps optimize your content for AI-powered search engines like ChatGPT, Claude, and Gemini. We analyze your website and provide actionable recommendations to improve your visibility in AI search results."
+  },
+  {
+    question: "How does the free trial work?",
+    answer: "Our 14-day free trial lets you explore all features with no credit card required. Trial analyses use simulated data to demonstrate the platform. Upgrade to a paid plan for real AI citation tracking with live queries to ChatGPT, Claude, Perplexity, and Gemini."
+  },
+  {
+    question: "Do you offer refunds?",
+    answer: "Yes, we offer a 30-day money-back guarantee if you're not satisfied with our service. Simply contact our support team within 30 days of your purchase for a full refund."
+  },
+  {
+    question: "Can I change plans later?",
+    answer: "Absolutely! You can upgrade or downgrade your plan at any time. Upgrades take effect immediately, while downgrades will apply at the end of your current billing cycle."
+  }
+];
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -12,6 +33,12 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Inject FAQ schema for SEO/AI visibility
+  useEffect(() => {
+    injectFAQSchema(CONTACT_FAQS, 'contact-faq-schema');
+    return () => removeFAQSchema('contact-faq-schema');
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
