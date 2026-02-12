@@ -5,6 +5,105 @@
 
 ---
 
+## 2026-02-11: Add SPA Detection and JavaScript Rendering Support
+
+**Changes:** Added automatic SPA detection, Jina Reader fallback, and static schema support for JavaScript-rendered websites
+
+### Problem
+
+The website crawler uses simple `fetch()` which only retrieves raw HTML without executing JavaScript. For Single Page Applications (SPAs) like React, Vue, or Angular sites, the crawler would see:
+- 0 words (only empty `<div id="root"></div>`)
+- 0 headings (no server-rendered headings)
+- 0 schema (dynamically injected schema not visible)
+
+This made the analysis results useless for SPA websites, including llmsearchinsight.com.
+
+### Solution
+
+Implemented a multi-phase crawling approach:
+
+1. **SPA Detection:** Check if initial HTML suggests a JavaScript app:
+   - Word count < 100 with SPA framework root elements (`<div id="root">`, `<div id="app">`, etc.)
+   - Very low content (< 50 words) with no headings
+
+2. **Jina Reader Fallback:** If SPA detected, use Jina Reader API (r.jina.ai) to fetch JavaScript-rendered content:
+   - Uses **markdown format** (more reliable than HTML for parsing)
+   - Parses both ATX-style (`# Heading`) and setext-style (`Heading\n------`) markdown headings
+   - Strips Jina metadata header (`Title:`, `URL Source:`, `Markdown Content:`)
+   - 15-second timeout to allow for JS execution
+
+3. **Schema Preservation:** When using Jina fallback, preserve schema from original raw HTML:
+   - Static schema in `index.html` is detected from initial fetch
+   - Content stats updated from Jina, but schema kept from original
+
+4. **Static Schema in index.html:** Added FAQ schema directly to `index.html` so crawlers can see it without JavaScript execution
+
+### Technical Implementation
+
+**New constants:**
+```typescript
+const SPA_DETECTION_THRESHOLD = 100;
+const JINA_READER_BASE_URL = 'https://r.jina.ai/';
+```
+
+**New/updated functions in `crawl-website/index.ts`:**
+```typescript
+// Detect if page is likely an SPA
+isLikelySPA(wordCount, headingsCount, hasReactRoot): boolean
+
+// Check for SPA framework root elements
+hasSPAFrameworkRoot(html): boolean
+
+// Fetch rendered content via Jina Reader (markdown format)
+fetchRenderedContent(url): Promise<{ html: string; text: string } | null>
+
+// Helper to get following content lines after a heading
+getFollowingLinesContent(allLines, startIndex): string
+
+// Parse Jina markdown response (supports ATX and setext headings)
+parseJinaTextContent(text): { headings, wordCount, paragraphCount }
+```
+
+**New type added to `src/types/crawl.ts`:**
+```typescript
+interface SPADetectionInfo {
+  detected: boolean;
+  usedJinaFallback: boolean;
+  originalWordCount?: number;
+}
+```
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `supabase/functions/crawl-website/index.ts` | SPA detection, Jina Reader (markdown), schema preservation |
+| `src/types/crawl.ts` | Add `SPADetectionInfo` interface |
+| `index.html` | Add static FAQ schema + meta description |
+| `docs/decisions/001-real-website-crawling.md` | Mark JS rendering as resolved |
+
+### Testing Results
+
+- **Build:** Passed
+- **Edge Function:** Deployed
+- **Test Results for llmsearchinsight.com:**
+  - Before: 0 words, 0 headings
+  - After: 720 words, 26 headings detected
+
+### Key Learnings
+
+1. **Jina HTML format issues:** Initially tried `X-Return-Format: html` but Deno's DOMParser had issues parsing the rendered HTML. Switched to markdown format which parses reliably.
+
+2. **Setext headings:** Jina returns setext-style markdown (`Heading\n------`) not ATX-style (`## Heading`). Parser needed to handle both.
+
+3. **Schema requires static HTML:** Schema injected via JavaScript `useEffect` won't be visible to crawlers. Must be in static `index.html` for detection.
+3. Parses and analyzes the JavaScript-rendered content
+4. Returns accurate word counts, headings, and readability scores
+
+**Limitation:** Schema markup injected via JavaScript (like our FAQ schema) may still not be detected since Jina Reader returns text/markdown format. The schema needs to be server-rendered to be detected by crawlers.
+
+---
+
 ## 2026-02-08: Add FAQ Schema Markup for AI Visibility
 
 **Changes:** Added JSON-LD FAQ schema markup to Pricing and Contact pages for better AI/SEO visibility

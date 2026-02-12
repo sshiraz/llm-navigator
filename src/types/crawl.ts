@@ -99,6 +99,13 @@ export interface AggregatedStats {
   pagesWithMeta: number;
 }
 
+// SPA detection info for JavaScript-rendered sites
+export interface SPADetectionInfo {
+  detected: boolean;
+  usedJinaFallback: boolean;
+  originalWordCount?: number;
+}
+
 export interface CrawlData {
   url: string;
   title: string;
@@ -115,6 +122,8 @@ export interface CrawlData {
   aggregatedStats?: AggregatedStats;
   // AI Readiness analysis
   aiReadiness?: AIReadinessAnalysis;
+  // SPA detection info (for JavaScript-rendered sites)
+  spaDetection?: SPADetectionInfo;
 }
 
 export interface CrawlResult {

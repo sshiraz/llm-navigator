@@ -77,7 +77,7 @@ Frontend → AnalysisEngine → crawl-website Edge Function → Real Website
 ### Negative
 - Edge function adds ~1-3 seconds to analysis time
 - Some sites may block the crawler (user-agent detection)
-- JavaScript-rendered content won't be captured (static HTML only)
+- ~~JavaScript-rendered content won't be captured (static HTML only)~~ **RESOLVED:** SPA detection + Jina Reader fallback added (2026-02-11)
 
 ### Risks & Mitigations
 | Risk | Mitigation |
@@ -85,7 +85,7 @@ Frontend → AnalysisEngine → crawl-website Edge Function → Real Website
 | Site blocks crawler | Return partial data, add retry logic |
 | Slow/timeout sites | 10-second timeout, graceful degradation |
 | Edge function costs | Monitor usage, add caching if needed |
-| JS-rendered sites | Document limitation, consider Puppeteer later |
+| JS-rendered sites | **RESOLVED (2026-02-11):** Added SPA detection + Jina Reader fallback |
 
 ## Implementation Details
 
@@ -118,7 +118,7 @@ Tested against `www.convologix.com`:
 ## Related Decisions
 
 - Future: ADR-XXX - LLM Citation Checking (query Perplexity/ChatGPT to see if site is cited)
-- Future: ADR-XXX - JavaScript rendering support (Puppeteer)
+- **COMPLETED (2026-02-11):** JavaScript rendering support via Jina Reader API (see BRANCH_ANALYSIS.md)
 
 ---
 

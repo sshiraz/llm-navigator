@@ -19,7 +19,7 @@ src/
 supabase/functions/ # Edge Functions (Deno)
 ├── _shared/        # CORS utilities
 ├── check-citations/# Query AI providers
-├── crawl-website/  # Website analysis
+├── crawl-website/  # Website analysis (includes SPA detection + Jina Reader fallback)
 ├── stripe-webhook/ # Payment events
 ├── delete-user/    # Admin deletion
 ├── delete-account/ # User self-deletion (GDPR)
@@ -288,6 +288,29 @@ Analyzes website's robots.txt for AI crawler rules and recommends platform regis
 - `supabase/functions/crawl-website/index.ts` - `analyzeAIReadiness()` function
 - `src/types/crawl.ts` - AIReadinessAnalysis types
 - `src/components/Analysis/AIReadinessSection.tsx` - Display component
+
+### SPA (Single Page Application) Support
+
+The crawler automatically detects SPAs and uses Jina Reader to fetch JavaScript-rendered content.
+
+**Detection criteria:**
+- Word count < 100 AND has SPA framework root (`<div id="root">`, `<div id="app">`, etc.)
+- OR: Word count < 50 AND no headings
+
+**How it works:**
+1. Initial `fetch()` gets raw HTML
+2. If SPA detected, calls Jina Reader API (`r.jina.ai/{url}`)
+3. Jina returns markdown format (more reliable than HTML)
+4. Parser handles both ATX (`# Heading`) and setext (`Heading\n------`) markdown
+5. Schema preserved from original HTML (static schema in `index.html`)
+
+**Key functions:**
+- `isLikelySPA()` - Detects SPA based on word count and framework roots
+- `hasSPAFrameworkRoot()` - Checks for React/Vue/Angular/Next.js root elements
+- `fetchRenderedContent()` - Calls Jina Reader API
+- `parseJinaTextContent()` - Parses markdown response
+
+**Important:** Schema injected via JavaScript (`useEffect`) won't be detected. Add static schema to `index.html` for crawler visibility.
 
 ### User Data: Database vs localStorage
 ```typescript

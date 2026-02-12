@@ -7,6 +7,8 @@ import { getCorsHeaders, handleCorsPreflightWithValidation, validateOrigin } fro
 const MAX_PAGES = 6; // Max pages to crawl (homepage + 5 subpages)
 const CRAWL_TIMEOUT = 8000; // 8 seconds per page
 const IMPORTANT_PATHS = ['/blog', '/services', '/about', '/contact', '/pricing', '/features', '/products', '/faq', '/help'];
+const SPA_DETECTION_THRESHOLD = 100; // Word count below this suggests SPA
+const JINA_READER_BASE_URL = 'https://r.jina.ai/';
 
 // AI Crawlers to check in robots.txt
 const AI_CRAWLERS = [
@@ -112,6 +114,12 @@ interface PageData {
   };
 }
 
+interface SPADetectionInfo {
+  detected: boolean;
+  usedJinaFallback: boolean;
+  originalWordCount?: number;
+}
+
 interface CrawlResult {
   success: boolean;
   data?: PageData & {
@@ -133,8 +141,160 @@ interface CrawlResult {
       pagesWithSchema: number;
       pagesWithMeta: number;
     };
+    // SPA detection info
+    spaDetection?: SPADetectionInfo;
   };
   error?: string;
+}
+
+// Detect if a page is likely a JavaScript SPA (low initial content)
+function isLikelySPA(wordCount: number, headingsCount: number, hasReactRoot: boolean): boolean {
+  // Signs of SPA: very low word count, no headings, has React/Vue root element
+  if (hasReactRoot && wordCount < SPA_DETECTION_THRESHOLD) return true;
+  if (wordCount < 50 && headingsCount === 0) return true;
+  return false;
+}
+
+// Check if HTML contains SPA framework root elements
+function hasSPAFrameworkRoot(html: string): boolean {
+  const spaPatterns = [
+    /<div\s+id=["']root["']/i,        // React
+    /<div\s+id=["']app["']/i,         // Vue
+    /<div\s+id=["']__next["']/i,      // Next.js
+    /<div\s+id=["']__nuxt["']/i,      // Nuxt.js
+    /ng-app|ng-controller/i,           // Angular
+    /<script[^>]*type=["']module["']/i // Modern SPA bundler
+  ];
+  return spaPatterns.some(pattern => pattern.test(html));
+}
+
+// Fetch rendered content via Jina Reader API (for SPAs)
+// Returns markdown format which is more reliable to parse than HTML
+async function fetchRenderedContent(url: string): Promise<{ html: string; text: string } | null> {
+  try {
+    console.log(`Fetching rendered content via Jina Reader for: ${url}`);
+
+    // Use default format (markdown) - more reliable than HTML for parsing
+    const response = await fetch(`${JINA_READER_BASE_URL}${url}`, {
+      headers: {
+        'Accept': 'text/plain',
+      },
+      signal: AbortSignal.timeout(15000), // 15 second timeout for JS rendering
+    });
+
+    if (!response.ok) {
+      console.log(`Jina Reader failed: ${response.status}`);
+      return null;
+    }
+
+    const content = await response.text();
+    console.log(`Jina Reader returned ${content.length} characters`);
+
+    // Always treat as text/markdown - more reliable parsing
+    return { html: '', text: content };
+  } catch (error) {
+    console.log('Jina Reader error:', error);
+    return null;
+  }
+}
+
+// Helper to get following content lines after a heading
+function getFollowingLinesContent(allLines: string[], startIndex: number): string {
+  const followingLines: string[] = [];
+  let charCount = 0;
+  const maxChars = 200;
+
+  for (let i = startIndex + 1; i < allLines.length && charCount < maxChars; i++) {
+    const line = allLines[i].trim();
+    // Stop at next heading (ATX or setext underline)
+    if (line.match(/^#{1,6}\s/) || line.match(/^[-=]{3,}$/)) break;
+    if (line.length > 0) {
+      followingLines.push(line);
+      charCount += line.length;
+    }
+  }
+
+  return followingLines.join(' ').substring(0, 200);
+}
+
+// Parse content from Jina Reader text response (markdown-like)
+function parseJinaTextContent(text: string): {
+  headings: Heading[];
+  wordCount: number;
+  paragraphCount: number;
+} {
+  // Skip Jina metadata header (Title:, URL Source:, Markdown Content:)
+  let cleanText = text;
+  const markdownContentMatch = text.match(/Markdown Content:\s*\n([\s\S]*)/i);
+  if (markdownContentMatch) {
+    cleanText = markdownContentMatch[1];
+  }
+
+  const allLines = cleanText.split('\n');
+  const lines = allLines.filter(line => line.trim());
+  const headings: Heading[] = [];
+  let paragraphCount = 0;
+
+  for (let i = 0; i < allLines.length; i++) {
+    const line = allLines[i];
+    const trimmedLine = line.trim();
+
+    // Detect ATX-style headings (# Heading)
+    const atxMatch = trimmedLine.match(/^(#{1,6})\s+(.+)$/);
+    if (atxMatch) {
+      const level = atxMatch[1].length;
+      const headingText = atxMatch[2].trim();
+      const followingContent = getFollowingLinesContent(allLines, i);
+
+      headings.push({
+        level,
+        text: headingText,
+        hasDirectAnswer: isDirectAnswer(followingContent),
+        followingContent,
+      });
+      continue;
+    }
+
+    // Detect setext-style headings (Heading\n======= or Heading\n-------)
+    if (i + 1 < allLines.length && trimmedLine.length > 0) {
+      const nextLine = allLines[i + 1].trim();
+      // H1: ====== (at least 3 equals)
+      if (nextLine.match(/^={3,}$/)) {
+        const followingContent = getFollowingLinesContent(allLines, i + 1);
+        headings.push({
+          level: 1,
+          text: trimmedLine,
+          hasDirectAnswer: isDirectAnswer(followingContent),
+          followingContent,
+        });
+        continue;
+      }
+      // H2: ------ (at least 3 dashes)
+      if (nextLine.match(/^-{3,}$/)) {
+        const followingContent = getFollowingLinesContent(allLines, i + 1);
+        headings.push({
+          level: 2,
+          text: trimmedLine,
+          hasDirectAnswer: isDirectAnswer(followingContent),
+          followingContent,
+        });
+        continue;
+      }
+    }
+
+    // Count paragraphs (lines with substantial content)
+    if (trimmedLine.length > 50 && !trimmedLine.match(/^[-=]{3,}$/)) {
+      paragraphCount++;
+    }
+  }
+
+  const words = cleanText.split(/\s+/).filter(w => w.length > 0);
+
+  return {
+    headings,
+    wordCount: words.length,
+    paragraphCount,
+  };
 }
 
 // Calculate Flesch-Kincaid readability score
@@ -937,7 +1097,7 @@ serve(async (req) => {
     }
 
     // Parse homepage HTML
-    const homepageDoc = new DOMParser().parseFromString(homepageHtml, "text/html");
+    let homepageDoc = new DOMParser().parseFromString(homepageHtml, "text/html");
     if (!homepageDoc) {
       return new Response(
         JSON.stringify({ success: false, error: "Failed to parse homepage HTML" }),
@@ -946,7 +1106,63 @@ serve(async (req) => {
     }
 
     // Step 2: Extract page data from homepage
-    const homepage = parsePageData(homepageDoc, homepageUrl, keywords, Date.now() - homepageStartTime);
+    let homepage = parsePageData(homepageDoc, homepageUrl, keywords, Date.now() - homepageStartTime);
+
+    // Step 2.1: Check if this is likely an SPA with minimal server-rendered content
+    const hasSPARoot = hasSPAFrameworkRoot(homepageHtml);
+    const isLikelySPASite = isLikelySPA(
+      homepage.contentStats.wordCount,
+      homepage.headings.length,
+      hasSPARoot
+    );
+
+    let usedJinaFallback = false;
+
+    if (isLikelySPASite) {
+      console.log(`Detected likely SPA (${homepage.contentStats.wordCount} words, ${homepage.headings.length} headings, SPA root: ${hasSPARoot}). Trying Jina Reader...`);
+
+      const renderedContent = await fetchRenderedContent(homepageUrl);
+
+      if (renderedContent && renderedContent.text) {
+        // Got text/markdown content, parse manually
+        const parsedContent = parseJinaTextContent(renderedContent.text);
+        console.log(`Jina Reader text: ${parsedContent.wordCount} words, ${parsedContent.headings.length} headings`);
+
+        // Preserve schema from original HTML (static schema in index.html)
+        // Jina markdown doesn't include <script> tags, so we keep the original
+        const originalSchema = homepage.schemaMarkup;
+        console.log(`Preserving ${originalSchema.length} schema(s) from original HTML`);
+
+        // Update homepage with rendered content data
+        homepage.contentStats.wordCount = parsedContent.wordCount;
+        homepage.contentStats.paragraphCount = parsedContent.paragraphCount;
+        homepage.headings = parsedContent.headings;
+        homepage.schemaMarkup = originalSchema; // Keep original schema
+
+          // Recalculate BLUF analysis
+          const headingsWithAnswers = parsedContent.headings.filter(h => h.hasDirectAnswer);
+          homepage.blufAnalysis = {
+            score: parsedContent.headings.length > 0
+              ? Math.round((headingsWithAnswers.length / parsedContent.headings.length) * 100)
+              : 0,
+            directAnswers: headingsWithAnswers.map(h => ({
+              heading: h.text,
+              answer: h.followingContent,
+            })),
+            totalHeadings: parsedContent.headings.length,
+            headingsWithDirectAnswers: headingsWithAnswers.length,
+          };
+
+          // Recalculate readability
+          homepage.contentStats.readabilityScore = Math.round(calculateReadability(renderedContent.text));
+
+          usedJinaFallback = true;
+      }
+
+      if (!usedJinaFallback) {
+        console.log('Jina Reader fallback failed, using original sparse content');
+      }
+    }
 
     // Step 2.5: Analyze robots.txt for AI crawlers (in parallel with other work)
     console.log('Analyzing robots.txt for AI crawlers...');
@@ -1081,6 +1297,12 @@ serve(async (req) => {
         aggregatedStats,
         // AI Readiness analysis
         aiReadiness,
+        // SPA detection info
+        spaDetection: isLikelySPASite ? {
+          detected: true,
+          usedJinaFallback,
+          originalWordCount: hasSPARoot ? homepage.contentStats.wordCount : undefined,
+        } : undefined,
       },
     };
 
